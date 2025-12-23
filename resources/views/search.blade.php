@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" 
+      x-data="{ theme: 'light' }"
+      x-bind:class="{ 'dark': theme === 'dark' }"
+      x-init="
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        theme = savedTheme;
+        if (savedTheme === 'dark') {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+      ">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="csrf-token" content="{{ csrf_token() }}">
+        
+        @if(isset($seo))
+            <x-seo-head :seo="$seo" />
+        @else
+            <title>Поиск - {{ config('app.name', 'Дневник сновидений') }}</title>
+        @endif
+        <link rel="preconnect" href="https://fonts.bunny.net">
+        <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+        @vite(['resources/css/app.css', 'resources/js/app.js'])
+        <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+        <style>
+            .gradient-primary {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            }
+            .card-shadow {
+                box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+            }
+            .dark .card-shadow {
+                box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            }
+            .main-grid {
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+                width: 100%;
+            }
+            @media (min-width: 1024px) {
+                .main-grid {
+                    grid-template-columns: 280px 1fr 320px;
+                    gap: 2rem;
+                }
+            }
+            @media (min-width: 1400px) {
+                .main-grid {
+                    grid-template-columns: 320px 1fr 360px;
+                    gap: 2.5rem;
+                }
+            }
+            .sidebar-menu {
+                display: none;
+            }
+            @media (min-width: 1024px) {
+                .sidebar-menu {
+                    display: block;
+                }
+            }
+        </style>
+        <x-header-styles />
+    </head>
+    <body class="font-sans antialiased bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+        <x-header />
+
+        <!-- Основной контент -->
+        <div class="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div class="main-grid w-full">
+                <!-- Левая панель (только для авторизованных) -->
+                @auth
+                <aside class="space-y-6">
+                    <!-- Быстрое меню -->
+                    <div class="sidebar-menu bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
+                        <h3 class="text-lg font-semibold mb-4 text-purple-600 dark:text-purple-400 flex items-center gap-2">
+                            <i class="fas fa-bars"></i> Меню
+                        </h3>
+                        <nav class="space-y-2">
+                            <a href="{{ route('dream-analyzer.create') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-purple-600 dark:hover:text-purple-400 transition-all {{ request()->routeIs('dream-analyzer.*') ? 'bg-gray-100 dark:bg-gray-700 text-purple-600 dark:text-purple-400 font-medium' : '' }}">
+                                <i class="fas fa-magic w-5"></i> Толкование снов
+                            </a>
+                            <a href="{{ route('activity.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-purple-600 dark:hover:text-purple-400 transition-all {{ request()->routeIs('activity.*') ? 'bg-gray-100 dark:bg-gray-700 text-purple-600 dark:text-purple-400 font-medium' : '' }}">
+                                <i class="fas fa-home w-5"></i> Лента активности
+                            </a>
+                            <a href="{{ route('reports.create') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-purple-600 dark:hover:text-purple-400 transition-all {{ request()->routeIs('reports.create') ? 'bg-gray-100 dark:bg-gray-700 text-purple-600 dark:text-purple-400 font-medium' : '' }}">
+                                <i class="fas fa-plus-circle w-5"></i> Добавить сон
+                            </a>
+                            <a href="{{ route('statistics.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-purple-600 dark:hover:text-purple-400 transition-all {{ request()->routeIs('statistics.*') ? 'bg-gray-100 dark:bg-gray-700 text-purple-600 dark:text-purple-400 font-medium' : '' }}">
+                                <i class="fas fa-chart-pie w-5"></i> Статистика
+                            </a>
+                            <a href="{{ route('dashboard') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-purple-600 dark:hover:text-purple-400 transition-all {{ request()->routeIs('dashboard') ? 'bg-gray-100 dark:bg-gray-700 text-purple-600 dark:text-purple-400 font-medium' : '' }}">
+                                <i class="fas fa-calendar-alt w-5"></i> Мои отчеты
+                            </a>
+                            <a href="{{ route('users.search') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-purple-600 dark:hover:text-purple-400 transition-all {{ request()->routeIs('users.search') ? 'bg-gray-100 dark:bg-gray-700 text-purple-600 dark:text-purple-400 font-medium' : '' }}">
+                                <i class="fas fa-user-friends w-5"></i> Мои друзья
+                            </a>
+                            <a href="{{ route('profile.edit') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-purple-600 dark:hover:text-purple-400 transition-all {{ request()->routeIs('profile.*') ? 'bg-gray-100 dark:bg-gray-700 text-purple-600 dark:text-purple-400 font-medium' : '' }}">
+                                <i class="fas fa-cog w-5"></i> Настройки
+                            </a>
+                        </nav>
+                    </div>
+                </aside>
+                @endauth
+                
+                <!-- Центральная панель -->
+                <main class="space-y-6 min-w-0 {{ !auth()->check() ? 'col-span-2' : '' }}">
+                    <!-- Заголовок и форма поиска -->
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
+                        <h2 class="text-2xl font-bold mb-4 text-purple-600 dark:text-purple-400">Поиск сновидений</h2>
+                        
+                        <!-- Форма поиска и фильтров -->
+                        <div x-data="{ open: {{ request()->hasAny(['search', 'tags', 'dream_type', 'date_from', 'date_to', 'sort_by', 'sort_order', 'per_page']) ? 'false' : 'true' }} }">
+                            <div class="p-4 border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors rounded-t-lg"
+                                 @click="open = !open">
+                                <div class="flex justify-between items-center">
+                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                                        🔍 Фильтры поиска
+                                    </h3>
+                                    <svg class="w-5 h-5 text-gray-500 transition-transform" 
+                                         :class="{ 'rotate-180': open }"
+                                         fill="none" 
+                                         stroke="currentColor" 
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <div x-show="open" 
+                                 x-transition:enter="transition ease-out duration-200"
+                                 x-transition:enter-start="opacity-0 transform scale-95"
+                                 x-transition:enter-end="opacity-100 transform scale-100"
+                                 x-transition:leave="transition ease-in duration-150"
+                                 x-transition:leave-start="opacity-100 transform scale-100"
+                                 x-transition:leave-end="opacity-0 transform scale-95"
+                                 class="p-6">
+                                <form method="GET" action="{{ route('reports.search') }}" class="space-y-4">
+                                    <!-- Поиск по тексту -->
+                                    <div>
+                                        <label for="search" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Поиск по тексту</label>
+                                        <input type="text" 
+                                               id="search" 
+                                               name="search" 
+                                               value="{{ request('search') }}"
+                                               placeholder="Поиск по названию, описанию снов или пользователям..."
+                                               class="block w-full border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                    </div>
+
+                                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                        <!-- Фильтр по тегам -->
+                                        <div>
+                                            <label for="tags" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Теги</label>
+                                            <select id="tags" 
+                                                    name="tags[]" 
+                                                    multiple
+                                                    class="block w-full border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                                    size="5">
+                                                @foreach($allTags as $tag)
+                                                    <option value="{{ $tag->id }}" 
+                                                            {{ in_array($tag->id, (array)request('tags', [])) ? 'selected' : '' }}>
+                                                        {{ $tag->name }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Удерживайте Ctrl для выбора нескольких</p>
+                                        </div>
+
+                                        <!-- Фильтр по типу сна -->
+                                        <div>
+                                            <label for="dream_type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Тип сна</label>
+                                            <select id="dream_type" 
+                                                    name="dream_type" 
+                                                    class="block w-full border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                                <option value="">Все типы</option>
+                                                @foreach($dreamTypes as $type)
+                                                    <option value="{{ $type }}" {{ request('dream_type') === $type ? 'selected' : '' }}>
+                                                        {{ $type }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+
+                                        <!-- Фильтр по дате (от) -->
+                                        <div>
+                                            <label for="date_from" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Дата от</label>
+                                            <input type="date" 
+                                                   id="date_from" 
+                                                   name="date_from" 
+                                                   value="{{ request('date_from') }}"
+                                                   class="block w-full border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                        </div>
+
+                                        <!-- Фильтр по дате (до) -->
+                                        <div>
+                                            <label for="date_to" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Дата до</label>
+                                            <input type="date" 
+                                                   id="date_to" 
+                                                   name="date_to" 
+                                                   value="{{ request('date_to') }}"
+                                                   class="block w-full border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                        </div>
+                                    </div>
+
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <!-- Сортировка -->
+                                        <div>
+                                            <label for="sort_by" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Сортировать по</label>
+                                            <select id="sort_by" 
+                                                    name="sort_by" 
+                                                    class="block w-full border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                                <option value="created_at" {{ request('sort_by', 'created_at') === 'created_at' ? 'selected' : '' }}>Дате создания</option>
+                                                <option value="report_date" {{ request('sort_by') === 'report_date' ? 'selected' : '' }}>Дате отчета</option>
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <label for="sort_order" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Порядок</label>
+                                            <select id="sort_order" 
+                                                    name="sort_order" 
+                                                    class="block w-full border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                                <option value="desc" {{ request('sort_order', 'desc') === 'desc' ? 'selected' : '' }}>По убыванию</option>
+                                                <option value="asc" {{ request('sort_order') === 'asc' ? 'selected' : '' }}>По возрастанию</option>
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <label for="per_page" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">На странице</label>
+                                            <select id="per_page" 
+                                                    name="per_page" 
+                                                    class="block w-full border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                                <option value="10" {{ request('per_page', 20) == 10 ? 'selected' : '' }}>10</option>
+                                                <option value="20" {{ request('per_page', 20) == 20 ? 'selected' : '' }}>20</option>
+                                                <option value="50" {{ request('per_page') == 50 ? 'selected' : '' }}>50</option>
+                                                <option value="100" {{ request('per_page') == 100 ? 'selected' : '' }}>100</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex gap-2">
+                                        <button type="submit" class="gradient-primary text-white font-bold py-2 px-4 rounded hover:shadow-lg transition-all">
+                                            <i class="fas fa-search mr-2"></i>Применить фильтры
+                                        </button>
+                                        <a href="{{ route('reports.search') }}" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
+                                            Сбросить
+                                        </a>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Результаты поиска -->
+                    <div class="space-y-6">
+                        @if($reports->count() > 0)
+                            @foreach($reports as $report)
+                                <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all">
+                                    <div class="flex justify-between items-start mb-4">
+                                        <div class="flex items-center gap-4">
+                                            <x-avatar :user="$report->user" size="md" />
+                                            <div>
+                                                <a href="{{ route('users.profile', $report->user) }}" class="font-semibold text-gray-900 dark:text-white hover:text-purple-600 dark:hover:text-purple-400">
+                                                    {{ $report->user->nickname }}
+                                                </a>
+                                                <div class="text-sm text-gray-600 dark:text-gray-400">
+                                                    {{ $report->report_date->format('d.m.Y') }} • 
+                                                    {{ $report->created_at->diffForHumans() }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    @if($report->dreams->count() > 0)
+                                        @php 
+                                            $firstDream = $report->dreams->first();
+                                            $dreamsWithTitles = $report->dreams->filter(function($dream) {
+                                                return !empty($dream->title);
+                                            });
+                                            $allTitles = $dreamsWithTitles->pluck('title')->implode(', ');
+                                        @endphp
+                                        @if(!empty($allTitles))
+                                            <h3 class="text-xl font-semibold mb-3 text-purple-600 dark:text-purple-400">
+                                                {{ $allTitles }}
+                                                @if($report->dreams->count() > 1)
+                                                    <span class="text-sm font-normal text-gray-500 dark:text-gray-400 ml-2">
+                                                        ({{ $report->dreams->count() }} {{ $report->dreams->count() == 2 ? 'сна' : ($report->dreams->count() < 5 ? 'сна' : 'снов') }})
+                                                    </span>
+                                                @endif
+                                            </h3>
+                                        @endif
+                                        <p class="text-gray-700 dark:text-gray-300 mb-4 line-clamp-3">
+                                            {{ \Illuminate\Support\Str::limit($firstDream->description, 300) }}
+                                        </p>
+                                    @endif
+                                    
+                                    @if($report->tags->count() > 0)
+                                        <div class="flex flex-wrap gap-2 mb-4">
+                                            @foreach($report->tags as $tag)
+                                                <span class="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm">
+                                                    {{ $tag->name }}
+                                                </span>
+                                            @endforeach
+                                        </div>
+                                    @endif
+                                    
+                                    <div class="flex justify-between items-center pt-4 border-t border-gray-200 dark:border-gray-700">
+                                        <div class="flex gap-6">
+                                            <span class="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                                                <i class="far fa-comment"></i>
+                                                <span>{{ $report->comments->where('parent_id', null)->count() }}</span>
+                                            </span>
+                                            <span class="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                                                <i class="far fa-eye"></i>
+                                                <span>{{ $report->dreams->count() }}</span>
+                                            </span>
+                                        </div>
+                                        <a href="{{ route('reports.show', $report) }}" class="px-4 py-2 gradient-primary text-white rounded-lg text-sm font-medium hover:shadow-lg transition-all">
+                                            <i class="fas fa-brain mr-2"></i>Просмотр
+                                        </a>
+                                    </div>
+                                </div>
+                            @endforeach
+                            
+                            <div class="mt-6">
+                                {{ $reports->links() }}
+                            </div>
+                        @else
+                            <div class="bg-white dark:bg-gray-800 rounded-2xl p-12 text-center card-shadow border border-gray-200 dark:border-gray-700">
+                                <p class="text-gray-600 dark:text-gray-400 mb-4">По вашему запросу ничего не найдено.</p>
+                                <a href="{{ route('reports.search') }}" class="inline-block mt-4 gradient-primary text-white px-6 py-3 rounded-lg hover:shadow-lg transition-all">
+                                    <i class="fas fa-redo mr-2"></i>Сбросить фильтры
+                                </a>
+                            </div>
+                        @endif
+                    </div>
+                </main>
+                
+                <!-- Правая панель (только для авторизованных) -->
+                @auth
+                <aside class="space-y-6">
+                    <!-- Информация -->
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
+                        <h3 class="text-lg font-semibold mb-4 text-purple-600 dark:text-purple-400 flex items-center gap-2">
+                            <i class="fas fa-info-circle"></i> О поиске
+                        </h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">
+                            Используйте фильтры для поиска сновидений по различным критериям. Вы можете искать по тексту, тегам, типу сна и дате.
+                        </p>
+                    </div>
+                </aside>
+                @endauth
+            </div>
+        </div>
+
+        <script>
+            function toggleTheme() {
+                const html = document.documentElement;
+                const currentTheme = html.classList.contains('dark') ? 'dark' : 'light';
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                
+                if (newTheme === 'dark') {
+                    html.classList.add('dark');
+                } else {
+                    html.classList.remove('dark');
+                }
+                
+                localStorage.setItem('theme', newTheme);
+                
+                if (window.Alpine && window.Alpine.store) {
+                    window.Alpine.store('theme', newTheme);
+                }
+            }
+        </script>
+    </body>
+</html>
+
+
+
+

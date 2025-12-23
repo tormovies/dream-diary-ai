@@ -1,0 +1,195 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Comment;
+use App\Models\Report;
+use App\Models\Setting;
+use App\Models\User;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\View\View;
+
+class AdminController extends Controller
+{
+    // Middleware применяется через маршруты
+
+    /**
+     * Дашборд админ-панели
+     */
+    public function dashboard(): View
+    {
+        $stats = [
+            'users_count' => User::count(),
+            'reports_count' => Report::count(),
+            'comments_count' => Comment::count(),
+            'reports_today' => Report::whereDate('created_at', today())->count(),
+        ];
+
+        $recentReports = Report::with(['user', 'dreams'])->latest()->limit(10)->get();
+        $recentUsers = User::latest()->limit(10)->get();
+
+        return view('admin.dashboard', compact('stats', 'recentReports', 'recentUsers'));
+    }
+
+    /**
+     * Управление пользователями
+     */
+    public function users(Request $request): View
+    {
+        $query = User::query();
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('nickname', 'like', "%{$search}%")
+                  ->orWhere('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('role')) {
+            $query->where('role', $request->role);
+        }
+
+        $users = $query->withCount('reports')->paginate(20);
+
+        return view('admin.users', compact('users'));
+    }
+
+    /**
+     * Редактирование пользователя
+     */
+    public function editUser(User $user): View
+    {
+        return view('admin.edit-user', compact('user'));
+    }
+
+    /**
+     * Обновление пользователя
+     */
+    public function updateUser(Request $request, User $user): RedirectResponse
+    {
+        $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'nickname' => ['required', 'string', 'max:255', 'unique:users,nickname,' . $user->id],
+            'email' => ['required', 'email', 'unique:users,email,' . $user->id],
+            'role' => ['required', 'in:admin,user'],
+            'diary_privacy' => ['required', 'in:public,private,friends'],
+        ]);
+
+        $user->update($request->only(['name', 'nickname', 'email', 'role', 'diary_privacy', 'bio', 'avatar']));
+
+        return redirect()->route('admin.users')->with('success', 'Пользователь обновлен');
+    }
+
+    /**
+     * Блокировка/разблокировка пользователя
+     */
+    public function toggleUserStatus(User $user): RedirectResponse
+    {
+        // Можно добавить поле is_blocked в будущем
+        // Пока просто редирект
+        return back()->with('success', 'Функция блокировки будет добавлена');
+    }
+
+    /**
+     * Управление отчетами
+     */
+    public function reports(Request $request): View
+    {
+        $query = Report::with(['user', 'dreams', 'tags']);
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->whereHas('dreams', function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('user_id')) {
+            $query->where('user_id', $request->user_id);
+        }
+
+        $reports = $query->latest()->paginate(20);
+        $users = User::orderBy('nickname')->get(['id', 'nickname']);
+
+        return view('admin.reports', compact('reports', 'users'));
+    }
+
+    /**
+     * Управление комментариями
+     */
+    public function comments(Request $request): View
+    {
+        $query = Comment::with(['user', 'report.user']);
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where('content', 'like', "%{$search}%");
+        }
+
+        $comments = $query->latest()->paginate(20);
+
+        return view('admin.comments', compact('comments'));
+    }
+
+    /**
+     * Удаление комментария (админ)
+     */
+    public function deleteComment(Comment $comment): RedirectResponse
+    {
+        $comment->delete();
+
+        return back()->with('success', 'Комментарий удален');
+    }
+
+    /**
+     * Настройки системы
+     */
+    public function settings(): View
+    {
+        $settings = [
+            'allow_report_deletion' => Setting::getValue('allow_report_deletion', true),
+            'edit_dreams_after_days' => Setting::getValue('edit_dreams_after_days', null),
+            'diary_spoiler_min_length' => Setting::getValue('diary_spoiler_min_length', 1000),
+            'deepseek_api_key' => Setting::getValue('deepseek_api_key', ''),
+        ];
+
+        return view('admin.settings', compact('settings'));
+    }
+
+    /**
+     * Сохранение настроек системы
+     */
+    public function updateSettings(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'allow_report_deletion' => ['nullable', 'boolean'],
+            'edit_dreams_after_days' => ['nullable', 'integer', 'min:0'],
+            'diary_spoiler_min_length' => ['nullable', 'integer', 'min:0'],
+            'deepseek_api_key' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        Setting::setValue('allow_report_deletion', $request->boolean('allow_report_deletion', true));
+        
+        if ($request->filled('edit_dreams_after_days')) {
+            Setting::setValue('edit_dreams_after_days', $request->edit_dreams_after_days);
+        } else {
+            Setting::where('key', 'edit_dreams_after_days')->delete();
+        }
+
+        if ($request->filled('diary_spoiler_min_length')) {
+            Setting::setValue('diary_spoiler_min_length', $request->diary_spoiler_min_length);
+        } else {
+            Setting::setValue('diary_spoiler_min_length', 1000); // Значение по умолчанию
+        }
+
+        if ($request->filled('deepseek_api_key')) {
+            Setting::setValue('deepseek_api_key', $request->deepseek_api_key);
+        }
+
+        return back()->with('success', 'Настройки сохранены');
+    }
+}
