@@ -206,9 +206,9 @@ class ActivityController extends Controller
                 ->count();
             
             // Среднее количество снов в месяц
-            $firstReport = $user->reports()->orderBy('created_at')->first();
+            $firstReport = $user->reports()->orderBy('report_date')->first();
             if ($firstReport) {
-                $monthsDiff = $firstReport->created_at->diffInMonths(now());
+                $monthsDiff = $firstReport->report_date->diffInMonths(now());
                 $avgDreamsPerMonth = $monthsDiff > 0 ? round($userDreamsCount / max($monthsDiff, 1), 1) : $userDreamsCount;
             } else {
                 $avgDreamsPerMonth = 0;

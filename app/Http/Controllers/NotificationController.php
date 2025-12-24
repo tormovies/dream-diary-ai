@@ -47,9 +47,9 @@ class NotificationController extends Controller
         ];
         
         // Среднее количество снов в месяц
-        $firstReport = $user->reports()->orderBy('created_at')->first();
+        $firstReport = $user->reports()->orderBy('report_date')->first();
         if ($firstReport) {
-            $monthsDiff = $firstReport->created_at->diffInMonths(now());
+            $monthsDiff = $firstReport->report_date->diffInMonths(now());
             $stats['avg_dreams_per_month'] = $monthsDiff > 0 ? round($stats['dreams_count'] / max($monthsDiff, 1), 1) : $stats['dreams_count'];
         } else {
             $stats['avg_dreams_per_month'] = 0;

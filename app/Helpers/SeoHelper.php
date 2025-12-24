@@ -270,25 +270,46 @@ class SeoHelper
      */
     public static function forDreamAnalyzerResult($interpretation): array
     {
+        // Приоритет: сначала нормализованные данные, потом старые
+        $result = $interpretation->result ?? null;
         $analysis = $interpretation->analysis_data ?? [];
         
-        // Проверяем, это серия снов или одиночный сон
-        $isSeries = isset($analysis['series_analysis']) && isset($analysis['dreams']);
+        // Определяем тип анализа
+        if ($result) {
+            $isSeries = $result->type === 'series';
+        } else {
+            $isSeries = isset($analysis['series_analysis']) && isset($analysis['dreams']);
+        }
         
         if ($isSeries) {
             // Обработка серии снов
-            $seriesAnalysis = $analysis['series_analysis'] ?? [];
-            $dreams = $analysis['dreams'] ?? [];
-            
-            // Название серии
-            $dreamTitle = $seriesAnalysis['series_title'] ?? 'Анализ серии снов';
-            
-            // Главная мысль - берем из overall_theme
-            $coreMessage = $seriesAnalysis['overall_theme'] ?? '';
-            
-            // Если нет overall_theme, берем из первого сна
-            if (empty($coreMessage) && !empty($dreams) && isset($dreams[0]['summary_insight'])) {
-                $coreMessage = $dreams[0]['summary_insight'];
+            if ($result) {
+                // Из нормализованных данных
+                $dreamTitle = $result->series_title ?? 'Анализ серии снов';
+                $coreMessage = $result->overall_theme ?? '';
+                
+                // Если нет overall_theme, берем из первого сна в серии
+                if (empty($coreMessage) && $result->seriesDreams->isNotEmpty()) {
+                    $coreMessage = $result->seriesDreams->first()->summary_insight ?? '';
+                }
+                
+                // Традиции
+                $traditions = $result->traditions ?? [];
+                $analysisType = $result->analysis_type ?? 'series_integrated';
+            } else {
+                // Из старых данных
+                $seriesAnalysis = $analysis['series_analysis'] ?? [];
+                $dreams = $analysis['dreams'] ?? [];
+                
+                $dreamTitle = $seriesAnalysis['series_title'] ?? 'Анализ серии снов';
+                $coreMessage = $seriesAnalysis['overall_theme'] ?? '';
+                
+                if (empty($coreMessage) && !empty($dreams) && isset($dreams[0]['summary_insight'])) {
+                    $coreMessage = $dreams[0]['summary_insight'];
+                }
+                
+                $traditions = $seriesAnalysis['traditions'] ?? [];
+                $analysisType = $seriesAnalysis['analysis_type'] ?? 'series_integrated';
             }
             
             // Если все еще пусто, используем дефолтное описание
@@ -296,8 +317,72 @@ class SeoHelper
                 $coreMessage = 'Психологический анализ серии снов с использованием различных традиций интерпретации.';
             }
             
-            // Традиции
-            $traditions = $seriesAnalysis['traditions'] ?? [];
+            // Традиции - общая обработка
+            $traditionsText = '';
+            if (!empty($traditions) && is_array($traditions)) {
+                $traditionNames = [
+                    'freudian' => 'Фрейдистский',
+                    'jungian' => 'Юнгианский',
+                    'cognitive' => 'Когнитивный',
+                    'symbolic' => 'Символический',
+                    'shamanic' => 'Шаманистический',
+                    'gestalt' => 'Гештальт',
+                    'eclectic' => 'Комплексный',
+                ];
+                
+                $translatedTraditions = array_map(function($t) use ($traditionNames) {
+                    return $traditionNames[strtolower($t)] ?? ucfirst($t);
+                }, $traditions);
+                
+                $traditionsText = implode(', ', $translatedTraditions);
+            }
+            
+            $analysisTypeText = 'Анализ серии снов';
+        } else {
+            // Обработка одиночного сна
+            if ($result) {
+                // Из нормализованных данных
+                $dreamTitle = $result->dream_title ?? 'Анализ сна';
+                $coreMessage = $result->summary_insight ?? '';
+                
+                // Традиции
+                $traditions = $result->traditions ?? [];
+                $analysisType = $result->analysis_type ?? 'single';
+            } elseif (isset($analysis['dream_analysis'])) {
+                // Новый формат (из analysis_data)
+                $dreamAnalysis = $analysis['dream_analysis'] ?? [];
+                
+                $dreamTitle = $dreamAnalysis['core_theme'] ?? 'Анализ сна';
+                $coreMessage = $dreamAnalysis['central_message'] ?? '';
+                
+                if (empty($coreMessage)) {
+                    $coreMessage = $dreamAnalysis['core_theme'] ?? '';
+                }
+                
+                $traditions = [];
+                $analysisType = 'single';
+            } else {
+                // Старый формат (из analysis_data)
+                $metadata = $analysis['metadata'] ?? [];
+                $analysisData = $analysis['analysis'] ?? [];
+                
+                $dreamTitle = $metadata['title'] ?? 'Анализ сна';
+                $coreMessage = $analysisData['core_message'] ?? '';
+                
+                if (empty($coreMessage) && isset($analysisData['interpretation'])) {
+                    $coreMessage = Str::limit(strip_tags($analysisData['interpretation']), 160, '...');
+                }
+                
+                $traditions = $analysisData['traditions'] ?? [];
+                $analysisType = $analysisData['analysis_type'] ?? 'single';
+            }
+            
+            // Если все еще пусто, используем дефолтное описание
+            if (empty($coreMessage)) {
+                $coreMessage = 'Психологический анализ сна с использованием различных традиций интерпретации.';
+            }
+            
+            // Традиции - общая обработка
             $traditionsText = '';
             if (!empty($traditions) && is_array($traditions)) {
                 $traditionNames = [
@@ -318,88 +403,12 @@ class SeoHelper
             }
             
             // Тип анализа
-            $analysisType = $seriesAnalysis['analysis_type'] ?? 'series_integrated';
-            $analysisTypeText = 'Анализ серии снов';
-        } else {
-            // Обработка одиночного сна
-            // Проверяем, это новый формат или старый
-            if (isset($analysis['dream_analysis'])) {
-                // Новый формат
-                $dreamAnalysis = $analysis['dream_analysis'] ?? [];
-                
-                // Название сна - берем из core_theme
-                $dreamTitle = $dreamAnalysis['core_theme'] ?? 'Анализ сна';
-                
-                // Главная мысль
-                $coreMessage = $dreamAnalysis['central_message'] ?? '';
-                
-                // Если нет central_message, берем из core_theme
-                if (empty($coreMessage)) {
-                    $coreMessage = $dreamAnalysis['core_theme'] ?? '';
-                }
-                
-                // Если все еще пусто, используем дефолтное описание
-                if (empty($coreMessage)) {
-                    $coreMessage = 'Психологический анализ сна с использованием различных традиций интерпретации.';
-                }
-                
-                // Традиции - в новом формате их нет в JSON, но они могут быть в текстовом анализе
-                $traditionsText = '';
-                
-                // Тип анализа - в новом формате его нет в JSON, но может быть в текстовом анализе
-                $analysisType = 'single';
-                $analysisTypeText = 'Одиночный';
-            } else {
-                // Старый формат
-                $metadata = $analysis['metadata'] ?? [];
-                $analysisData = $analysis['analysis'] ?? [];
-                
-                // Название сна
-                $dreamTitle = $metadata['title'] ?? 'Анализ сна';
-                
-                // Главная мысль
-                $coreMessage = $analysisData['core_message'] ?? '';
-                
-                // Если нет core_message, берем первые 160 символов из interpretation
-                if (empty($coreMessage) && isset($analysisData['interpretation'])) {
-                    $coreMessage = Str::limit(strip_tags($analysisData['interpretation']), 160, '...');
-                }
-                
-                // Если все еще пусто, используем дефолтное описание
-                if (empty($coreMessage)) {
-                    $coreMessage = 'Психологический анализ сна с использованием различных традиций интерпретации.';
-                }
-                
-                // Традиции
-                $traditions = $analysisData['traditions'] ?? [];
-                $traditionsText = '';
-                if (!empty($traditions) && is_array($traditions)) {
-                    $traditionNames = [
-                        'freudian' => 'Фрейдистский',
-                        'jungian' => 'Юнгианский',
-                        'cognitive' => 'Когнитивный',
-                        'symbolic' => 'Символический',
-                        'shamanic' => 'Шаманистический',
-                        'gestalt' => 'Гештальт',
-                        'eclectic' => 'Комплексный',
-                    ];
-                    
-                    $translatedTraditions = array_map(function($t) use ($traditionNames) {
-                        return $traditionNames[strtolower($t)] ?? ucfirst($t);
-                    }, $traditions);
-                    
-                    $traditionsText = implode(', ', $translatedTraditions);
-                }
-                
-                // Тип анализа
-                $analysisType = $analysisData['analysis_type'] ?? 'single';
-                $analysisTypeText = [
-                    'single' => 'Одиночный',
-                    'integrated' => 'Интегрированный',
-                    'comparative' => 'Сравнительный',
-                    'series_integrated' => 'Анализ серии снов',
-                ][$analysisType] ?? 'Анализ';
-            }
+            $analysisTypeText = [
+                'single' => 'Одиночный',
+                'integrated' => 'Интегрированный',
+                'comparative' => 'Сравнительный',
+                'series_integrated' => 'Анализ серии снов',
+            ][$analysisType] ?? 'Анализ';
         }
         
         // Дата создания
@@ -426,5 +435,8 @@ class SeoHelper
         return $seoResult;
     }
 }
+
+
+
 
 

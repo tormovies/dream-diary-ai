@@ -98,4 +98,9 @@ Route::middleware('auth')->group(function () {
 // Публичный просмотр отчетов (доступен всем) - должен быть после resource маршрутов
 Route::get('/reports/{report}', [\App\Http\Controllers\ReportController::class, 'show'])->name('reports.show');
 
+// Редиректы со старых URL дневника Tor
+if (file_exists(__DIR__.'/redirects.php')) {
+    require __DIR__.'/redirects.php';
+}
+
 require __DIR__.'/auth.php';

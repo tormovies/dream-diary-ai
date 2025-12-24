@@ -273,13 +273,32 @@
                                                 <div class="flex items-center gap-2 mb-2">
                                                     <i class="fas fa-comment text-blue-600 dark:text-blue-400"></i>
                                                     <span class="font-semibold text-gray-900 dark:text-white">{{ $notification->data['from_user_nickname'] ?? 'Пользователь' }}</span>
-                                                    <span class="text-gray-600 dark:text-gray-400">прокомментировал ваш отчет</span>
+                                                    <span class="text-gray-600 dark:text-gray-400">прокомментировал ваш отчет от {{ $notification->data['report_date'] ?? '' }}</span>
                                                     <span class="text-xs text-gray-400 dark:text-gray-500">{{ $notification->created_at->diffForHumans() }}</span>
                                                 </div>
                                                 @if(isset($notification->data['report_id']))
                                                     <div class="flex gap-2 mt-3">
-                                                        <a href="{{ route('reports.show', $notification->data['report_id']) }}" class="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 text-sm font-medium inline-flex items-center">
-                                                            Перейти к отчету <i class="fas fa-arrow-right ml-2"></i>
+                                                        <a href="{{ route('reports.show', $notification->data['report_id']) }}#comments" class="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 text-sm font-medium inline-flex items-center">
+                                                            Перейти к комментариям <i class="fas fa-arrow-right ml-2"></i>
+                                                        </a>
+                                                    </div>
+                                                @endif
+                                            @elseif($notification->type === 'comment_reply')
+                                                <div class="flex items-center gap-2 mb-2">
+                                                    <i class="fas fa-reply text-green-600 dark:text-green-400"></i>
+                                                    <span class="font-semibold text-gray-900 dark:text-white">{{ $notification->data['from_user_nickname'] ?? 'Пользователь' }}</span>
+                                                    <span class="text-gray-600 dark:text-gray-400">ответил на ваш комментарий к отчету от {{ $notification->data['report_date'] ?? '' }}</span>
+                                                    <span class="text-xs text-gray-400 dark:text-gray-500">{{ $notification->created_at->diffForHumans() }}</span>
+                                                </div>
+                                                @if(isset($notification->data['comment_preview']))
+                                                    <div class="mt-2 text-sm text-gray-500 dark:text-gray-400 italic pl-6">
+                                                        "{{ $notification->data['comment_preview'] }}"
+                                                    </div>
+                                                @endif
+                                                @if(isset($notification->data['report_id']))
+                                                    <div class="flex gap-2 mt-3">
+                                                        <a href="{{ route('reports.show', $notification->data['report_id']) }}#comments" class="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 text-sm font-medium inline-flex items-center">
+                                                            Перейти к комментариям <i class="fas fa-arrow-right ml-2"></i>
                                                         </a>
                                                     </div>
                                                 @endif

@@ -48,6 +48,14 @@ class DreamInterpretation extends Model
     }
 
     /**
+     * Нормализованный результат анализа (если есть)
+     */
+    public function result()
+    {
+        return $this->hasOne(DreamInterpretationResult::class, 'dream_interpretation_id');
+    }
+
+    /**
      * Получить выбранные традиции как строку
      */
     public function getTraditionsStringAttribute(): string

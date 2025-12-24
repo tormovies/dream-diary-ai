@@ -252,58 +252,38 @@
                                 </div>
                             </div>
                             <div class="flex flex-col sm:flex-row gap-2 sm:items-stretch">
+                                @php
+                                    // Получаем предыдущий URL, если он с нашего сайта
+                                    $previousUrl = url()->previous();
+                                    $currentHost = parse_url(url('/'), PHP_URL_HOST);
+                                    $previousHost = parse_url($previousUrl, PHP_URL_HOST);
+                                    
+                                    // Если предыдущий URL с нашего сайта, используем его, иначе соответствующая стартовая страница
+                                    $backUrl = ($previousHost === $currentHost && $previousUrl !== url()->current()) 
+                                        ? $previousUrl 
+                                        : (auth()->check() ? route('dashboard') : route('home'));
+                                @endphp
+                                
+                                <!-- Кнопка "Назад" (всегда первая) -->
+                                <a href="{{ $backUrl }}" 
+                                   class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-colors text-center w-full sm:w-auto sm:flex-1">
+                                    <i class="fas fa-arrow-left mr-2"></i>Назад
+                                </a>
+                                
+                                <!-- Кнопка "Страница дневника" (видна всем) -->
+                                <a href="{{ route('diary.public', $report->user->public_link) }}" 
+                                   class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg transition-colors text-center w-full sm:w-auto sm:flex-1">
+                                    <i class="fas fa-book mr-2"></i>Страница дневника
+                                </a>
+                                
+                                <!-- Кнопка "Редактировать" (только для владельца) -->
                                 @auth
                                     @if(auth()->id() === $report->user_id)
                                         <a href="{{ route('reports.edit', $report) }}" 
                                            class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors text-center w-full sm:w-auto sm:flex-1">
                                             <i class="fas fa-edit mr-2"></i>Редактировать
                                         </a>
-                                        @if($report->status === 'draft')
-                                            <form action="{{ route('reports.publish', $report) }}" method="POST" class="inline w-full sm:w-auto sm:flex-1">
-                                                @csrf
-                                                <button type="submit" class="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
-                                                    <i class="fas fa-eye mr-2"></i>Опубликовать
-                                                </button>
-                                            </form>
-                                        @else
-                                            <form action="{{ route('reports.unpublish', $report) }}" method="POST" class="inline w-full sm:w-auto sm:flex-1">
-                                                @csrf
-                                                <button type="submit" class="w-full bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
-                                                    <i class="fas fa-eye-slash mr-2"></i>Снять с публикации
-                                                </button>
-                                            </form>
-                                        @endif
                                     @endif
-                                    @php
-                                        // Получаем предыдущий URL, если он с нашего сайта
-                                        $previousUrl = url()->previous();
-                                        $currentHost = parse_url(url('/'), PHP_URL_HOST);
-                                        $previousHost = parse_url($previousUrl, PHP_URL_HOST);
-                                        
-                                        // Если предыдущий URL с нашего сайта, используем его, иначе dashboard
-                                        $backUrl = ($previousHost === $currentHost && $previousUrl !== url()->current()) 
-                                            ? $previousUrl 
-                                            : route('dashboard');
-                                    @endphp
-                                    <a href="{{ $backUrl }}" 
-                                       class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-colors text-center w-full sm:w-auto sm:flex-1">
-                                        <i class="fas fa-arrow-left mr-2"></i>Назад
-                                    </a>
-                                @else
-                                    @php
-                                        // Для неавторизованных - аналогично
-                                        $previousUrl = url()->previous();
-                                        $currentHost = parse_url(url('/'), PHP_URL_HOST);
-                                        $previousHost = parse_url($previousUrl, PHP_URL_HOST);
-                                        
-                                        $backUrl = ($previousHost === $currentHost && $previousUrl !== url()->current()) 
-                                            ? $previousUrl 
-                                            : route('home');
-                                    @endphp
-                                    <a href="{{ $backUrl }}" 
-                                       class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-colors text-center w-full sm:w-auto sm:flex-1">
-                                        <i class="fas fa-arrow-left mr-2"></i>Назад
-                                    </a>
                                 @endauth
                             </div>
                         </div>

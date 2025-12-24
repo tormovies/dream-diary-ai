@@ -28,22 +28,8 @@ class CommentController extends Controller
             'content' => $request->content,
         ]);
 
-        // Создаем уведомление только для комментариев первого уровня
-        if (!$request->parent_id) {
-            // Уведомляем автора отчета (если это не он сам)
-            if ($report->user_id !== auth()->id()) {
-                Notification::create([
-                    'user_id' => $report->user_id,
-                    'type' => 'comment',
-                    'data' => [
-                        'comment_id' => $comment->id,
-                        'report_id' => $report->id,
-                        'from_user_id' => auth()->id(),
-                        'from_user_nickname' => auth()->user()->nickname,
-                    ],
-                ]);
-            }
-        }
+        // Создаем уведомления
+        $this->createNotifications($comment, $report, $request->parent_id);
 
         return back()->with('success', 'Комментарий добавлен');
     }
@@ -61,12 +47,130 @@ class CommentController extends Controller
             abort(403, 'У вас нет прав для удаления этого комментария');
         }
 
+        // Удаляем связанные уведомления
+        $this->deleteNotifications($comment);
+
         // Удаляем все дочерние комментарии
         $this->deleteReplies($comment);
 
         $comment->delete();
 
         return back()->with('success', 'Комментарий удален');
+    }
+    
+    /**
+     * Создание уведомлений для комментария
+     */
+    private function createNotifications(Comment $comment, Report $report, $parentId): void
+    {
+        $currentUserId = auth()->id();
+        $currentUserNickname = auth()->user()->nickname;
+        
+        if (!$parentId) {
+            // Комментарий первого уровня - уведомляем владельца отчета
+            if ($report->user_id !== $currentUserId) {
+                // Проверяем, нет ли уже непрочитанного уведомления для этого отчета
+                $existingNotification = Notification::where('user_id', $report->user_id)
+                    ->where('type', 'comment')
+                    ->whereNull('read_at')
+                    ->whereJsonContains('data->report_id', $report->id)
+                    ->first();
+                
+                if (!$existingNotification) {
+                    Notification::create([
+                        'user_id' => $report->user_id,
+                        'type' => 'comment',
+                        'data' => [
+                            'comment_id' => $comment->id,
+                            'report_id' => $report->id,
+                            'report_date' => $report->report_date->format('d.m.Y'),
+                            'from_user_id' => $currentUserId,
+                            'from_user_nickname' => $currentUserNickname,
+                        ],
+                    ]);
+                }
+            }
+        } else {
+            // Ответ на комментарий
+            $parentComment = Comment::find($parentId);
+            
+            if ($parentComment) {
+                // 1. Уведомляем владельца отчета (если это не текущий пользователь)
+                if ($report->user_id !== $currentUserId) {
+                    $existingNotification = Notification::where('user_id', $report->user_id)
+                        ->where('type', 'comment')
+                        ->whereNull('read_at')
+                        ->whereJsonContains('data->report_id', $report->id)
+                        ->first();
+                    
+                    if (!$existingNotification) {
+                        Notification::create([
+                            'user_id' => $report->user_id,
+                            'type' => 'comment',
+                            'data' => [
+                                'comment_id' => $comment->id,
+                                'report_id' => $report->id,
+                                'report_date' => $report->report_date->format('d.m.Y'),
+                                'from_user_id' => $currentUserId,
+                                'from_user_nickname' => $currentUserNickname,
+                                'is_reply' => false,
+                            ],
+                        ]);
+                    }
+                }
+                
+                // 2. Уведомляем автора родительского комментария (если это не текущий пользователь и не владелец отчета)
+                if ($parentComment->user_id !== $currentUserId && $parentComment->user_id !== $report->user_id) {
+                    $existingReplyNotification = Notification::where('user_id', $parentComment->user_id)
+                        ->where('type', 'comment_reply')
+                        ->whereNull('read_at')
+                        ->whereJsonContains('data->parent_comment_id', $parentComment->id)
+                        ->first();
+                    
+                    if (!$existingReplyNotification) {
+                        // Получаем первые 30 символов родительского комментария
+                        $commentPreview = mb_substr($parentComment->content, 0, 30);
+                        if (mb_strlen($parentComment->content) > 30) {
+                            $commentPreview .= '...';
+                        }
+                        
+                        Notification::create([
+                            'user_id' => $parentComment->user_id,
+                            'type' => 'comment_reply',
+                            'data' => [
+                                'comment_id' => $comment->id,
+                                'parent_comment_id' => $parentComment->id,
+                                'report_id' => $report->id,
+                                'report_date' => $report->report_date->format('d.m.Y'),
+                                'comment_preview' => $commentPreview,
+                                'from_user_id' => $currentUserId,
+                                'from_user_nickname' => $currentUserNickname,
+                            ],
+                        ]);
+                    }
+                }
+            }
+        }
+    }
+    
+    /**
+     * Удаление уведомлений, связанных с комментарием
+     */
+    private function deleteNotifications(Comment $comment): void
+    {
+        // Удаляем уведомления, где этот комментарий является основным
+        Notification::where('type', 'comment')
+            ->whereJsonContains('data->comment_id', $comment->id)
+            ->delete();
+        
+        Notification::where('type', 'comment_reply')
+            ->whereJsonContains('data->comment_id', $comment->id)
+            ->delete();
+        
+        // Удаляем уведомления, где этот комментарий является родительским
+        Notification::where('type', 'comment_reply')
+            ->whereJsonContains('data->parent_comment_id', $comment->id)
+            ->delete();
     }
 
     /**
@@ -129,6 +233,9 @@ class CommentController extends Controller
     private function deleteReplies(Comment $comment): void
     {
         foreach ($comment->replies as $reply) {
+            // Удаляем уведомления для ответа
+            $this->deleteNotifications($reply);
+            // Рекурсивно удаляем вложенные ответы
             $this->deleteReplies($reply);
             $reply->delete();
         }

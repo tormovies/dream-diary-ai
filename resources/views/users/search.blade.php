@@ -354,7 +354,7 @@
                                 <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">Пользователей</div>
                             </div>
                             <div class="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:shadow-md transition-all">
-                                <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">{{ number_format(round($globalStats['avg_dreams_per_report'], 1), 1, ',', ' ') }}</div>
+                                <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">{{ number_format(round($globalStats['avg_dreams_per_report'] ?? 0, 1), 1, ',', ' ') }}</div>
                                 <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">Снов/отчет</div>
                             </div>
                         </div>

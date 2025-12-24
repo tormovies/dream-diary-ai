@@ -4,10 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\Comment;
 use App\Models\DreamInterpretation;
+use App\Models\DreamInterpretationResult;
+use App\Models\DreamInterpretationSeriesDream;
 use App\Models\Report;
 use App\Models\Tag;
 use App\Models\User;
 use App\Services\DeepSeekService;
+use App\Services\DreamAnalysisAdapters\DreamAnalysisAdapterFactory;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -56,8 +59,8 @@ class DreamAnalyzerController extends Controller
             
             $friendsCount = count($friendIds);
             
-            $firstReport = $user->reports()->orderBy('created_at')->first();
-            $monthsDiff = $firstReport ? $firstReport->created_at->diffInMonths(now()) : 0;
+            $firstReport = $user->reports()->orderBy('report_date')->first();
+            $monthsDiff = $firstReport ? $firstReport->report_date->diffInMonths(now()) : 0;
             $avgDreamsPerMonth = $monthsDiff > 0 ? round($userDreamsCount / max($monthsDiff, 1), 1) : $userDreamsCount;
             
             $userStats = [
@@ -174,15 +177,79 @@ class DreamAnalyzerController extends Controller
                 ->withInput();
         }
 
+        // Нормализуем и сохраняем данные в новую таблицу
+        if (!empty($result['analysis_data'])) {
+            $this->saveNormalizedData($interpretation, $result['analysis_data']);
+        }
+
         return redirect()->route('dream-analyzer.show', $hash);
     }
 
     /**
      * Просмотр результата анализа
      */
-    public function show(string $hash): View
+    public function show(Request $request, string $hash): View
     {
-        $interpretation = DreamInterpretation::where('hash', $hash)->firstOrFail();
+        // Сначала проверяем, нужны ли нам JSON-поля (они большие и редко используются)
+        $needsJson = false;
+        
+        // 1. Проверяем наличие ошибки API (минимальный запрос)
+        $preview = DreamInterpretation::where('hash', $hash)
+            ->select(['id', 'api_error'])
+            ->first();
+        
+        if (!$preview) {
+            abort(404);
+        }
+        
+        // Если есть ошибка API, нужны JSON-поля для отладки
+        if ($preview->api_error) {
+            $needsJson = true;
+        }
+        
+        // 2. Админ явно запросил отладочную информацию через ?debug=1
+        if (auth()->check() && auth()->user()->isAdmin() && $request->has('debug')) {
+            $needsJson = true;
+        }
+        
+        // 3. Проверяем, есть ли нормализованные данные (если их нет, нужен analysis_data)
+        if (!$needsJson) {
+            $result = \App\Models\DreamInterpretationResult::where('dream_interpretation_id', $preview->id)->first();
+            
+            // Проверяем, есть ли реальные данные в result
+            $hasNormalizedData = $result && (
+                (is_array($result->general_interpretation) && count($result->general_interpretation) > 0) ||
+                (is_array($result->key_symbols) && count($result->key_symbols) > 0) ||
+                (is_array($result->emotional_state) && count($result->emotional_state) > 0) ||
+                (is_array($result->practical_recommendations) && count($result->practical_recommendations) > 0)
+            );
+            
+            // Если нормализованных данных нет, загружаем analysis_data (может быть parse_error)
+            if (!$hasNormalizedData) {
+                $needsJson = true;
+            }
+        }
+        
+        // Формируем основной запрос
+        $query = DreamInterpretation::with('result.seriesDreams')
+            ->where('hash', $hash);
+        
+        // Если JSON не нужен, загружаем только необходимые поля (экономия ~20-50 KB на запрос)
+        if (!$needsJson) {
+            $query->select([
+                'id', 
+                'hash', 
+                'dream_description', 
+                'context', 
+                'traditions', 
+                'api_error', 
+                'created_at', 
+                'updated_at'
+            ]);
+        }
+        
+        $interpretation = $query->firstOrFail();
+        
         $layoutData = $this->getLayoutData();
         $seo = \App\Helpers\SeoHelper::forDreamAnalyzerResult($interpretation);
 
@@ -245,6 +312,79 @@ class DreamAnalyzerController extends Controller
         }
         
         return $dreams;
+    }
+
+    /**
+     * Сохраняет нормализованные данные анализа в новую таблицу
+     */
+    private function saveNormalizedData(DreamInterpretation $interpretation, array $rawAnalysisData): void
+    {
+        try {
+            // Определяем версию формата
+            $version = DreamAnalysisAdapterFactory::detectVersion($rawAnalysisData);
+            
+            // Получаем адаптер и нормализуем данные
+            $adapter = DreamAnalysisAdapterFactory::getAdapter($version);
+            $normalized = $adapter->normalize($rawAnalysisData);
+
+            // Сохраняем нормализованные данные
+            $result = DreamInterpretationResult::create([
+                'dream_interpretation_id' => $interpretation->id,
+                'type' => $normalized['type'],
+                'format_version' => $normalized['version'],
+                'traditions' => $normalized['traditions'],
+                'analysis_type' => $normalized['analysis_type'],
+                'recommendations' => $normalized['recommendations'],
+            ]);
+
+            if ($normalized['type'] === 'single') {
+                // Сохраняем данные для одиночного сна
+                $singleAnalysis = $normalized['single_analysis'];
+                $result->update([
+                    'dream_title' => $singleAnalysis['dream_title'] ?? null,
+                    'dream_detailed' => $singleAnalysis['dream_detailed'] ?? null,
+                    'dream_type' => $singleAnalysis['dream_type'] ?? null,
+                    'key_symbols' => $singleAnalysis['key_symbols'] ?? [],
+                    'unified_locations' => $singleAnalysis['unified_locations'] ?? [],
+                    'key_tags' => $singleAnalysis['key_tags'] ?? [],
+                    'summary_insight' => $singleAnalysis['summary_insight'] ?? null,
+                    'emotional_tone' => $singleAnalysis['emotional_tone'] ?? null,
+                ]);
+            } else {
+                // Сохраняем данные для серии снов
+                $seriesAnalysis = $normalized['series_analysis'];
+                $result->update([
+                    'series_title' => $seriesAnalysis['series_title'] ?? null,
+                    'overall_theme' => $seriesAnalysis['overall_theme'] ?? null,
+                    'emotional_arc' => $seriesAnalysis['emotional_arc'] ?? null,
+                    'key_connections' => $seriesAnalysis['key_connections'] ?? [],
+                ]);
+
+                // Сохраняем отдельные сны в серии
+                foreach ($seriesAnalysis['dreams'] ?? [] as $dreamData) {
+                    DreamInterpretationSeriesDream::create([
+                        'dream_interpretation_result_id' => $result->id,
+                        'dream_number' => $dreamData['dream_number'] ?? 1,
+                        'dream_title' => $dreamData['dream_title'] ?? null,
+                        'dream_detailed' => $dreamData['dream_detailed'] ?? null,
+                        'dream_type' => $dreamData['dream_type'] ?? null,
+                        'key_symbols' => $dreamData['key_symbols'] ?? [],
+                        'unified_locations' => $dreamData['unified_locations'] ?? [],
+                        'key_tags' => $dreamData['key_tags'] ?? [],
+                        'summary_insight' => $dreamData['summary_insight'] ?? null,
+                        'emotional_tone' => $dreamData['emotional_tone'] ?? null,
+                        'order' => $dreamData['dream_number'] ?? 1,
+                    ]);
+                }
+            }
+        } catch (\Exception $e) {
+            // Логируем ошибку, но не прерываем процесс
+            \Log::error('Ошибка при сохранении нормализованных данных анализа', [
+                'interpretation_id' => $interpretation->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+        }
     }
 }
 

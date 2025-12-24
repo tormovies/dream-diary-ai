@@ -34,8 +34,8 @@ class StatisticsController extends Controller
         $reportsByDay = DB::table('reports')
             ->join('dreams', 'reports.id', '=', 'dreams.report_id')
             ->where('reports.user_id', $user->id)
-            ->where('reports.created_at', '>=', now()->subDays(30))
-            ->selectRaw('DATE(reports.created_at) as date, COUNT(dreams.id) as count')
+            ->where('reports.report_date', '>=', now()->subDays(30))
+            ->selectRaw('DATE(reports.report_date) as date, COUNT(dreams.id) as count')
             ->groupBy('date')
             ->orderByDesc('date')
             ->get()
@@ -71,7 +71,7 @@ class StatisticsController extends Controller
 
         // Самый активный день недели
         $reportsByWeekday = Report::where('user_id', $user->id)
-            ->selectRaw("CASE strftime('%w', created_at)
+            ->selectRaw("CASE strftime('%w', report_date)
                 WHEN '0' THEN 'Воскресенье'
                 WHEN '1' THEN 'Понедельник'
                 WHEN '2' THEN 'Вторник'
@@ -136,9 +136,9 @@ class StatisticsController extends Controller
         }
         
         // Среднее количество снов в месяц
-        $firstReport = $user->reports()->orderBy('created_at')->first();
+        $firstReport = $user->reports()->orderBy('report_date')->first();
         if ($firstReport) {
-            $monthsDiff = $firstReport->created_at->diffInMonths(now());
+            $monthsDiff = $firstReport->report_date->diffInMonths(now());
             $avgDreamsPerMonth = $monthsDiff > 0 ? round($userDreamsCount / max($monthsDiff, 1), 1) : $userDreamsCount;
         } else {
             $avgDreamsPerMonth = 0;

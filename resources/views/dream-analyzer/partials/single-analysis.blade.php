@@ -381,4 +381,25 @@
     </div>
 @endif
 
+<!-- Блок "Поделиться" (Вариант 3) -->
+<div class="bg-gray-50 dark:bg-gray-900 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 mb-6">
+    <p class="text-gray-700 dark:text-gray-300 mb-4 text-center">
+        💬 Понравился анализ? Поделитесь с друзьями!
+    </p>
+    <div class="flex flex-wrap justify-center gap-3">
+        <button onclick="shareToVK(event)" class="cursor-pointer font-semibold text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors py-2 px-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+            <i class="fab fa-vk mr-2"></i>ВКонтакте
+        </button>
+        <button onclick="shareToTelegram(event)" class="cursor-pointer font-semibold text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors py-2 px-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+            <i class="fab fa-telegram mr-2"></i>Telegram
+        </button>
+        <button onclick="copyShareLink(event)" class="cursor-pointer font-semibold text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors py-2 px-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+            <i class="fas fa-copy mr-2"></i>Копировать
+        </button>
+    </div>
+</div>
+
+
+
+
 

@@ -62,8 +62,8 @@
                         <i class="fas fa-book mr-2"></i>Мой дневник
                     </a>
                 @endauth
-                <a href="{{ route('activity.index') }}" class="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors">
-                    <i class="fas fa-home mr-2"></i>Лента
+                <a href="{{ route('dream-analyzer.create') }}" class="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors">
+                    <i class="fas fa-magic mr-2"></i>Толкование снов
                 </a>
                 @auth
                     <a href="{{ route('statistics.index') }}" class="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors">
@@ -109,8 +109,8 @@
                         <i class="fas fa-book mr-2"></i>Мой дневник
                     </a>
                 @endauth
-                <a href="{{ route('activity.index') }}" class="block px-3 py-2 text-base font-medium text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors">
-                    <i class="fas fa-home mr-2"></i>Лента
+                <a href="{{ route('dream-analyzer.create') }}" class="block px-3 py-2 text-base font-medium text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors">
+                    <i class="fas fa-magic mr-2"></i>Толкование снов
                 </a>
                 @auth
                     <a href="{{ route('statistics.index') }}" class="block px-3 py-2 text-base font-medium text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors">

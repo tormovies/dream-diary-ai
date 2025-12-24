@@ -212,3 +212,6 @@ private function buildPrompt(
 - `dreams` - массив с детальным анализом каждого сна
 - `recommendations` - общие рекомендации для всей серии
 
+
+
+

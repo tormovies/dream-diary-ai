@@ -311,42 +311,6 @@
                         </a>
                     </div>
                     
-                    <!-- Карточка пользователя -->
-                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
-                        <div class="text-center">
-                            <div class="flex justify-center">
-                                <x-avatar :user="auth()->user()" size="lg" />
-                            </div>
-                            <div class="mt-4">
-                                <div class="font-semibold text-lg text-gray-900 dark:text-white">{{ auth()->user()->nickname }}</div>
-                                <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                                    @if($userStats)
-                                        {{ $userStats['reports'] }} {{ $userStats['reports'] == 1 ? 'запись' : ($userStats['reports'] < 5 ? 'записи' : 'записей') }}
-                                    @else
-                                        Пользователь
-                                    @endif
-                                </div>
-                            </div>
-                            
-                            @if($userStats)
-                            <div class="flex justify-between mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                                <div class="text-center flex-1">
-                                    <div class="text-xl font-bold text-purple-600 dark:text-purple-400">{{ $userStats['friends'] }}</div>
-                                    <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">друзей</div>
-                                </div>
-                                <div class="text-center flex-1">
-                                    <div class="text-xl font-bold text-purple-600 dark:text-purple-400">{{ $userStats['dreams'] }}</div>
-                                    <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">снов</div>
-                                </div>
-                                <div class="text-center flex-1">
-                                    <div class="text-xl font-bold text-purple-600 dark:text-purple-400">{{ $userStats['avg_per_month'] }}</div>
-                                    <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">снов/мес</div>
-                                </div>
-                            </div>
-                            @endif
-                        </div>
-                    </div>
-                    
                     <!-- Быстрое меню -->
                     <div class="sidebar-menu bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
                         <h3 class="text-lg font-semibold mb-4 text-purple-600 dark:text-purple-400 flex items-center gap-2">
@@ -468,7 +432,7 @@
                                                         </span>
                                                         <span class="text-gray-600 dark:text-gray-400">|</span>
                                                         <span class="text-gray-600 dark:text-gray-400 text-sm flex-shrink-0">
-                                                            {{ $report->created_at->format('d.m.Y') }}
+                                                            {{ $report->report_date->format('d.m.Y') }}
                                                         </span>
                                                     </div>
                                                 </div>
@@ -498,28 +462,39 @@
                 
                 <!-- Правая панель -->
                 <aside class="space-y-6">
-                    <!-- Наша статистика (общая статистика проекта) -->
+                    <!-- Карточка пользователя -->
                     <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
-                        <h3 class="text-lg font-semibold mb-4 text-purple-600 dark:text-purple-400 flex items-center gap-2">
-                            <i class="fas fa-chart-line"></i> Наша статистика
-                        </h3>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div class="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:shadow-md transition-all">
-                                <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">{{ number_format($globalStats['dreams'], 0, ',', ' ') }}</div>
-                                <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">Всего снов</div>
+                        <div class="text-center">
+                            <div class="flex justify-center">
+                                <x-avatar :user="auth()->user()" size="lg" />
                             </div>
-                            <div class="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:shadow-md transition-all">
-                                <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">{{ number_format($globalStats['reports'], 0, ',', ' ') }}</div>
-                                <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">Отчетов</div>
+                            <div class="mt-4">
+                                <div class="font-semibold text-lg text-gray-900 dark:text-white">{{ auth()->user()->nickname }}</div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                    @if($userStats)
+                                        {{ $userStats['reports'] }} {{ $userStats['reports'] == 1 ? 'запись' : ($userStats['reports'] < 5 ? 'записи' : 'записей') }}
+                                    @else
+                                        Пользователь
+                                    @endif
+                                </div>
                             </div>
-                            <div class="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:shadow-md transition-all">
-                                <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">{{ number_format($globalStats['users'], 0, ',', ' ') }}</div>
-                                <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">Пользователей</div>
+                            
+                            @if($userStats)
+                            <div class="flex justify-between mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                                <div class="text-center flex-1">
+                                    <div class="text-xl font-bold text-purple-600 dark:text-purple-400">{{ $userStats['friends'] }}</div>
+                                    <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">друзей</div>
+                                </div>
+                                <div class="text-center flex-1">
+                                    <div class="text-xl font-bold text-purple-600 dark:text-purple-400">{{ $userStats['dreams'] }}</div>
+                                    <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">снов</div>
+                                </div>
+                                <div class="text-center flex-1">
+                                    <div class="text-xl font-bold text-purple-600 dark:text-purple-400">{{ $userStats['avg_per_month'] }}</div>
+                                    <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">снов/мес</div>
+                                </div>
                             </div>
-                            <div class="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:shadow-md transition-all">
-                                <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">{{ number_format(round($globalStats['avg_dreams_per_report'], 1), 1, ',', ' ') }}</div>
-                                <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">Снов/отчет</div>
-                            </div>
+                            @endif
                         </div>
                     </div>
                     
@@ -550,7 +525,33 @@
                     </div>
                     @endif
                     
-                    <!-- Сонник дня -->
+                    <!-- Наша статистика (общая статистика проекта) -->
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
+                        <h3 class="text-lg font-semibold mb-4 text-purple-600 dark:text-purple-400 flex items-center gap-2">
+                            <i class="fas fa-chart-line"></i> Наша статистика
+                        </h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:shadow-md transition-all">
+                                <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">{{ number_format($globalStats['dreams'], 0, ',', ' ') }}</div>
+                                <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">Всего снов</div>
+                            </div>
+                            <div class="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:shadow-md transition-all">
+                                <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">{{ number_format($globalStats['reports'], 0, ',', ' ') }}</div>
+                                <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">Отчетов</div>
+                            </div>
+                            <div class="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:shadow-md transition-all">
+                                <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">{{ number_format($globalStats['users'], 0, ',', ' ') }}</div>
+                                <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">Пользователей</div>
+                            </div>
+                            <div class="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:shadow-md transition-all">
+                                <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">{{ number_format(round($globalStats['avg_dreams_per_report'] ?? 0, 1), 1, ',', ' ') }}</div>
+                                <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">Снов/отчет</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    @if(false)
+                    <!-- Сонник дня (скрыт) -->
                     <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
                         <h3 class="text-lg font-semibold mb-4 text-purple-600 dark:text-purple-400 flex items-center gap-2">
                             <i class="fas fa-book-open"></i> Сонник дня
@@ -564,6 +565,7 @@
                             @endforeach
                         </div>
                     </div>
+                    @endif
                     
                     @if($popularTags->count() > 0)
                     <!-- Тренды недели -->
@@ -596,35 +598,6 @@
                         <a href="{{ route('register') }}" class="inline-block bg-white text-purple-600 px-4 py-2 rounded-lg font-semibold hover:bg-purple-50 transition-colors text-sm">
                             <i class="fas fa-user-plus mr-2"></i>Регистрация
                         </a>
-                    </div>
-                    
-                    <!-- Статистика проекта -->
-                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
-                        <h3 class="text-lg font-semibold mb-4 text-purple-600 dark:text-purple-400 flex items-center gap-2">
-                            <i class="fas fa-chart-bar"></i> Статистика проекта
-                        </h3>
-                        <div class="space-y-3">
-                            <div class="flex justify-between items-center">
-                                <span class="text-sm text-gray-600 dark:text-gray-400">Пользователей</span>
-                                <span class="text-lg font-bold text-purple-600 dark:text-purple-400">{{ number_format($stats['users'], 0, ',', ' ') }}</span>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <span class="text-sm text-gray-600 dark:text-gray-400">Отчетов</span>
-                                <span class="text-lg font-bold text-blue-600 dark:text-blue-400">{{ number_format($stats['reports'], 0, ',', ' ') }}</span>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <span class="text-sm text-gray-600 dark:text-gray-400">Снов</span>
-                                <span class="text-lg font-bold text-green-600 dark:text-green-400">{{ number_format($stats['dreams'], 0, ',', ' ') }}</span>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <span class="text-sm text-gray-600 dark:text-gray-400">Комментариев</span>
-                                <span class="text-lg font-bold text-orange-600 dark:text-orange-400">{{ number_format($stats['comments'], 0, ',', ' ') }}</span>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <span class="text-sm text-gray-600 dark:text-gray-400">Тегов</span>
-                                <span class="text-lg font-bold text-pink-600 dark:text-pink-400">{{ number_format($stats['tags'], 0, ',', ' ') }}</span>
-                            </div>
-                        </div>
                     </div>
                     
                     <!-- Быстрые действия -->
@@ -738,7 +711,7 @@
                                                         </span>
                                                         <span class="text-gray-600 dark:text-gray-400">|</span>
                                                         <span class="text-gray-600 dark:text-gray-400 text-sm flex-shrink-0">
-                                                            {{ $report->created_at->format('d.m.Y') }}
+                                                            {{ $report->report_date->format('d.m.Y') }}
                                                         </span>
                                                     </div>
                                                 </div>
@@ -766,7 +739,37 @@
                 
                 <!-- Правая панель -->
                 <aside class="space-y-6">
-                    <!-- Сонник дня -->
+                    <!-- Статистика проекта -->
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
+                        <h3 class="text-lg font-semibold mb-4 text-purple-600 dark:text-purple-400 flex items-center gap-2">
+                            <i class="fas fa-chart-bar"></i> Статистика проекта
+                        </h3>
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-600 dark:text-gray-400">Пользователей</span>
+                                <span class="text-lg font-bold text-purple-600 dark:text-purple-400">{{ number_format($stats['users'], 0, ',', ' ') }}</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-600 dark:text-gray-400">Отчетов</span>
+                                <span class="text-lg font-bold text-blue-600 dark:text-blue-400">{{ number_format($stats['reports'], 0, ',', ' ') }}</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-600 dark:text-gray-400">Снов</span>
+                                <span class="text-lg font-bold text-green-600 dark:text-green-400">{{ number_format($stats['dreams'], 0, ',', ' ') }}</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-600 dark:text-gray-400">Комментариев</span>
+                                <span class="text-lg font-bold text-orange-600 dark:text-orange-400">{{ number_format($stats['comments'], 0, ',', ' ') }}</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-600 dark:text-gray-400">Тегов</span>
+                                <span class="text-lg font-bold text-pink-600 dark:text-pink-400">{{ number_format($stats['tags'], 0, ',', ' ') }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    @if(false)
+                    <!-- Сонник дня (скрыт) -->
                     <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
                         <h3 class="text-lg font-semibold mb-4 text-purple-600 dark:text-purple-400 flex items-center gap-2">
                             <i class="fas fa-book-open"></i> Сонник дня
@@ -780,6 +783,7 @@
                             @endforeach
                         </div>
                     </div>
+                    @endif
                     
                     @if($popularTags->count() > 0)
                     <!-- Популярные теги -->

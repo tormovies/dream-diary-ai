@@ -31,6 +31,10 @@ Homestead.yaml
 /backup
 backup/
 
+# Import data files
+/storage/import/*
+!/storage/import/.gitignore
+
 # Temporary files
 *.tmp
 *.temp
