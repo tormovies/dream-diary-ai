@@ -154,6 +154,7 @@
                 -webkit-line-clamp: 2;
                 -webkit-box-orient: vertical;
                 word-wrap: break-word;
+                max-width: 150px;
             }
             @media (min-width: 769px) {
                 .diary-title {
