@@ -18,7 +18,7 @@ Route::get('/diaries/night/164-164-lyudi-protiv-titanov-belaya-shkatulka-i-krugi
     return redirect()->route('reports.show', 3876, 301);
 });
 
-Route::get('/diaries/night/216-216.html', function() {
+Route::get('/diaries/night/216.html', function() {
     return redirect()->route('reports.show', 3877, 301);
 });
 
