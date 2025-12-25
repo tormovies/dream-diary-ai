@@ -71,14 +71,14 @@ class StatisticsController extends Controller
 
         // Самый активный день недели
         $reportsByWeekday = Report::where('user_id', $user->id)
-            ->selectRaw("CASE strftime('%w', report_date)
-                WHEN '0' THEN 'Воскресенье'
-                WHEN '1' THEN 'Понедельник'
-                WHEN '2' THEN 'Вторник'
-                WHEN '3' THEN 'Среда'
-                WHEN '4' THEN 'Четверг'
-                WHEN '5' THEN 'Пятница'
-                WHEN '6' THEN 'Суббота'
+            ->selectRaw("CASE DAYOFWEEK(report_date)
+                WHEN 1 THEN 'Воскресенье'
+                WHEN 2 THEN 'Понедельник'
+                WHEN 3 THEN 'Вторник'
+                WHEN 4 THEN 'Среда'
+                WHEN 5 THEN 'Четверг'
+                WHEN 6 THEN 'Пятница'
+                WHEN 7 THEN 'Суббота'
             END as weekday, COUNT(*) as count")
             ->groupBy('weekday')
             ->orderByDesc('count')
