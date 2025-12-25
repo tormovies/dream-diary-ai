@@ -102,9 +102,10 @@ class StatisticsController extends Controller
             ];
         });
 
-        // Статистика пользователя
-        $userReportsCount = $user->reports()->count();
-        $userDreamsCount = $user->reports()->withCount('dreams')->get()->sum('dreams_count');
+        // Статистика пользователя - с кэшированием на 5 минут
+        $userStats = Cache::remember("user_stats_{$user->id}", 300, function () use ($user) {
+            $userReportsCount = $user->reports()->count();
+            $userDreamsCount = $user->reports()->withCount('dreams')->get()->sum('dreams_count');
         
         // Подсчет друзей
         $allFriendships = Friendship::where(function ($query) use ($user) {
@@ -144,18 +145,21 @@ class StatisticsController extends Controller
             $avgDreamsPerMonth = 0;
         }
         
-        $userStats = [
-            'reports' => $userReportsCount,
-            'dreams' => $userDreamsCount,
-            'friends' => $friendsCount,
-            'avg_per_month' => $avgDreamsPerMonth,
-        ];
+            return [
+                'reports' => $userReportsCount,
+                'dreams' => $userDreamsCount,
+                'friends' => $friendsCount,
+                'avg_per_month' => $avgDreamsPerMonth,
+            ];
+        });
 
-        // Популярные теги (топ 6)
-        $popularTags = Tag::withCount('reports')
-            ->orderByDesc('reports_count')
-            ->limit(6)
-            ->get();
+        // Популярные теги (топ 6) - с кэшированием на 1 час
+        $popularTags = Cache::remember('popular_tags', 3600, function () {
+            return Tag::withCount('reports')
+                ->orderByDesc('reports_count')
+                ->limit(6)
+                ->get();
+        });
 
         // Сонник (статичные данные)
         $dreamDictionary = [

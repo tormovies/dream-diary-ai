@@ -146,11 +146,13 @@ class HomeController extends Controller
             ->limit(15)
             ->get();
 
-        // Популярные теги (топ 6)
-        $popularTags = Tag::withCount('reports')
-            ->orderByDesc('reports_count')
-            ->limit(6)
-            ->get();
+        // Популярные теги (топ 6) - с кэшированием на 1 час
+        $popularTags = Cache::remember('popular_tags', 3600, function () {
+            return Tag::withCount('reports')
+                ->orderByDesc('reports_count')
+                ->limit(6)
+                ->get();
+        });
 
         // Сонник (статичные данные для примера)
         $dreamDictionary = [

@@ -76,7 +76,8 @@ class ActivityController extends Controller
         $comments = $commentsQuery->get();
 
         // Получаем последние отчеты (только опубликованные)
-        $reportsQuery = Report::with(['user', 'dreams', 'tags'])
+        // Оптимизация: добавлен eager loading для comments
+        $reportsQuery = Report::with(['user', 'dreams', 'tags', 'comments'])
             ->where('status', 'published')
             ->where('access_level', '!=', 'none');
         
@@ -227,11 +228,13 @@ class ActivityController extends Controller
                 ->count();
         }
 
-        // Популярные теги (топ 6)
-        $popularTags = \App\Models\Tag::withCount('reports')
-            ->orderByDesc('reports_count')
-            ->limit(6)
-            ->get();
+        // Популярные теги (топ 6) - с кэшированием на 1 час
+        $popularTags = \Illuminate\Support\Facades\Cache::remember('popular_tags', 3600, function () {
+            return \App\Models\Tag::withCount('reports')
+                ->orderByDesc('reports_count')
+                ->limit(6)
+                ->get();
+        });
 
         // Сонник (статичные данные)
         $dreamDictionary = [
