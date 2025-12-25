@@ -1,0 +1,21 @@
+{
+  "_alpine-l0sNRNKZ.js": {
+    "file": "assets/alpine-l0sNRNKZ.js",
+    "name": "alpine"
+  },
+  "resources/css/app.css": {
+    "file": "assets/app-DXI8nV9s.css",
+    "src": "resources/css/app.css",
+    "isEntry": true,
+    "name": "app",
+    "names": [
+      "app.css"
+    ]
+  },
+  "resources/js/app.js": {
+    "file": "assets/app-BaTb13aw.js",
+    "name": "app",
+    "src": "resources/js/app.js",
+    "isEntry": true
+  }
+}
