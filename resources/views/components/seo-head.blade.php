@@ -18,6 +18,10 @@
 <meta name="keywords" content="{{ $keywords }}">
 @endif
 
+{{-- Favicon --}}
+<link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
+<link rel="alternate icon" href="{{ asset('favicon.ico') }}">
+
 {{-- Canonical URL --}}
 <link rel="canonical" href="{{ $canonical }}">
 
@@ -39,6 +43,8 @@
 @if(!empty($ogImage))
 <meta name="twitter:image" content="{{ $ogImage }}">
 @endif
+
+
 
 
 
