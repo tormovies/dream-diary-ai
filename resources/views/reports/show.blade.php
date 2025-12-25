@@ -344,8 +344,10 @@
                             <!-- Форма добавления комментария (только для авторизованных) -->
                             @auth
                                 @php
-                                    // Владелец всегда может комментировать свой отчёт
-                                    $canComment = $report->user_id === auth()->id() || auth()->user()->can('view', $report);
+                                    // Владелец всегда может комментировать свой отчёт, админ тоже может
+                                    $canComment = $report->user_id === auth()->id() 
+                                        || auth()->user()->isAdmin() 
+                                        || auth()->user()->can('view', $report);
                                 @endphp
                                 @if($canComment)
                                     <form action="{{ route('comments.store', $report) }}" method="POST" class="mb-6">
