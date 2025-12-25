@@ -180,8 +180,18 @@ class CommentController extends Controller
     {
         $user = auth()->user();
 
-        // Если отчет не опубликован, нельзя комментировать (кроме владельца)
-        if ($report->status !== 'published' && $report->user_id !== $user->id) {
+        // Владелец отчёта всегда может комментировать свой отчёт
+        if ($report->user_id === $user->id) {
+            return true;
+        }
+
+        // Администратор всегда может комментировать любой отчёт
+        if ($user->isAdmin()) {
+            return true;
+        }
+
+        // Если отчет не опубликован, нельзя комментировать
+        if ($report->status !== 'published') {
             return false;
         }
 
