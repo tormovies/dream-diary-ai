@@ -87,6 +87,12 @@
             .feed-table {
                 width: 100%;
                 border-collapse: collapse;
+                table-layout: fixed;
+            }
+            .feed-table td {
+                word-wrap: break-word;
+                overflow-wrap: break-word;
+                word-break: break-word;
             }
             .feed-table-header {
                 background-color: #f1f3f5;
@@ -133,10 +139,19 @@
                 color: #212529;
                 margin-bottom: 5px;
                 line-height: 1.3;
-                max-width: 300px;
                 overflow: hidden;
                 text-overflow: ellipsis;
-                white-space: nowrap;
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
+                -webkit-box-orient: vertical;
+                word-wrap: break-word;
+            }
+            @media (min-width: 769px) {
+                .diary-title {
+                    max-width: 300px;
+                    white-space: nowrap;
+                    -webkit-line-clamp: 1;
+                }
             }
             .dark .diary-title {
                 color: #f8f9fa;
