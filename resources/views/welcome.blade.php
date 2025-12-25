@@ -105,14 +105,28 @@
             }
             @media (max-width: 768px) {
                 .feed-table td:first-child {
-                    width: 45%;
-                    max-width: 45%;
+                    width: 60%;
+                    max-width: 60%;
                 }
                 .feed-table td:nth-child(2) {
-                    width: 30%;
+                    width: 20%;
                 }
                 .feed-table td:nth-child(3) {
-                    width: 25%;
+                    width: 20%;
+                }
+                /* Ограничиваем flex-элементы внутри ячеек */
+                .feed-table-row td .flex {
+                    flex-wrap: wrap;
+                }
+                .feed-table-row td a,
+                .feed-table-row td strong {
+                    max-width: 100%;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                }
+                .feed-table-row td .truncate {
+                    max-width: 100%;
                 }
             }
             .feed-table-header {
