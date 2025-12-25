@@ -1,10 +1,6 @@
 import './bootstrap';
 
-import Alpine from 'alpinejs';
-
-window.Alpine = Alpine;
-
-Alpine.start();
+// Alpine.js загружается отдельно через <script defer> для оптимизации
 
 // Переключение темы
 window.toggleTheme = function() {
