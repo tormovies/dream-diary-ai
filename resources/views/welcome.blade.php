@@ -107,14 +107,17 @@
                 /* Ограничиваем ширину названия дневника */
                 .feed-table-row td a.font-bold,
                 .feed-table-row td strong {
-                    max-width: 120px;
+                    max-width: 240px;
                     overflow: hidden;
                     text-overflow: ellipsis;
                     white-space: nowrap;
                     display: inline-block;
                 }
-                /* Скрываем аватар на мобильных для экономии места */
-                .feed-table-row .diary-author x-avatar {
+                /* Скрываем аватар автора на мобильных */
+                .feed-table-row .diary-author {
+                    gap: 0 !important;
+                }
+                .feed-table-row .diary-author :first-child {
                     display: none;
                 }
             }
