@@ -345,9 +345,22 @@
                             @auth
                                 @php
                                     // Владелец всегда может комментировать свой отчёт, админ тоже может
-                                    $canComment = $report->user_id === auth()->id() 
-                                        || auth()->user()->isAdmin() 
-                                        || auth()->user()->can('view', $report);
+                                    $isOwner = $report->user_id === auth()->id();
+                                    $isAdmin = auth()->user()->isAdmin();
+                                    $canView = auth()->user()->can('view', $report);
+                                    $canComment = $isOwner || $isAdmin || $canView;
+                                    
+                                    // Временная отладка (удалить после проверки)
+                                    if (!$canComment) {
+                                        \Log::info('Comment access denied', [
+                                            'user_id' => auth()->id(),
+                                            'user_role' => auth()->user()->role,
+                                            'report_user_id' => $report->user_id,
+                                            'isOwner' => $isOwner,
+                                            'isAdmin' => $isAdmin,
+                                            'canView' => $canView,
+                                        ]);
+                                    }
                                 @endphp
                                 @if($canComment)
                                     <form action="{{ route('comments.store', $report) }}" method="POST" class="mb-6">
