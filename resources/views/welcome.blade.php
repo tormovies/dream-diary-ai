@@ -103,6 +103,18 @@
                 overflow-wrap: break-word;
                 word-break: break-word;
             }
+            @media (max-width: 768px) {
+                .feed-table td:first-child {
+                    width: 45%;
+                    max-width: 45%;
+                }
+                .feed-table td:nth-child(2) {
+                    width: 30%;
+                }
+                .feed-table td:nth-child(3) {
+                    width: 25%;
+                }
+            }
             .feed-table-header {
                 background-color: #f1f3f5;
                 border-bottom: 1px solid #dee2e6;
