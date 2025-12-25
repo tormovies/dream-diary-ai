@@ -52,7 +52,7 @@ class StatisticsController extends Controller
 
         // Статистика по месяцам
         $reportsByMonth = Report::where('user_id', $user->id)
-            ->selectRaw("strftime('%Y-%m', created_at) as month, COUNT(*) as count")
+            ->selectRaw("DATE_FORMAT(created_at, '%Y-%m') as month, COUNT(*) as count")
             ->groupBy('month')
             ->orderBy('month')
             ->get()
