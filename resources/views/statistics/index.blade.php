@@ -162,60 +162,63 @@
                     </div>
 
                     <!-- Основная статистика -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
-                            <div class="text-3xl font-bold text-gray-900 dark:text-white">{{ $totalReports }}</div>
-                            <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Всего отчетов</div>
-                        </div>
-                        <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
-                            <div class="text-3xl font-bold text-gray-900 dark:text-white">{{ $totalDreams }}</div>
-                            <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Всего снов</div>
-                        </div>
-                        <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
-                            <div class="text-3xl font-bold text-gray-900 dark:text-white">{{ $avgDreamsPerReport }}</div>
-                            <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Среднее снов на отчет</div>
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div class="text-center">
+                                <div class="text-3xl font-bold text-gray-900 dark:text-white">{{ $totalReports }}</div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Всего отчетов</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-3xl font-bold text-gray-900 dark:text-white">{{ $totalDreams }}</div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Всего снов</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-3xl font-bold text-gray-900 dark:text-white">{{ $avgDreamsPerReport }}</div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Среднее снов на отчет</div>
+                            </div>
                         </div>
                     </div>
 
+                    <!-- Статистика по типам снов -->
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
+                        <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Распределение по типам снов</h3>
+                        <div class="space-y-3">
+                            @foreach($dreamsByType as $dreamType)
+                                <div>
+                                    <div class="flex justify-between items-center mb-1">
+                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ $dreamType->dream_type }}</span>
+                                        <span class="text-sm text-gray-600 dark:text-gray-400">{{ $dreamType->count }}</span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                        <div class="bg-blue-600 dark:bg-blue-500 h-2 rounded-full" 
+                                             style="width: {{ $totalDreams > 0 ? ($dreamType->count / $totalDreams * 100) : 0 }}%"></div>
+                                    </div>
+                                </div>
+                            @endforeach
+                            @if($dreamsByType->isEmpty())
+                                <p class="text-gray-500 dark:text-gray-400 text-sm">Нет данных</p>
+                            @endif
+                        </div>
+                    </div>
+
+                    <!-- Самые используемые теги -->
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
+                        <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Популярные теги</h3>
+                        <div class="space-y-2">
+                            @foreach($topTags as $tag)
+                                <div class="flex justify-between items-center p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded transition-colors">
+                                    <span class="text-sm text-gray-700 dark:text-gray-300">{{ $tag->name }}</span>
+                                    <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ $tag->count }}</span>
+                                </div>
+                            @endforeach
+                            @if($topTags->isEmpty())
+                                <p class="text-gray-500 dark:text-gray-400 text-sm">Нет данных</p>
+                            @endif
+                        </div>
+                    </div>
+
+                    <!-- Активность: 30 дней и дни недели -->
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <!-- Статистика по типам снов -->
-                        <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
-                            <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Распределение по типам снов</h3>
-                            <div class="space-y-3">
-                                @foreach($dreamsByType as $dreamType)
-                                    <div>
-                                        <div class="flex justify-between items-center mb-1">
-                                            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ $dreamType->dream_type }}</span>
-                                            <span class="text-sm text-gray-600 dark:text-gray-400">{{ $dreamType->count }}</span>
-                                        </div>
-                                        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                                            <div class="bg-blue-600 dark:bg-blue-500 h-2 rounded-full" 
-                                                 style="width: {{ $totalDreams > 0 ? ($dreamType->count / $totalDreams * 100) : 0 }}%"></div>
-                                        </div>
-                                    </div>
-                                @endforeach
-                                @if($dreamsByType->isEmpty())
-                                    <p class="text-gray-500 dark:text-gray-400 text-sm">Нет данных</p>
-                                @endif
-                            </div>
-                        </div>
-
-                        <!-- Самые используемые теги -->
-                        <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
-                            <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Популярные теги</h3>
-                            <div class="space-y-2">
-                                @foreach($topTags as $tag)
-                                    <div class="flex justify-between items-center p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded transition-colors">
-                                        <span class="text-sm text-gray-700 dark:text-gray-300">{{ $tag->name }}</span>
-                                        <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ $tag->count }}</span>
-                                    </div>
-                                @endforeach
-                                @if($topTags->isEmpty())
-                                    <p class="text-gray-500 dark:text-gray-400 text-sm">Нет данных</p>
-                                @endif
-                            </div>
-                        </div>
-
                         <!-- Отчеты по дням (последние 30 дней) -->
                         <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
                             <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Активность за последние 30 дней (количество снов)</h3>
