@@ -103,6 +103,38 @@
                 overflow-wrap: break-word;
                 word-break: break-word;
             }
+            /* Бейджи для типа действия */
+            .action-badge {
+                display: inline-block;
+                padding: 3px 10px;
+                border-radius: 12px;
+                font-size: 11px;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                border: 1.5px solid;
+            }
+            .action-badge.report {
+                background-color: #e7f5ff;
+                color: #1971c2;
+                border-color: #74c0fc;
+            }
+            .dark .action-badge.report {
+                background-color: #1a3a52;
+                color: #74c0fc;
+                border-color: #1971c2;
+            }
+            .action-badge.comment {
+                background-color: #fff3e0;
+                color: #e65100;
+                border-color: #ffb74d;
+            }
+            .dark .action-badge.comment {
+                background-color: #4a3520;
+                color: #ffb74d;
+                border-color: #e65100;
+            }
+            
             @media (max-width: 768px) {
                 /* Ограничиваем ширину названия дневника */
                 .feed-table-row td a.font-bold,
@@ -119,6 +151,22 @@
                 }
                 .feed-table-row .diary-author :first-child {
                     display: none;
+                }
+                /* Скрываем полный текст действия на мобильных */
+                .action-text-full {
+                    display: none;
+                }
+                .action-badge {
+                    display: inline-block;
+                }
+            }
+            @media (min-width: 769px) {
+                /* Скрываем бейджи на десктопе */
+                .action-badge {
+                    display: none;
+                }
+                .action-text-full {
+                    display: inline;
                 }
             }
             .feed-table-header {
@@ -432,9 +480,13 @@
                                             }
                                             $commentsCount = $report->comments->where('parent_id', null)->count();
                                             $whatHappened = 'Добавлен отчет';
+                                            $whatHappenedShort = 'Отчёт';
+                                            $badgeClass = 'report';
                                             $whatHappenedLink = route('reports.show', $report);
                                             if($commentsCount > 0) {
                                                 $whatHappened = 'Новый комментарий';
+                                                $whatHappenedShort = 'Коммент';
+                                                $badgeClass = 'comment';
                                                 $whatHappenedLink = route('reports.show', $report) . '#comments';
                                             }
                                         @endphp
@@ -451,8 +503,9 @@
                                                             <strong class="text-gray-900 dark:text-white flex-shrink-0">{{ $diaryName }}</strong>
                                                         @endif
                                                         <span class="text-gray-600 dark:text-gray-400">|</span>
-                                                        <a href="{{ $whatHappenedLink }}" class="text-purple-600 dark:text-purple-400 hover:underline flex-shrink-0">
-                                                            {{ $whatHappened }}
+                                                        <a href="{{ $whatHappenedLink }}" class="flex-shrink-0">
+                                                            <span class="action-text-full text-purple-600 dark:text-purple-400 hover:underline">{{ $whatHappened }}</span>
+                                                            <span class="action-badge {{ $badgeClass }}">{{ $whatHappenedShort }}</span>
                                                         </a>
                                                         <span class="text-gray-600 dark:text-gray-400">|</span>
                                                         <div class="diary-author flex-shrink-0">
@@ -711,9 +764,13 @@
                                             }
                                             $commentsCount = $report->comments->where('parent_id', null)->count();
                                             $whatHappened = 'Добавлен отчет';
+                                            $whatHappenedShort = 'Отчёт';
+                                            $badgeClass = 'report';
                                             $whatHappenedLink = route('reports.show', $report);
                                             if($commentsCount > 0) {
                                                 $whatHappened = 'Новый комментарий';
+                                                $whatHappenedShort = 'Коммент';
+                                                $badgeClass = 'comment';
                                                 $whatHappenedLink = route('reports.show', $report) . '#comments';
                                             }
                                         @endphp
@@ -730,8 +787,9 @@
                                                             <strong class="text-gray-900 dark:text-white flex-shrink-0">{{ $diaryName }}</strong>
                                                         @endif
                                                         <span class="text-gray-600 dark:text-gray-400">|</span>
-                                                        <a href="{{ $whatHappenedLink }}" class="text-purple-600 dark:text-purple-400 hover:underline flex-shrink-0">
-                                                            {{ $whatHappened }}
+                                                        <a href="{{ $whatHappenedLink }}" class="flex-shrink-0">
+                                                            <span class="action-text-full text-purple-600 dark:text-purple-400 hover:underline">{{ $whatHappened }}</span>
+                                                            <span class="action-badge {{ $badgeClass }}">{{ $whatHappenedShort }}</span>
                                                         </a>
                                                         <span class="text-gray-600 dark:text-gray-400">|</span>
                                                         <div class="diary-author flex-shrink-0">
