@@ -18,11 +18,11 @@ Route::get('/diaries/night/164-164-lyudi-protiv-titanov-belaya-shkatulka-i-krugi
     return redirect()->route('reports.show', 3876, 301);
 });
 
-Route::get('/diaries/night/216-216.html', function() {
+Route::get('/diaries/night/216.html', function() {
     return redirect()->route('reports.show', 3877, 301);
 });
 
-Route::get('/diaries/night/217-217.html', function() {
+Route::get('/diaries/night/217.html', function() {
     return redirect()->route('reports.show', 3878, 301);
 });
 
@@ -34,7 +34,7 @@ Route::get('/diaries/night/220-220-ptaah-i-pticy.html', function() {
     return redirect()->route('reports.show', 3880, 301);
 });
 
-Route::get('/diaries/night/221-221.html', function() {
+Route::get('/diaries/night/221.html', function() {
     return redirect()->route('reports.show', 3881, 301);
 });
 
@@ -62,7 +62,7 @@ Route::get('/diaries/night/227-227-izuchenie-sebya-metodom-tyka.html', function(
     return redirect()->route('reports.show', 3887, 301);
 });
 
-Route::get('/diaries/night/228-228.html', function() {
+Route::get('/diaries/night/228.html', function() {
     return redirect()->route('reports.show', 3888, 301);
 });
 
@@ -86,7 +86,7 @@ Route::get('/diaries/night/233-233-chernye-volki-s-zheltymi-glazami.html', funct
     return redirect()->route('reports.show', 3893, 301);
 });
 
-Route::get('/diaries/night/234-234.html', function() {
+Route::get('/diaries/night/234.html', function() {
     return redirect()->route('reports.show', 3894, 301);
 });
 
@@ -294,7 +294,7 @@ Route::get('/diaries/night/298-298-radamentaliya-i-unichtozhenie-lokacii.html', 
     return redirect()->route('reports.show', 3945, 301);
 });
 
-Route::get('/diaries/night/299-299.html', function() {
+Route::get('/diaries/night/299.html', function() {
     return redirect()->route('reports.show', 3946, 301);
 });
 
@@ -330,7 +330,7 @@ Route::get('/diaries/night/307-307-vtoroe-vnimanie-i-ochered-na-rynok.html', fun
     return redirect()->route('reports.show', 3954, 301);
 });
 
-Route::get('/diaries/night/308-308.html', function() {
+Route::get('/diaries/night/308.html', function() {
     return redirect()->route('reports.show', 3955, 301);
 });
 
@@ -426,7 +426,7 @@ Route::get('/diaries/night/331-331-ocherednye-naezdniki-na-mne.html', function()
     return redirect()->route('reports.show', 3978, 301);
 });
 
-Route::get('/diaries/night/332-332.html', function() {
+Route::get('/diaries/night/332.html', function() {
     return redirect()->route('reports.show', 3979, 301);
 });
 
@@ -442,7 +442,7 @@ Route::get('/diaries/night/335-335-apgrejd-tela.html', function() {
     return redirect()->route('reports.show', 3982, 301);
 });
 
-Route::get('/diaries/night/336-336.html', function() {
+Route::get('/diaries/night/336.html', function() {
     return redirect()->route('reports.show', 3983, 301);
 });
 
@@ -450,15 +450,15 @@ Route::get('/diaries/night/337-337-blednye-sny.html', function() {
     return redirect()->route('reports.show', 3984, 301);
 });
 
-Route::get('/diaries/night/338-338.html', function() {
+Route::get('/diaries/night/338.html', function() {
     return redirect()->route('reports.show', 3985, 301);
 });
 
-Route::get('/diaries/night/339-339.html', function() {
+Route::get('/diaries/night/339.html', function() {
     return redirect()->route('reports.show', 3986, 301);
 });
 
-Route::get('/diaries/night/340-340.html', function() {
+Route::get('/diaries/night/340.html', function() {
     return redirect()->route('reports.show', 3987, 301);
 });
 
@@ -494,7 +494,7 @@ Route::get('/diaries/night/350-350-slaboe-namerenie-i-vystavka-platev.html', fun
     return redirect()->route('reports.show', 3997, 301);
 });
 
-Route::get('/diaries/night/355-355.html', function() {
+Route::get('/diaries/night/355.html', function() {
     return redirect()->route('reports.show', 3998, 301);
 });
 
@@ -514,7 +514,7 @@ Route::get('/diaries/night/361-361-prashury-zhivotnyh-chernyj-kot-i-dobromir.htm
     return redirect()->route('reports.show', 4002, 301);
 });
 
-Route::get('/diaries/night/363-363.html', function() {
+Route::get('/diaries/night/363.html', function() {
     return redirect()->route('reports.show', 4003, 301);
 });
 
@@ -530,11 +530,11 @@ Route::get('/diaries/night/368-368-zatochenie-svadba-i-samoe-dorogoe-shampanskoe
     return redirect()->route('reports.show', 4006, 301);
 });
 
-Route::get('/diaries/night/369-369.html', function() {
+Route::get('/diaries/night/369.html', function() {
     return redirect()->route('reports.show', 4007, 301);
 });
 
-Route::get('/diaries/night/370-370.html', function() {
+Route::get('/diaries/night/370.html', function() {
     return redirect()->route('reports.show', 4008, 301);
 });
 
@@ -562,7 +562,7 @@ Route::get('/diaries/night/382-382-vystavka-skulptur-i-zal-s-druzyami.html', fun
     return redirect()->route('reports.show', 4014, 301);
 });
 
-Route::get('/diaries/night/383-383.html', function() {
+Route::get('/diaries/night/383.html', function() {
     return redirect()->route('reports.show', 4015, 301);
 });
 
@@ -606,7 +606,7 @@ Route::get('/diaries/night/395-395-vozmozhnosti-ii-pauki-i-dolzhoooook.html', fu
     return redirect()->route('reports.show', 4025, 301);
 });
 
-Route::get('/diaries/night/396-396.html', function() {
+Route::get('/diaries/night/396.html', function() {
     return redirect()->route('reports.show', 4026, 301);
 });
 
@@ -614,7 +614,7 @@ Route::get('/diaries/night/397-397-gruppa-stalkerov-i-yajco.html', function() {
     return redirect()->route('reports.show', 4027, 301);
 });
 
-Route::get('/diaries/night/398-398.html', function() {
+Route::get('/diaries/night/398.html', function() {
     return redirect()->route('reports.show', 4028, 301);
 });
 
@@ -646,7 +646,7 @@ Route::get('/diaries/night/405-405-majkl-dzhordan-botinki-i-put-k-preodoleniyu-l
     return redirect()->route('reports.show', 4035, 301);
 });
 
-Route::get('/diaries/night/406-406.html', function() {
+Route::get('/diaries/night/406.html', function() {
     return redirect()->route('reports.show', 4036, 301);
 });
 
@@ -678,7 +678,7 @@ Route::get('/diaries/night/413-413-babulka-rogatyj-i-enoh.html', function() {
     return redirect()->route('reports.show', 4043, 301);
 });
 
-Route::get('/diaries/night/414-414.html', function() {
+Route::get('/diaries/night/414.html', function() {
     return redirect()->route('reports.show', 4044, 301);
 });
 
@@ -786,7 +786,7 @@ Route::get('/diaries/night/440-440-golub-i-vorona.html', function() {
     return redirect()->route('reports.show', 4070, 301);
 });
 
-Route::get('/diaries/night/441-441.html', function() {
+Route::get('/diaries/night/441.html', function() {
     return redirect()->route('reports.show', 4071, 301);
 });
 
@@ -1022,7 +1022,7 @@ Route::get('/diaries/night/499-499-volohovskij-les-yuzhnyj-m-i-devushka-strashna
     return redirect()->route('reports.show', 4129, 301);
 });
 
-Route::get('/diaries/night/500-500.html', function() {
+Route::get('/diaries/night/500.html', function() {
     return redirect()->route('reports.show', 4130, 301);
 });
 
@@ -1218,7 +1218,7 @@ Route::get('/diaries/night/548-548-trip-kristall-i-moi-obidy-na-zhenu.html', fun
     return redirect()->route('reports.show', 4178, 301);
 });
 
-Route::get('/diaries/night/549-549.html', function() {
+Route::get('/diaries/night/549.html', function() {
     return redirect()->route('reports.show', 4179, 301);
 });
 
