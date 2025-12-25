@@ -104,29 +104,18 @@
                 word-break: break-word;
             }
             @media (max-width: 768px) {
-                .feed-table td:first-child {
-                    width: 60%;
-                    max-width: 60%;
-                }
-                .feed-table td:nth-child(2) {
-                    width: 20%;
-                }
-                .feed-table td:nth-child(3) {
-                    width: 20%;
-                }
-                /* Ограничиваем flex-элементы внутри ячеек */
-                .feed-table-row td .flex {
-                    flex-wrap: wrap;
-                }
-                .feed-table-row td a,
+                /* Ограничиваем ширину названия дневника */
+                .feed-table-row td a.font-bold,
                 .feed-table-row td strong {
-                    max-width: 100%;
+                    max-width: 120px;
                     overflow: hidden;
                     text-overflow: ellipsis;
                     white-space: nowrap;
+                    display: inline-block;
                 }
-                .feed-table-row td .truncate {
-                    max-width: 100%;
+                /* Скрываем аватар на мобильных для экономии места */
+                .feed-table-row .diary-author x-avatar {
+                    display: none;
                 }
             }
             .feed-table-header {
