@@ -36,11 +36,15 @@
                             <div class="border border-gray-200 rounded-lg p-4">
                                 <div class="flex justify-between items-start mb-2">
                                     <div class="flex-1">
-                                        <p class="font-semibold text-gray-900">{{ $comment->user->nickname }}</p>
+                                        <p class="font-semibold text-gray-900">{{ $comment->user ? $comment->user->nickname : 'Удалённый пользователь' }}</p>
                                         <p class="text-sm text-gray-600 mb-2">{{ $comment->content }}</p>
                                         <p class="text-xs text-gray-500">
-                                            К отчету: <a href="{{ route('reports.show', $comment->report) }}" class="text-blue-600">{{ $comment->report->report_date->format('d.m.Y') }}</a>
-                                            от <a href="{{ route('admin.users.edit', $comment->report->user) }}" class="text-blue-600">{{ $comment->report->user->nickname }}</a>
+                                            @if($comment->report)
+                                                К отчету: <a href="{{ route('reports.show', $comment->report) }}" class="text-blue-600">{{ $comment->report->report_date->format('d.m.Y') }}</a>
+                                                от <a href="{{ route('admin.users.edit', $comment->report->user) }}" class="text-blue-600">{{ $comment->report->user ? $comment->report->user->nickname : 'Удалённый' }}</a>
+                                            @else
+                                                <span class="text-red-500">Отчёт удалён</span>
+                                            @endif
                                         </p>
                                         <p class="text-xs text-gray-400 mt-1">{{ $comment->created_at->format('d.m.Y H:i') }}</p>
                                     </div>
