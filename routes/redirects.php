@@ -258,7 +258,7 @@ Route::get('/diaries/night/288-288-ovoshnaya-dieta-iz-supchikov.html', function(
     return redirect()->route('reports.show', 3936, 301);
 });
 
-Route::get('/diaries/night/290-290-zapis-ot-28-08-2022.html', function() {
+Route::get('/diaries/night/290-zapis-ot-28-08-2022.html', function() {
     return redirect()->route('reports.show', 3937, 301);
 });
 
