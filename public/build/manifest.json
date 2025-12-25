@@ -1,6 +1,6 @@
 {
-  "_alpine-l0sNRNKZ.js": {
-    "file": "assets/alpine-l0sNRNKZ.js",
+  "_alpine-BLrUkf4X.js": {
+    "file": "assets/alpine-BLrUkf4X.js",
     "name": "alpine"
   },
   "resources/css/app.css": {
@@ -13,9 +13,12 @@
     ]
   },
   "resources/js/app.js": {
-    "file": "assets/app-BaTb13aw.js",
+    "file": "assets/app-ClNC5jNc.js",
     "name": "app",
     "src": "resources/js/app.js",
-    "isEntry": true
+    "isEntry": true,
+    "imports": [
+      "_alpine-BLrUkf4X.js"
+    ]
   }
 }

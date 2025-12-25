@@ -29,10 +29,6 @@
         <x-fontawesome />
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         
-        @if(!isset($skipAlpine) || !$skipAlpine)
-        <script defer src="{{ asset('js/alpine.min.js') }}"></script>
-        @endif
-        
         <x-header-styles />
         
         @stack('styles')

@@ -17,13 +17,10 @@ export default defineConfig({
                 drop_debugger: true,
             },
         },
-        // Code splitting
+        // Code splitting отключен - Alpine.js нужен сразу для работы меню
         rollupOptions: {
             output: {
-                manualChunks: {
-                    // Разделяем Alpine.js в отдельный чанк
-                    'alpine': ['alpinejs'],
-                },
+                manualChunks: undefined,
             },
         },
         // Оптимизация размера чанков
