@@ -75,9 +75,18 @@
             .compact-feed {
                 background-color: white;
                 border-radius: 15px;
-                overflow: hidden;
+                overflow-x: auto;
+                overflow-y: hidden;
                 box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
                 border: 1px solid #dee2e6;
+            }
+            @media (max-width: 768px) {
+                .compact-feed {
+                    margin: 0 -12px;
+                    border-radius: 0;
+                    border-left: none;
+                    border-right: none;
+                }
             }
             .dark .compact-feed {
                 background-color: #1a1a2e;
