@@ -448,7 +448,7 @@
                                                             <form action="{{ route('reports.unpublish', $report) }}" method="POST" class="inline">
                                                                 @csrf
                                                                 <button type="submit" 
-                                                                        class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-300 hover:bg-orange-200 dark:hover:bg-orange-800 transition-colors">
+                                                                        class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                                                                     Снять с публикации
                                                                 </button>
                                                             </form>
