@@ -8,6 +8,15 @@ Route::get('/', [\App\Http\Controllers\HomeController::class, 'index'])->name('h
 // Публичные дневники (без авторизации)
 Route::get('/diary/{publicLink}', [\App\Http\Controllers\DiaryController::class, 'public'])->name('diary.public');
 
+// 301 редирект со старого формата /diaries/{id} на новый /diary/{public_link}
+Route::get('/diaries/{id}', function ($id) {
+    $user = \App\Models\User::find($id);
+    if (!$user || !$user->public_link) {
+        abort(404);
+    }
+    return redirect()->route('diary.public', ['publicLink' => $user->public_link], 301);
+})->where('id', '[0-9]+');
+
 // Публичные профили
 Route::get('/users/{user}', [\App\Http\Controllers\UserController::class, 'profile'])->name('users.profile');
 
@@ -22,6 +31,9 @@ Route::get('/tolkovanie-snov/{hash}', [\App\Http\Controllers\DreamAnalyzerContro
 // Поиск отчетов (доступен всем)
 Route::get('/search', [\App\Http\Controllers\ReportController::class, 'search'])->name('reports.search');
 
+// Просмотр анализа отчета (доступен всем, проверка прав через Policy)
+Route::get('/reports/{report}/analysis', [\App\Http\Controllers\ReportController::class, 'showAnalysis'])->name('reports.analysis');
+
 Route::get('/dashboard', [\App\Http\Controllers\ReportController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
@@ -33,6 +45,11 @@ Route::middleware('auth')->group(function () {
     Route::resource('reports', \App\Http\Controllers\ReportController::class)->except(['index', 'show']); // index теперь на dashboard
     Route::post('/reports/{report}/publish', [\App\Http\Controllers\ReportController::class, 'publish'])->name('reports.publish');
     Route::post('/reports/{report}/unpublish', [\App\Http\Controllers\ReportController::class, 'unpublish'])->name('reports.unpublish');
+    
+    // Анализ отчётов (создание и управление - только для авторизованных)
+    Route::post('/reports/{report}/analyze', [\App\Http\Controllers\ReportController::class, 'analyze'])->name('reports.analyze');
+    Route::post('/reports/{report}/analysis/process', [\App\Http\Controllers\ReportController::class, 'processAnalysis'])->name('reports.analysis.process');
+    Route::delete('/reports/{report}/analysis', [\App\Http\Controllers\ReportController::class, 'detachAnalysis'])->name('reports.analysis.detach');
     
     // Редирект со старой страницы отчетов на dashboard
     Route::get('/reports', function () {
