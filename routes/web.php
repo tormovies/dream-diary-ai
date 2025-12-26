@@ -19,6 +19,9 @@ Route::get('/tolkovanie-snov', [\App\Http\Controllers\DreamAnalyzerController::c
 Route::post('/tolkovanie-snov', [\App\Http\Controllers\DreamAnalyzerController::class, 'store'])->name('dream-analyzer.store');
 Route::get('/tolkovanie-snov/{hash}', [\App\Http\Controllers\DreamAnalyzerController::class, 'show'])->name('dream-analyzer.show');
 
+// Поиск отчетов (доступен всем)
+Route::get('/search', [\App\Http\Controllers\ReportController::class, 'search'])->name('reports.search');
+
 Route::get('/dashboard', [\App\Http\Controllers\ReportController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
@@ -54,9 +57,6 @@ Route::middleware('auth')->group(function () {
     
     // Поиск пользователей
     Route::get('/users', [\App\Http\Controllers\UserController::class, 'search'])->name('users.search');
-    
-    // Поиск отчетов
-    Route::get('/search', [\App\Http\Controllers\ReportController::class, 'search'])->name('reports.search');
     
     // Статистика
     Route::get('/statistics', [\App\Http\Controllers\StatisticsController::class, 'index'])->name('statistics.index');
