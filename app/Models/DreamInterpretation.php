@@ -11,11 +11,14 @@ class DreamInterpretation extends Model
     protected $fillable = [
         'hash',
         'user_id',
+        'report_id',
         'ip_address',
         'dream_description',
         'context',
         'traditions',
         'analysis_type',
+        'processing_status',
+        'processing_started_at',
         'analysis_data',
         'raw_api_request',
         'raw_api_response',
@@ -25,6 +28,7 @@ class DreamInterpretation extends Model
     protected $casts = [
         'traditions' => 'array',
         'analysis_data' => 'array',
+        'processing_started_at' => 'datetime',
     ];
 
     /**
@@ -53,6 +57,14 @@ class DreamInterpretation extends Model
     public function result()
     {
         return $this->hasOne(DreamInterpretationResult::class, 'dream_interpretation_id');
+    }
+
+    /**
+     * Отчет (если анализ связан с отчетом)
+     */
+    public function report(): BelongsTo
+    {
+        return $this->belongsTo(Report::class);
     }
 
     /**

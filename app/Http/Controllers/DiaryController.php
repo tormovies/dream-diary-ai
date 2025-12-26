@@ -18,6 +18,11 @@ class DiaryController extends Controller
         // Ищем по public_link (который теперь равен нормализованному nickname)
         $user = User::where('public_link', $publicLink)->firstOrFail();
 
+        // Проверяем права доступа к дневнику
+        if (!$this->canViewDiary(auth()->user(), $user)) {
+            abort(403, 'У вас нет доступа к этому дневнику');
+        }
+
         // Получаем только опубликованные отчеты с access_level = 'all'
         $reports = Report::where('user_id', $user->id)
             ->where('status', 'published')
@@ -41,7 +46,18 @@ class DiaryController extends Controller
 
         // Проверяем доступ к дневнику
         if (!$this->canViewDiary($currentUser, $user)) {
-            abort(403, 'У вас нет доступа к этому дневнику');
+            // Определяем причину отказа
+            if (!$currentUser) {
+                session()->flash('access_reason', 'not_authenticated');
+            } elseif ($user->diary_privacy === 'private') {
+                session()->flash('access_reason', 'private_diary');
+            } elseif ($user->diary_privacy === 'friends') {
+                session()->flash('access_reason', 'friends_only');
+            }
+            session()->flash('owner_name', $user->nickname);
+            session()->flash('owner_id', $user->id);
+            
+            abort(403);
         }
 
         // Владелец видит все свои отчеты (включая черновики), другие - только опубликованные

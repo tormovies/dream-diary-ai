@@ -26,3 +26,14 @@ interface DreamAnalysisAdapterInterface
 
 
 
+
+
+
+
+
+
+
+
+
+
+

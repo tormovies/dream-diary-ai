@@ -49,7 +49,7 @@
                 </div>
                 
                 <!-- Название сна -->
-                <a href="{{ route('reports.show', $report) }}" class="block text-gray-900 dark:text-white hover:text-purple-600 dark:hover:text-purple-400 mb-1">
+                <a href="{{ route('reports.show', $report) }}" target="_blank" rel="noopener noreferrer" class="block text-gray-900 dark:text-white hover:text-purple-600 dark:hover:text-purple-400 mb-1">
                     {{ $allTitles }}
                 </a>
                 
@@ -87,6 +87,17 @@
         </div>
     </td>
 </tr>
+
+
+
+
+
+
+
+
+
+
+
 
 
 

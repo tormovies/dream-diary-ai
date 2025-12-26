@@ -123,23 +123,46 @@ class HomeController extends Controller
         }
 
         // Получаем последние отчеты (только опубликованные) - это "Лента сновидений"
+        // Учитываем иерархию: diary_privacy (главное) -> access_level
         $reportsQuery = Report::with(['user', 'dreams', 'tags'])
-            ->where('status', 'published')
-            ->where('access_level', '!=', 'none');
+            ->where('status', 'published');
         
         if ($user) {
+            // Для авторизованных пользователей
             $reportsQuery->where(function ($query) use ($user, $friendIds) {
-                $query->where('access_level', 'all')
+                // 1. Свои отчеты видим всегда
+                $query->where('user_id', $user->id)
+                      // 2. Отчеты из публичных дневников с правильным access_level
+                      ->orWhere(function ($q) use ($user, $friendIds) {
+                          $q->whereHas('user', function ($userQuery) {
+                              $userQuery->where('diary_privacy', 'public');
+                          })
+                          ->where(function ($accessQuery) use ($friendIds) {
+                              $accessQuery->where('access_level', 'all')
+                                          ->orWhere(function ($friendQuery) use ($friendIds) {
+                                              if (!empty($friendIds)) {
+                                                  $friendQuery->where('access_level', 'friends')
+                                                             ->whereIn('user_id', $friendIds);
+                                              }
+                                          });
+                          });
+                      })
+                      // 3. Отчеты из дневников друзей (diary_privacy = 'friends')
                       ->orWhere(function ($q) use ($friendIds) {
                           if (!empty($friendIds)) {
-                              $q->whereIn('user_id', $friendIds)
-                                ->where('access_level', 'friends');
+                              $q->whereHas('user', function ($userQuery) {
+                                  $userQuery->where('diary_privacy', 'friends');
+                              })
+                              ->whereIn('user_id', $friendIds);
                           }
-                      })
-                      ->orWhere('user_id', $user->id);
+                      });
             });
         } else {
-            $reportsQuery->where('access_level', 'all');
+            // Для неавторизованных только публичные дневники + access_level = 'all'
+            $reportsQuery->whereHas('user', function ($userQuery) {
+                $userQuery->where('diary_privacy', 'public');
+            })
+            ->where('access_level', 'all');
         }
         
         $reports = $reportsQuery->orderBy('report_date', 'desc')

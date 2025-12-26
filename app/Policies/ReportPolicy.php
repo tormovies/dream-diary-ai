@@ -18,72 +18,91 @@ class ReportPolicy
 
     /**
      * Determine whether the user can view the model.
+     * 
+     * Иерархия приватности:
+     * 1. diary_privacy владельца (главное)
+     *    - private: только владелец и админ
+     *    - friends: только друзья владельца (игнорируем access_level)
+     *    - public: смотрим access_level
+     * 2. status отчета (published/draft)
+     * 3. access_level отчета (только если дневник public)
      */
     public function view(?User $user, Report $report): bool
     {
+        // Загружаем владельца отчета
+        $owner = $report->user;
+        
+        // Админ может видеть все
+        if ($user && $user->isAdmin()) {
+            return true;
+        }
+        
+        // Владелец всегда может видеть свой отчет
+        if ($user && $report->user_id === $user->id) {
+            return true;
+        }
+        
         // Если отчет не опубликован, его могут видеть только владелец и админ
         if ($report->status !== 'published') {
-            // Неавторизованные не могут видеть неопубликованные отчеты
-            if (!$user) {
-                return false;
-            }
-            // Админ может видеть все
-            if ($user->isAdmin()) {
-                return true;
-            }
-            // Владелец может видеть свой отчет (включая черновики)
-            if ($report->user_id === $user->id) {
-                return true;
-            }
             return false;
         }
-
-        // Проверяем настройки доступа
-        if ($report->access_level === 'none') {
-            // Неавторизованные не могут видеть отчеты с доступом 'none'
-            if (!$user) {
+        
+        // УРОВЕНЬ 1: Проверяем diary_privacy владельца (ГЛАВНОЕ!)
+        switch ($owner->diary_privacy) {
+            case 'private':
+                // Приватный дневник - только владелец и админ (уже проверено выше)
                 return false;
-            }
-            // Админ может видеть все
-            if ($user->isAdmin()) {
+                
+            case 'friends':
+                // Дневник для друзей - только друзья владельца (игнорируем access_level отчета)
+                if (!$user) {
+                    return false;
+                }
+                
+                // Проверяем дружбу с владельцем дневника
+                return \App\Models\Friendship::where(function ($query) use ($user, $owner) {
+                    $query->where('user_id', $user->id)
+                        ->where('friend_id', $owner->id)
+                        ->where('status', 'accepted');
+                })->orWhere(function ($query) use ($user, $owner) {
+                    $query->where('user_id', $owner->id)
+                        ->where('friend_id', $user->id)
+                        ->where('status', 'accepted');
+                })->exists();
+                
+            case 'public':
+                // УРОВЕНЬ 2: Дневник публичный - проверяем access_level отчета
+                
+                if ($report->access_level === 'none') {
+                    // Никому (кроме владельца и админа, которые уже проверены)
+                    return false;
+                }
+                
+                if ($report->access_level === 'friends') {
+                    // Только друзьям
+                    if (!$user) {
+                        return false;
+                    }
+                    
+                    // Проверяем дружбу с владельцем отчета
+                    return \App\Models\Friendship::where(function ($query) use ($user, $owner) {
+                        $query->where('user_id', $user->id)
+                            ->where('friend_id', $owner->id)
+                            ->where('status', 'accepted');
+                    })->orWhere(function ($query) use ($user, $owner) {
+                        $query->where('user_id', $owner->id)
+                            ->where('friend_id', $user->id)
+                            ->where('status', 'accepted');
+                    })->exists();
+                }
+                
+                // access_level === 'all' - доступен всем
                 return true;
-            }
-            // Владелец может видеть свой отчет
-            if ($report->user_id === $user->id) {
-                return true;
-            }
-            return false;
-        }
-
-        if ($report->access_level === 'friends') {
-            // Неавторизованные не могут видеть отчеты только для друзей
-            if (!$user) {
+                
+            default:
+                // Неизвестное значение diary_privacy - запрещаем доступ
                 return false;
-            }
-            // Админ может видеть все
-            if ($user->isAdmin()) {
-                return true;
-            }
-            // Владелец может видеть свой отчет
-            if ($report->user_id === $user->id) {
-                return true;
-            }
-            // Проверяем, являются ли пользователи друзьями
-            $friendship = \App\Models\Friendship::where(function ($query) use ($user, $report) {
-                $query->where('user_id', $user->id)
-                    ->where('friend_id', $report->user_id)
-                    ->where('status', 'accepted');
-            })->orWhere(function ($query) use ($user, $report) {
-                $query->where('user_id', $report->user_id)
-                    ->where('friend_id', $user->id)
-                    ->where('status', 'accepted');
-            })->exists();
-
-            return $friendship;
         }
-
-        // access_level === 'all' - все могут видеть (включая неавторизованных)
-        return true;
     }
 
     /**
