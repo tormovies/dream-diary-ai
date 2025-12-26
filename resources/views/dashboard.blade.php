@@ -46,7 +46,22 @@
         <div class="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <main class="space-y-6 w-full" 
                   x-data="{ viewMode: localStorage.getItem('reportsViewMode') || 'grid' }"
-                  x-init="$watch('viewMode', value => localStorage.setItem('reportsViewMode', value))">
+                  x-init="
+                    // Если на мобильных и выбрана таблица - переключаем на плитку
+                    if (window.innerWidth < 768 && viewMode === 'table') {
+                        viewMode = 'grid';
+                        localStorage.setItem('reportsViewMode', 'grid');
+                    }
+                    // Следим за изменениями
+                    $watch('viewMode', value => localStorage.setItem('reportsViewMode', value));
+                    // Следим за изменением размера окна
+                    window.addEventListener('resize', () => {
+                        if (window.innerWidth < 768 && viewMode === 'table') {
+                            viewMode = 'grid';
+                            localStorage.setItem('reportsViewMode', 'grid');
+                        }
+                    });
+                  ">
                     <!-- Заголовок и кнопка создания -->
                     <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
                         <div class="flex justify-between items-center flex-wrap gap-4">
