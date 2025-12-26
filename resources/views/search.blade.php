@@ -204,11 +204,44 @@
                             </a>
                         </nav>
                     </div>
-                </aside>
+                @else
+                    <!-- Для неавторизованных -->
+                    <!-- Приветственная карточка -->
+                    <div class="gradient-primary rounded-2xl p-6 text-white card-shadow">
+                        <h3 class="text-xl font-bold mb-2">Добро пожаловать!</h3>
+                        <p class="text-purple-100 mb-4 text-sm">
+                            Присоединяйтесь к сообществу людей, которые записывают и анализируют свои сновидения.
+                        </p>
+                        <a href="{{ route('register') }}" class="inline-block bg-white text-purple-600 px-4 py-2 rounded-lg font-semibold hover:bg-purple-50 transition-colors text-sm">
+                            <i class="fas fa-user-plus mr-2"></i>Регистрация
+                        </a>
+                    </div>
+                    
+                    <!-- Быстрые действия -->
+                    <div class="sidebar-menu bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
+                        <h3 class="text-lg font-semibold mb-4 text-purple-600 dark:text-purple-400 flex items-center gap-2">
+                            <i class="fas fa-bolt"></i> Быстрые действия
+                        </h3>
+                        <nav class="space-y-2">
+                            <a href="{{ route('dream-analyzer.create') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-purple-600 dark:hover:text-purple-400 transition-all {{ request()->routeIs('dream-analyzer.*') ? 'bg-gray-100 dark:bg-gray-700 text-purple-600 dark:text-purple-400 font-medium' : '' }}">
+                                <i class="fas fa-magic w-5"></i> Толкование снов
+                            </a>
+                            <a href="{{ route('reports.search') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-purple-600 dark:hover:text-purple-400 transition-all {{ request()->routeIs('reports.search') ? 'bg-gray-100 dark:bg-gray-700 text-purple-600 dark:text-purple-400 font-medium' : '' }}">
+                                <i class="fas fa-search w-5"></i> Поиск
+                            </a>
+                            <a href="{{ route('register') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-purple-600 dark:hover:text-purple-400 transition-all">
+                                <i class="fas fa-user-plus w-5"></i> Регистрация
+                            </a>
+                            <a href="{{ route('login') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-purple-600 dark:hover:text-purple-400 transition-all">
+                                <i class="fas fa-sign-in-alt w-5"></i> Войти
+                            </a>
+                        </nav>
+                    </div>
                 @endauth
+                </aside>
                 
                 <!-- Центральная панель -->
-                <main class="space-y-6 min-w-0 {{ !auth()->check() ? 'col-span-2' : '' }}">
+                <main class="space-y-6 min-w-0">
                     <!-- Заголовок и форма поиска -->
                     <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
                         <h2 class="text-2xl font-bold mb-4 text-purple-600 dark:text-purple-400">Поиск сновидений</h2>
@@ -466,20 +499,30 @@
                     </div>
                 </main>
                 
-                <!-- Правая панель (только для авторизованных) -->
-                @auth
+                <!-- Правая панель (доступна всем) -->
                 <aside class="space-y-6">
-                    <!-- Информация -->
+                    <!-- Информация о поиске -->
                     <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
                         <h3 class="text-lg font-semibold mb-4 text-purple-600 dark:text-purple-400 flex items-center gap-2">
                             <i class="fas fa-info-circle"></i> О поиске
                         </h3>
-                        <p class="text-sm text-gray-600 dark:text-gray-400">
-                            Используйте фильтры для поиска сновидений по различным критериям. Вы можете искать по тексту, тегам, типу сна и дате.
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                            Используйте фильтры для поиска сновидений по различным критериям. Вы можете искать по тексту, типу сна и дате.
                         </p>
+                        @guest
+                        <div class="mt-4 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                            <p class="text-xs text-purple-700 dark:text-purple-300 mb-2">
+                                <i class="fas fa-lightbulb mr-1"></i> Зарегистрируйтесь, чтобы:
+                            </p>
+                            <ul class="text-xs text-purple-600 dark:text-purple-400 space-y-1 ml-4">
+                                <li>• Создавать свои отчёты</li>
+                                <li>• Комментировать записи</li>
+                                <li>• Получать статистику</li>
+                            </ul>
+                        </div>
+                        @endguest
                     </div>
                 </aside>
-                @endauth
             </div>
         </div>
 
