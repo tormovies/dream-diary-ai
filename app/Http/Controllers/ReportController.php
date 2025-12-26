@@ -38,6 +38,36 @@ class ReportController extends Controller
     }
 
     /**
+     * Проверяет, является ли описание серией снов (есть разделитель ---)
+     */
+    private function isDreamSeries(string $text): bool
+    {
+        // Проверяем наличие разделителя из минусов (3 и более)
+        return preg_match('/---+/', $text) === 1;
+    }
+
+    /**
+     * Разбивает текст на отдельные сны по разделителю ---
+     */
+    private function splitDreams(string $text): array
+    {
+        $dreams = [];
+        
+        // Разделяем по минусам (3 и более)
+        $parts = preg_split('/---+/', $text);
+        
+        foreach ($parts as $part) {
+            $part = trim($part);
+            // Игнорируем пустые части
+            if (!empty($part)) {
+                $dreams[] = $part;
+            }
+        }
+        
+        return $dreams;
+    }
+
+    /**
      * Display a listing of the resource.
      */
     public function index(Request $request): View
@@ -366,14 +396,49 @@ class ReportController extends Controller
 
                 // Создаем сны
                 if ($request->has('dreams') && is_array($request->dreams)) {
-                    // Получаем данные снов
+                    // Получаем данные снов из формы
                     $dreamsData = $request->dreams;
+                    
+                    // Обрабатываем каждое окно сна - проверяем на серию
+                    $processedDreams = [];
+                    $seriesCount = 0;
+                    
+                    foreach ($dreamsData as $dreamData) {
+                        if (!isset($dreamData['description']) || !isset($dreamData['dream_type'])) {
+                            continue;
+                        }
+                        
+                        $description = $dreamData['description'];
+                        $dreamType = $dreamData['dream_type'];
+                        $title = isset($dreamData['title']) ? trim($dreamData['title']) : '';
+                        
+                        // Проверяем, является ли это серией снов
+                        if ($this->isDreamSeries($description)) {
+                            // Разбиваем на отдельные сны
+                            $splitDreams = $this->splitDreams($description);
+                            $seriesCount += count($splitDreams);
+                            
+                            foreach ($splitDreams as $splitIndex => $splitDescription) {
+                                $processedDreams[] = [
+                                    'title' => ($splitIndex === 0) ? $title : '', // Название только первому сну серии
+                                    'description' => $splitDescription,
+                                    'dream_type' => $dreamType,
+                                ];
+                            }
+                        } else {
+                            // Обычный сон
+                            $processedDreams[] = [
+                                'title' => $title,
+                                'description' => $description,
+                                'dream_type' => $dreamType,
+                            ];
+                        }
+                    }
                     
                     // Проверяем, есть ли хотя бы одно название
                     $hasAnyTitle = false;
-                    foreach ($dreamsData as $dreamData) {
-                        $title = isset($dreamData['title']) ? trim($dreamData['title']) : '';
-                        // Игнорируем пустые строки и строку "null"
+                    foreach ($processedDreams as $dreamData) {
+                        $title = $dreamData['title'];
                         if ($title !== '' && strtolower($title) !== 'null') {
                             $hasAnyTitle = true;
                             break;
@@ -382,36 +447,37 @@ class ReportController extends Controller
                     
                     // Если нет ни одного названия, создаем автоматически для первого сна
                     $autoTitleCreated = false;
-                    if (!$hasAnyTitle && !empty($dreamsData)) {
+                    if (!$hasAnyTitle && !empty($processedDreams)) {
                         $user = auth()->user();
                         $autoTitle = "Отчет {$user->nickname} от " . \Carbon\Carbon::parse($request->report_date)->format('d.m.Y');
-                        $dreamsData[0]['title'] = $autoTitle;
+                        $processedDreams[0]['title'] = $autoTitle;
                         $autoTitleCreated = true;
                     }
                     
-                    foreach ($dreamsData as $index => $dreamData) {
-                        if (isset($dreamData['description']) && isset($dreamData['dream_type'])) {
-                            // Обрабатываем title: если пустой, только пробелы или строка "null" - устанавливаем null
-                            $title = isset($dreamData['title']) ? trim($dreamData['title']) : '';
-                            // Проверяем, что это не строка "null"
-                            if ($title === '' || strtolower($title) === 'null') {
-                                $title = null;
-                            } else {
-                                // Капитализируем первую букву названия
-                                $title = $this->capitalizeFirstLetter($title);
-                            }
-                            
-                            Dream::create([
-                                'report_id' => $report->id,
-                                'title' => $title,
-                                'description' => $dreamData['description'],
-                                'dream_type' => $dreamData['dream_type'],
-                                'order' => $index,
-                            ]);
+                    // Создаем сны в базе
+                    foreach ($processedDreams as $index => $dreamData) {
+                        // Обрабатываем title: если пустой, только пробелы или строка "null" - устанавливаем null
+                        $title = $dreamData['title'];
+                        if ($title === '' || strtolower($title) === 'null') {
+                            $title = null;
+                        } else {
+                            // Капитализируем первую букву названия
+                            $title = $this->capitalizeFirstLetter($title);
                         }
+                        
+                        Dream::create([
+                            'report_id' => $report->id,
+                            'title' => $title,
+                            'description' => $dreamData['description'],
+                            'dream_type' => $dreamData['dream_type'],
+                            'order' => $index,
+                        ]);
                     }
                     
-                    // Если создали автоматическое название, уведомляем пользователя
+                    // Уведомления пользователю
+                    if ($seriesCount > 0) {
+                        session()->flash('info', "Обнаружено и обработано серий снов. Создано {$seriesCount} снов из серий.");
+                    }
                     if ($autoTitleCreated) {
                         session()->flash('info', 'Для первого сна автоматически создано название, так как ни у одного сна не было указано название.');
                     }
