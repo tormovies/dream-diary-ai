@@ -371,7 +371,7 @@
                                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                                 <i class="fas fa-moon mr-1"></i>Сны
                                             </th>
-                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden md:table-cell">
+                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                                 <i class="fas fa-info-circle mr-1"></i>Статус
                                             </th>
                                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden lg:table-cell">
@@ -431,7 +431,7 @@
                                                 </td>
                                                 
                                                 <!-- Статус (кнопка публикации) -->
-                                                <td class="px-4 py-3 whitespace-nowrap hidden md:table-cell">
+                                                <td class="px-4 py-3 whitespace-nowrap">
                                                     @if($report->status === 'draft')
                                                         <form action="{{ route('reports.publish', $report) }}" method="POST" class="inline">
                                                             @csrf
@@ -441,13 +441,18 @@
                                                             </button>
                                                         </form>
                                                     @else
-                                                        <form action="{{ route('reports.unpublish', $report) }}" method="POST" class="inline">
-                                                            @csrf
-                                                            <button type="submit" 
-                                                                    class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-800 transition-colors">
-                                                                <i class="fas fa-check-circle mr-1"></i>Снять с публикации
-                                                            </button>
-                                                        </form>
+                                                        <div class="flex items-center gap-2">
+                                                            <span class="inline-flex items-center text-green-600 dark:text-green-400">
+                                                                <i class="fas fa-check-circle text-lg"></i>
+                                                            </span>
+                                                            <form action="{{ route('reports.unpublish', $report) }}" method="POST" class="inline">
+                                                                @csrf
+                                                                <button type="submit" 
+                                                                        class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-300 hover:bg-orange-200 dark:hover:bg-orange-800 transition-colors">
+                                                                    Снять с публикации
+                                                                </button>
+                                                            </form>
+                                                        </div>
                                                     @endif
                                                 </td>
                                                 
