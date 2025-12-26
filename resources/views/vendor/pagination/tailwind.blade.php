@@ -25,7 +25,7 @@
 
         </div>
 
-        <div class="hidden sm:flex-1 sm:flex sm:flex-col sm:gap-4 sm:items-center">
+        <div class="hidden sm:flex sm:flex-col sm:gap-4 sm:items-center sm:w-full">
 
             <div class="flex justify-center w-full">
                 <span class="inline-flex rtl:flex-row-reverse shadow-sm rounded-md">
