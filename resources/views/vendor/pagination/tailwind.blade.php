@@ -25,25 +25,9 @@
 
         </div>
 
-        <div class="hidden sm:flex-1 sm:flex sm:gap-2 sm:items-center sm:justify-between">
+        <div class="hidden sm:flex-1 sm:flex sm:flex-col sm:gap-4 sm:items-center">
 
-            <div>
-                <p class="text-sm text-gray-700 leading-5 dark:text-gray-600">
-                    {!! __('Showing') !!}
-                    @if ($paginator->firstItem())
-                        <span class="font-medium">{{ $paginator->firstItem() }}</span>
-                        {!! __('to') !!}
-                        <span class="font-medium">{{ $paginator->lastItem() }}</span>
-                    @else
-                        {{ $paginator->count() }}
-                    @endif
-                    {!! __('of') !!}
-                    <span class="font-medium">{{ $paginator->total() }}</span>
-                    {!! __('results') !!}
-                </p>
-            </div>
-
-            <div>
+            <div class="flex justify-center w-full">
                 <span class="inline-flex rtl:flex-row-reverse shadow-sm rounded-md">
 
                     {{-- Previous Page Link --}}
@@ -105,6 +89,22 @@
                         </span>
                     @endif
                 </span>
+            </div>
+
+            <div class="flex justify-center w-full">
+                <p class="text-sm text-gray-700 leading-5 dark:text-gray-400">
+                    Показано
+                    @if ($paginator->firstItem())
+                        <span class="font-medium">{{ $paginator->firstItem() }}</span>
+                        -
+                        <span class="font-medium">{{ $paginator->lastItem() }}</span>
+                    @else
+                        {{ $paginator->count() }}
+                    @endif
+                    из
+                    <span class="font-medium">{{ $paginator->total() }}</span>
+                    результатов
+                </p>
             </div>
         </div>
     </nav>
