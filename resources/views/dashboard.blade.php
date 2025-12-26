@@ -57,11 +57,9 @@
                     // Проверяем при загрузке
                     checkMobileView();
                     
-                    // Следим за изменениями viewMode и сохраняем только если не мобильные
+                    // Следим за изменениями viewMode и всегда сохраняем
                     $watch('viewMode', value => {
-                        if (window.innerWidth >= 768 || value === 'grid') {
-                            localStorage.setItem('reportsViewMode', value);
-                        }
+                        localStorage.setItem('reportsViewMode', value);
                     });
                     
                     // Следим за изменением размера окна
