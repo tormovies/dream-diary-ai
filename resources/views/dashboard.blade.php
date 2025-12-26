@@ -229,19 +229,22 @@
                              x-transition:leave-start="opacity-100 transform scale-100"
                              x-transition:leave-end="opacity-0 transform scale-95"
                              class="p-6">
-                            <form method="GET" action="{{ route('dashboard') }}" class="space-y-4">
+                            <form method="GET" action="{{ route('dashboard') }}" class="profile-form">
                                 <!-- Поиск по тексту -->
-                                <div>
-                                    <label for="search" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Поиск по тексту</label>
+                                <div class="form-group">
+                                    <label for="search" class="form-label">
+                                        <i class="fas fa-search"></i>
+                                        Поиск по тексту
+                                    </label>
                                     <input type="text" 
                                            id="search" 
                                            name="search" 
                                            value="{{ request('search') }}"
                                            placeholder="Поиск по названию или описанию снов..."
-                                           class="block w-full border-2 border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                           class="form-input">
                                 </div>
 
-                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div class="form-row" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr))">
                                     <!-- Фильтр по тегам - СКРЫТ -->
                                     <!-- 
                                     <div>
