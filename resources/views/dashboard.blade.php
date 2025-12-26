@@ -141,14 +141,15 @@
                                            class="block w-full border-2 border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
                                 </div>
 
-                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                                    <!-- Фильтр по тегам -->
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <!-- Фильтр по тегам - СКРЫТ -->
+                                    <!-- 
                                     <div>
                                         <label for="tags" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Теги</label>
                                         <select id="tags" 
                                                 name="tags[]" 
                                                 multiple
-                                                class="block w-full border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                                class="block w-full border-2 border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                                                 size="5">
                                             @foreach($allTags as $tag)
                                                 <option value="{{ $tag->id }}" 
@@ -159,13 +160,14 @@
                                         </select>
                                         <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Удерживайте Ctrl для выбора нескольких</p>
                                     </div>
+                                    -->
 
                                     <!-- Фильтр по типу сна -->
                                     <div>
                                         <label for="dream_type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Тип сна</label>
                                         <select id="dream_type" 
                                                 name="dream_type" 
-                                                class="block w-full border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                                class="block w-full border-2 border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
                                             <option value="">Все типы</option>
                                             @foreach($dreamTypes as $type)
                                                 <option value="{{ $type }}" {{ request('dream_type') === $type ? 'selected' : '' }}>
@@ -192,7 +194,7 @@
                                                id="date_to" 
                                                name="date_to" 
                                                value="{{ request('date_to') }}"
-                                               class="block w-full border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                               class="block w-full border-2 border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
                                     </div>
                                 </div>
 
@@ -234,7 +236,7 @@
                                         <label for="per_page" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">На странице</label>
                                         <select id="per_page" 
                                                 name="per_page" 
-                                                class="block w-full border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                                class="block w-full border-2 border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
                                             <option value="10" {{ request('per_page', 20) == 10 ? 'selected' : '' }}>10</option>
                                             <option value="20" {{ request('per_page', 20) == 20 ? 'selected' : '' }}>20</option>
                                             <option value="50" {{ request('per_page') == 50 ? 'selected' : '' }}>50</option>
