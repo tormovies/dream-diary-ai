@@ -235,8 +235,8 @@
                     </div>
 
                     @if($reports->count() > 0)
-                        <!-- Вид плиткой -->
-                        <div x-show="viewMode === 'grid'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- Вид плиткой (всегда на мобильных, переключаемый на десктопе) -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" :class="{ 'md:hidden': viewMode === 'table' }">
                             @foreach($reports as $report)
                                 <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm card-shadow border border-gray-200 dark:border-gray-700 relative">
                                     <div class="p-6">
