@@ -163,11 +163,14 @@
                                     -->
 
                                     <!-- Фильтр по типу сна -->
-                                    <div>
-                                        <label for="dream_type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Тип сна</label>
+                                    <div class="form-group">
+                                        <label for="dream_type" class="form-label">
+                                            <i class="fas fa-moon"></i>
+                                            Тип сна
+                                        </label>
                                         <select id="dream_type" 
                                                 name="dream_type" 
-                                                class="block w-full border-2 border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                                class="form-select">
                                             <option value="">Все типы</option>
                                             @foreach($dreamTypes as $type)
                                                 <option value="{{ $type }}" {{ request('dream_type') === $type ? 'selected' : '' }}>
@@ -178,33 +181,42 @@
                                     </div>
 
                                     <!-- Фильтр по дате (от) -->
-                                    <div>
-                                        <label for="date_from" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Дата от</label>
+                                    <div class="form-group">
+                                        <label for="date_from" class="form-label">
+                                            <i class="fas fa-calendar"></i>
+                                            Дата от
+                                        </label>
                                         <input type="date" 
                                                id="date_from" 
                                                name="date_from" 
                                                value="{{ request('date_from') }}"
-                                               class="block w-full border-2 border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                               class="form-input">
                                     </div>
 
                                     <!-- Фильтр по дате (до) -->
-                                    <div>
-                                        <label for="date_to" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Дата до</label>
+                                    <div class="form-group">
+                                        <label for="date_to" class="form-label">
+                                            <i class="fas fa-calendar"></i>
+                                            Дата до
+                                        </label>
                                         <input type="date" 
                                                id="date_to" 
                                                name="date_to" 
                                                value="{{ request('date_to') }}"
-                                               class="block w-full border-2 border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                               class="form-input">
                                     </div>
                                 </div>
 
-                                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <div class="form-row" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr))">
                                     <!-- Фильтр по статусу -->
-                                    <div>
-                                        <label for="status" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Статус</label>
+                                    <div class="form-group">
+                                        <label for="status" class="form-label">
+                                            <i class="fas fa-eye"></i>
+                                            Статус
+                                        </label>
                                         <select id="status" 
                                                 name="status" 
-                                                class="block w-full border-2 border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                                class="form-select">
                                             <option value="">Все</option>
                                             <option value="published" {{ request('status') === 'published' ? 'selected' : '' }}>Опубликованные</option>
                                             <option value="draft" {{ request('status') === 'draft' ? 'selected' : '' }}>Черновики</option>
@@ -212,31 +224,40 @@
                                     </div>
 
                                     <!-- Сортировка -->
-                                    <div>
-                                        <label for="sort_by" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Сортировать по</label>
+                                    <div class="form-group">
+                                        <label for="sort_by" class="form-label">
+                                            <i class="fas fa-sort"></i>
+                                            Сортировать по
+                                        </label>
                                         <select id="sort_by" 
                                                 name="sort_by" 
-                                                class="block w-full border-2 border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                                class="form-select">
                                             <option value="report_date" {{ request('sort_by', 'report_date') === 'report_date' ? 'selected' : '' }}>Дате отчета</option>
                                             <option value="created_at" {{ request('sort_by') === 'created_at' ? 'selected' : '' }}>Дате создания</option>
                                         </select>
                                     </div>
 
-                                    <div>
-                                        <label for="sort_order" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Порядок</label>
+                                    <div class="form-group">
+                                        <label for="sort_order" class="form-label">
+                                            <i class="fas fa-arrow-down-wide-short"></i>
+                                            Порядок
+                                        </label>
                                         <select id="sort_order" 
                                                 name="sort_order" 
-                                                class="block w-full border-2 border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                                class="form-select">
                                             <option value="desc" {{ request('sort_order', 'desc') === 'desc' ? 'selected' : '' }}>По убыванию</option>
                                             <option value="asc" {{ request('sort_order') === 'asc' ? 'selected' : '' }}>По возрастанию</option>
                                         </select>
                                     </div>
 
-                                    <div>
-                                        <label for="per_page" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">На странице</label>
+                                    <div class="form-group">
+                                        <label for="per_page" class="form-label">
+                                            <i class="fas fa-list-ol"></i>
+                                            На странице
+                                        </label>
                                         <select id="per_page" 
                                                 name="per_page" 
-                                                class="block w-full border-2 border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                                class="form-select">
                                             <option value="10" {{ request('per_page', 20) == 10 ? 'selected' : '' }}>10</option>
                                             <option value="20" {{ request('per_page', 20) == 20 ? 'selected' : '' }}>20</option>
                                             <option value="50" {{ request('per_page') == 50 ? 'selected' : '' }}>50</option>
@@ -245,8 +266,9 @@
                                     </div>
                                 </div>
 
-                                <div class="flex gap-2">
-                                    <button type="submit" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition-all">
+                                <div class="form-actions" style="justify-content: flex-start; gap: 12px;">
+                                    <button type="submit" class="btn-form-primary">
+                                        <i class="fas fa-filter mr-2"></i>
                                         Применить фильтры
                                     </button>
                                     <a href="{{ route('dashboard') }}" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
