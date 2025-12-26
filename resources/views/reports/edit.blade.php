@@ -28,6 +28,130 @@
             .dark .card-shadow {
                 box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
             }
+            /* Стили форм из профиля */
+            .profile-form-section {
+                background-color: white;
+                border-radius: 15px;
+                padding: 30px;
+                box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+                border: 1px solid #dee2e6;
+            }
+            .dark .profile-form-section {
+                background-color: #1a1a2e;
+                border-color: #343a40;
+                box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            }
+            .profile-form {
+                display: flex;
+                flex-direction: column;
+                gap: 20px;
+            }
+            .form-group {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+            .form-label {
+                font-weight: 600;
+                color: #212529;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .dark .form-label {
+                color: #f8f9fa;
+            }
+            .form-label.required:after {
+                content: '*';
+                color: #fa5252;
+                margin-left: 4px;
+            }
+            .form-input, .form-select, .form-textarea {
+                padding: 14px 18px;
+                border-radius: 10px;
+                border: 1px solid #dee2e6;
+                background-color: white;
+                color: #212529;
+                font-family: inherit;
+                font-size: 1rem;
+                transition: all 0.2s;
+                width: 100%;
+            }
+            .form-input:focus, .form-select:focus, .form-textarea:focus {
+                outline: none;
+                border-color: #4263eb;
+                box-shadow: 0 0 0 3px rgba(116, 143, 252, 0.2);
+            }
+            .dark .form-input, .dark .form-select, .dark .form-textarea {
+                background-color: #2d2d44;
+                border-color: #343a40;
+                color: #f8f9fa;
+            }
+            .dark .form-input:focus, .dark .form-select:focus, .dark .form-textarea:focus {
+                border-color: #748ffc;
+            }
+            .form-textarea {
+                min-height: 120px;
+                resize: vertical;
+            }
+            .form-hint {
+                font-size: 0.85rem;
+                color: #495057;
+                margin-top: 5px;
+            }
+            .dark .form-hint {
+                color: #adb5bd;
+            }
+            .form-actions {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-top: 30px;
+                padding-top: 20px;
+                border-top: 1px solid #dee2e6;
+            }
+            .dark .form-actions {
+                border-top-color: #343a40;
+            }
+            .btn-form-primary {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+                padding: 12px 24px;
+                border-radius: 8px;
+                border: none;
+                font-weight: 600;
+                cursor: pointer;
+                font-size: 1rem;
+                transition: all 0.2s;
+            }
+            .btn-form-primary:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 18px rgba(102, 126, 234, 0.4);
+            }
+            .btn-form-secondary {
+                background-color: transparent;
+                color: #495057;
+                border: 2px solid #dee2e6;
+                padding: 12px 24px;
+                border-radius: 8px;
+                font-weight: 600;
+                cursor: pointer;
+                font-size: 1rem;
+                transition: all 0.2s;
+                text-decoration: none;
+                display: inline-block;
+            }
+            .dark .btn-form-secondary {
+                color: #adb5bd;
+                border-color: #343a40;
+            }
+            .btn-form-secondary:hover {
+                background-color: #f8f9fa;
+            }
+            .dark .btn-form-secondary:hover {
+                background-color: #2d2d44;
+            }
         </style>
         <x-header-styles />
     </head>
@@ -46,99 +170,122 @@
                 </div>
 
                 <!-- Форма -->
-                <div class="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden card-shadow border border-gray-200 dark:border-gray-700">
-                    <div class="p-6">
-                        <form method="POST" action="{{ route('reports.update', $report) }}" id="reportForm">
-                            @csrf
-                            @method('PUT')
+                <div class="profile-form-section card-shadow">
+                    @if ($errors->any())
+                        <div class="mb-4 bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg">
+                            <ul class="list-disc list-inside">
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
 
-                            <!-- Дата отчета -->
-                            <div class="mb-6">
-                                <x-input-label for="report_date" :value="__('Дата отчета')" />
-                                <x-text-input id="report_date" 
-                                             class="block mt-1 w-full dark:bg-gray-700 dark:text-white dark:border-gray-600" 
-                                             type="date" 
-                                             name="report_date" 
-                                             :value="old('report_date', $report->report_date->format('Y-m-d'))" 
-                                             required />
-                                <x-input-error :messages="$errors->get('report_date')" class="mt-2" />
+                    @if (session('error'))
+                        <div class="mb-4 bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg">
+                            {{ session('error') }}
+                        </div>
+                    @endif
+
+                    <form method="POST" action="{{ route('reports.update', $report) }}" id="reportForm" class="profile-form">
+                        @csrf
+                        @method('PUT')
+
+                        <!-- Дата отчета -->
+                        <div class="form-group">
+                            <label for="report_date" class="form-label required">
+                                <i class="fas fa-calendar"></i> Дата отчета
+                            </label>
+                            <input type="date" 
+                                   id="report_date" 
+                                   name="report_date" 
+                                   class="form-input" 
+                                   value="{{ old('report_date', $report->report_date->format('Y-m-d')) }}" 
+                                   required />
+                            <x-input-error :messages="$errors->get('report_date')" class="mt-2" />
+                        </div>
+
+                        <!-- Уровень доступа -->
+                        <div class="form-group">
+                            <label for="access_level" class="form-label required">
+                                <i class="fas fa-lock"></i> Уровень доступа
+                            </label>
+                            <select id="access_level" 
+                                   name="access_level" 
+                                   class="form-select"
+                                   required>
+                                <option value="all" {{ old('access_level', $report->access_level) === 'all' ? 'selected' : '' }}>Всем</option>
+                                <option value="friends" {{ old('access_level', $report->access_level) === 'friends' ? 'selected' : '' }}>Только друзьям</option>
+                                <option value="none" {{ old('access_level', $report->access_level) === 'none' ? 'selected' : '' }}>Никому</option>
+                            </select>
+                            <x-input-error :messages="$errors->get('access_level')" class="mt-2" />
+                        </div>
+
+                        <!-- Статус публикации -->
+                        <div class="form-group">
+                            <label for="status" class="form-label required">
+                                <i class="fas fa-eye"></i> Статус публикации
+                            </label>
+                            <select id="status" 
+                                   name="status" 
+                                   class="form-select"
+                                   required>
+                                <option value="draft" {{ old('status', $report->status) === 'draft' ? 'selected' : '' }}>Черновик (не опубликован)</option>
+                                <option value="published" {{ old('status', $report->status) === 'published' ? 'selected' : '' }}>Опубликован</option>
+                            </select>
+                            <div class="form-hint">
+                                Черновики видны только вам. Опубликованные отчеты видны другим пользователям согласно уровню доступа.
                             </div>
+                            <x-input-error :messages="$errors->get('status')" class="mt-2" />
+                        </div>
 
-                            <!-- Уровень доступа -->
-                            <div class="mb-6">
-                                <x-input-label for="access_level" :value="__('Уровень доступа')" />
-                                <select id="access_level" 
-                                       name="access_level" 
-                                       class="block mt-1 w-full border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                                       required>
-                                    <option value="all" {{ old('access_level', $report->access_level) === 'all' ? 'selected' : '' }}>Всем</option>
-                                    <option value="friends" {{ old('access_level', $report->access_level) === 'friends' ? 'selected' : '' }}>Только друзьям</option>
-                                    <option value="none" {{ old('access_level', $report->access_level) === 'none' ? 'selected' : '' }}>Никому</option>
-                                </select>
-                                <x-input-error :messages="$errors->get('access_level')" class="mt-2" />
-                            </div>
-
-                            <!-- Статус публикации -->
-                            <div class="mb-6">
-                                <x-input-label for="status" :value="__('Статус публикации')" />
-                                <select id="status" 
-                                       name="status" 
-                                       class="block mt-1 w-full border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                                       required>
-                                    <option value="draft" {{ old('status', $report->status) === 'draft' ? 'selected' : '' }}>Черновик (не опубликован)</option>
-                                    <option value="published" {{ old('status', $report->status) === 'published' ? 'selected' : '' }}>Опубликован</option>
-                                </select>
-                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                                    Черновики видны только вам. Опубликованные отчеты видны другим пользователям согласно уровню доступа.
-                                </p>
-                                <x-input-error :messages="$errors->get('status')" class="mt-2" />
-                            </div>
-
-                            <!-- Сны -->
-                            <div class="mb-6">
-                                <div class="flex justify-between items-center mb-4">
-                                    <x-input-label :value="__('Сны')" />
-                                    <button type="button" 
-                                            onclick="addDream()" 
-                                            class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
-                                        <i class="fas fa-plus mr-2"></i>Добавить сон
-                                    </button>
-                                </div>
-                                
-                                <div id="dreams-container">
-                                    <!-- Сны будут добавляться динамически -->
-                                </div>
-                                
-                                <x-input-error :messages="$errors->get('dreams')" class="mt-2" />
-                            </div>
-
-                            <!-- Теги -->
-                            <div class="mb-6">
-                                <x-input-label for="tags" :value="__('Теги')" />
-                                <div class="relative">
-                                    <input type="text" 
-                                           id="tags-input" 
-                                           class="block mt-1 w-full border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white" 
-                                           placeholder="Начните вводить тег..." 
-                                           autocomplete="off" />
-                                    <div id="tags-suggestions" class="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg hidden max-h-60 overflow-y-auto"></div>
-                                </div>
-                                <div id="tags-selected" class="mt-2 flex flex-wrap gap-2"></div>
-                                <input type="hidden" id="tags-hidden" name="tags" />
-                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Введите тег и нажмите Enter или выберите из предложенных</p>
-                            </div>
-
-                            <div class="flex items-center justify-end mt-4 gap-4">
-                                <a href="{{ route('reports.show', $report) }}" 
-                                   class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
-                                    Отмена
-                                </a>
-                                <button type="submit" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition-all">
-                                    <i class="fas fa-save mr-2"></i>Сохранить изменения
+                        <!-- Сны -->
+                        <div class="form-group">
+                            <div class="flex justify-between items-center">
+                                <label class="form-label">
+                                    <i class="fas fa-moon"></i> Сны
+                                </label>
+                                <button type="button" 
+                                        onclick="addDream()" 
+                                        class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                                    <i class="fas fa-plus mr-2"></i>Добавить сон
                                 </button>
                             </div>
-                        </form>
-                    </div>
+                            
+                            <div id="dreams-container">
+                                <!-- Сны будут добавляться динамически -->
+                            </div>
+                            
+                            <x-input-error :messages="$errors->get('dreams')" class="mt-2" />
+                        </div>
+
+                        <!-- Теги -->
+                        <div class="form-group">
+                            <label for="tags-input" class="form-label">
+                                <i class="fas fa-tags"></i> Теги
+                            </label>
+                            <div class="relative">
+                                <input type="text" 
+                                       id="tags-input" 
+                                       class="form-input" 
+                                       placeholder="Начните вводить тег..." 
+                                       autocomplete="off" />
+                                <div id="tags-suggestions" class="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg hidden max-h-60 overflow-y-auto"></div>
+                            </div>
+                            <div id="tags-selected" class="mt-2 flex flex-wrap gap-2"></div>
+                            <input type="hidden" id="tags-hidden" name="tags" />
+                            <div class="form-hint">Введите тег и нажмите Enter или выберите из предложенных</div>
+                        </div>
+
+                        <div class="form-actions">
+                            <a href="{{ route('reports.show', $report) }}" class="btn-form-secondary">
+                                Отмена
+                            </a>
+                            <button type="submit" class="btn-form-primary">
+                                <i class="fas fa-save mr-2"></i>Сохранить изменения
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </main>
         </div>
@@ -168,7 +315,7 @@
                 const dreamType = dreamData ? dreamData.dream_type : 'Бледный сон';
 
                 dreamDiv.innerHTML = `
-                    <div class="flex justify-between items-center mb-2">
+                    <div class="flex justify-between items-center mb-4">
                         <h4 class="font-semibold text-gray-900 dark:text-white">Сон #${dreamIndex + 1}</h4>
                         <button type="button" 
                                 onclick="removeDream(this)" 
@@ -177,28 +324,28 @@
                         </button>
                     </div>
                     
-                    <div class="mb-3">
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Название <span class="text-gray-400 text-xs">(необязательно)</span></label>
+                    <div class="form-group mb-3">
+                        <label class="form-label">Название <span class="text-gray-400 text-xs">(необязательно)</span></label>
                         <input type="text" 
                                name="dreams[${dreamIndex}][title]" 
                                value="${title}"
-                               class="block w-full border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                               placeholder="Оставьте пустым, если сон не важен" />
-                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Хотя бы у одного сна в отчете должно быть название</p>
+                               class="form-input"
+                               placeholder="Оставьте пустым, если не придумать" />
+                        <div class="form-hint">Хотя бы у одного сна в отчете должно быть название</div>
                     </div>
                     
-                    <div class="mb-3">
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Описание</label>
+                    <div class="form-group mb-3">
+                        <label class="form-label required">Описание</label>
                         <textarea name="dreams[${dreamIndex}][description]" 
                                   rows="4"
-                                  class="block w-full border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                                  class="form-textarea"
                                   required>${description}</textarea>
                     </div>
                     
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Тип сна</label>
+                    <div class="form-group">
+                        <label class="form-label required">Тип сна</label>
                         <select name="dreams[${dreamIndex}][dream_type]" 
-                                class="block w-full border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                                class="form-select"
                                 required>
                             ${dreamTypes.map(type => 
                                 `<option value="${type}" ${type === dreamType ? 'selected' : ''}>${type}</option>`

@@ -171,7 +171,11 @@
                     <!-- Заголовок и кнопка создания -->
                     <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
                         <div class="flex justify-between items-center flex-wrap gap-4">
-                            <h2 class="text-2xl font-bold text-purple-600 dark:text-purple-400">Мои отчёты</h2>
+                            <h2 class="text-2xl font-bold">
+                                <a href="{{ route('dashboard') }}" class="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors">
+                                    Мои отчёты
+                                </a>
+                            </h2>
                             
                             <div class="flex items-center gap-3">
                                 <!-- Переключатель вида (скрыт на мобильных) -->
@@ -383,6 +387,40 @@
                     </div>
 
                     @if($reports->count() > 0)
+                        @php
+                            // Функция для извлечения фрагмента текста с поисковым запросом
+                            function getSearchSnippet($text, $search, $maxLength = 150) {
+                                if (empty($search) || empty($text)) {
+                                    return null;
+                                }
+                                
+                                $search = mb_strtolower(trim($search));
+                                $textLower = mb_strtolower($text);
+                                $pos = mb_strpos($textLower, $search);
+                                
+                                if ($pos === false) {
+                                    return null;
+                                }
+                                
+                                // Вычисляем начало фрагмента (за 50 символов до найденного)
+                                $start = max(0, $pos - 50);
+                                $snippet = mb_substr($text, $start, $maxLength);
+                                
+                                // Добавляем многоточие
+                                if ($start > 0) {
+                                    $snippet = '...' . $snippet;
+                                }
+                                if (mb_strlen($text) > $start + $maxLength) {
+                                    $snippet .= '...';
+                                }
+                                
+                                // Подсвечиваем найденное слово
+                                $snippet = preg_replace('/(' . preg_quote($search, '/') . ')/iu', '<mark class="bg-yellow-200 dark:bg-yellow-700 px-1 rounded">$1</mark>', $snippet);
+                                
+                                return $snippet;
+                            }
+                        @endphp
+                        
                         <!-- Вид плиткой (всегда на мобильных, переключаемый на десктопе) -->
                         <div x-show="viewMode === 'grid'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             @foreach($reports as $report)
@@ -390,7 +428,7 @@
                                     <div class="p-6">
                                         <div class="flex justify-between items-start mb-4">
                                             <div>
-                                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                                                     {{ $report->report_date->format('d.m.Y') }}
                                                 </h3>
                                                 <span class="text-xs px-2 py-1 rounded mt-1 inline-block
@@ -430,12 +468,43 @@
                                                     <div class="flex items-center p-2 bg-gray-50 dark:bg-gray-700 rounded border-l-2 border-blue-400 gap-2">
                                                         <span class="text-xs font-bold text-blue-600 dark:text-blue-400 min-w-[28px] flex-shrink-0 text-center">#{{ $index + 1 }}</span>
                                                         <span class="text-sm text-gray-900 dark:text-white flex-1">{{ $dream->title }}</span>
+                                                        @if($index === 0 && $report->hasAnalysis())
+                                                            <span class="text-yellow-400 dark:text-yellow-300 text-lg flex-shrink-0" title="Есть анализ">✨</span>
+                                                        @endif
                                                     </div>
                                                 @endforeach
                                                 @if($report->dreams->count() > $dreamsWithTitles->count())
                                                     <p class="text-xs text-gray-500 dark:text-gray-400 italic pl-2">
                                                         ... и еще {{ $report->dreams->count() - $dreamsWithTitles->count() }} {{ ($report->dreams->count() - $dreamsWithTitles->count()) == 1 ? 'сон' : 'снов' }}
                                                     </p>
+                                                @endif
+                                                
+                                                {{-- Фрагменты поиска --}}
+                                                @if($searchQuery)
+                                                    @php
+                                                        $snippets = [];
+                                                        foreach ($report->dreams as $dream) {
+                                                            // Ищем в названии
+                                                            $snippet = getSearchSnippet($dream->title, $searchQuery, 100);
+                                                            if ($snippet) {
+                                                                $snippets[] = $snippet;
+                                                                if (count($snippets) >= 2) break;
+                                                            }
+                                                            // Ищем в описании
+                                                            $snippet = getSearchSnippet($dream->description, $searchQuery, 150);
+                                                            if ($snippet) {
+                                                                $snippets[] = $snippet;
+                                                                if (count($snippets) >= 2) break;
+                                                            }
+                                                        }
+                                                    @endphp
+                                                    @if(count($snippets) > 0)
+                                                        <div class="mt-2 pt-2 border-t border-gray-200 dark:border-gray-600">
+                                                            @foreach($snippets as $snippet)
+                                                                <p class="text-xs text-gray-600 dark:text-gray-400 mb-1 italic">{!! $snippet !!}</p>
+                                                            @endforeach
+                                                        </div>
+                                                    @endif
                                                 @endif
                                             </div>
                                         @endif
@@ -480,6 +549,7 @@
                                             <div class="flex gap-2 items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
                                                 <div class="flex gap-2">
                                                     <a href="{{ route('reports.show', $report) }}" 
+                                                       target="_blank" rel="noopener noreferrer"
                                                        class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm">
                                                         Просмотр
                                                     </a>
@@ -487,6 +557,14 @@
                                                        class="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 text-sm">
                                                         Редактировать
                                                     </a>
+                                                    @if($report->status === 'published')
+                                                        @if($report->hasAnalysis())
+                                                            <a href="{{ route('reports.analysis', $report) }}" 
+                                                               class="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 text-sm">
+                                                                🔮 Анализ
+                                                            </a>
+                                                        @endif
+                                                    @endif
                                                 </div>
                                                 
                                                 <!-- Кнопка удаления -->
@@ -545,8 +623,8 @@
                                             <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                                                 <!-- Дата -->
                                                 <td class="px-4 py-3 whitespace-nowrap">
-                                                    <div class="flex items-center">
-                                                        <i class="fas fa-calendar-day text-purple-500 mr-2"></i>
+                                                    <div class="flex items-center gap-2">
+                                                        <i class="fas fa-calendar-day text-purple-500"></i>
                                                         <span class="text-sm font-medium text-gray-900 dark:text-white">
                                                             {{ $report->report_date->format('d.m.Y') }}
                                                         </span>
@@ -572,12 +650,16 @@
                                                         @endphp
                                                         <div class="flex items-center gap-2">
                                                             <a href="{{ route('reports.show', $report) }}" 
+                                                               target="_blank" rel="noopener noreferrer"
                                                                class="text-sm text-gray-900 dark:text-white hover:text-purple-600 dark:hover:text-purple-400 hover:underline truncate flex-1">
                                                                 {{ $dreamTitles }}
                                                                 @if($report->dreams->filter(fn($d) => !empty($d->title))->count() > 3)
                                                                     <span class="text-gray-400 dark:text-gray-500">...</span>
                                                                 @endif
                                                             </a>
+                                                            @if($report->hasAnalysis())
+                                                                <span class="text-yellow-400 dark:text-yellow-300 flex-shrink-0" title="Есть анализ">✨</span>
+                                                            @endif
                                                             <div class="flex items-center gap-2 flex-shrink-0">
                                                                 <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-300 whitespace-nowrap">
                                                                     <i class="fas fa-moon mr-1"></i>{{ $report->dreams->count() }}
@@ -589,6 +671,21 @@
                                                                 @endif
                                                             </div>
                                                         </div>
+                                                        
+                                                        {{-- Фрагменты поиска в таблице --}}
+                                                        @if($searchQuery)
+                                                            @php
+                                                                $snippet = null;
+                                                                foreach ($report->dreams as $dream) {
+                                                                    if (!$snippet) $snippet = getSearchSnippet($dream->title, $searchQuery, 100);
+                                                                    if (!$snippet) $snippet = getSearchSnippet($dream->description, $searchQuery, 120);
+                                                                    if ($snippet) break;
+                                                                }
+                                                            @endphp
+                                                            @if($snippet)
+                                                                <div class="mt-1 text-xs text-gray-600 dark:text-gray-400 italic">{!! $snippet !!}</div>
+                                                            @endif
+                                                        @endif
                                                     @endif
                                                 </td>
                                                 
@@ -664,6 +761,7 @@
                                                 <td class="px-4 py-3 whitespace-nowrap text-right">
                                                     <div class="flex items-center justify-end gap-2">
                                                         <a href="{{ route('reports.show', $report) }}" 
+                                                           target="_blank" rel="noopener noreferrer"
                                                            class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
                                                            title="Просмотр">
                                                             <i class="fas fa-eye"></i>
@@ -673,6 +771,13 @@
                                                            title="Редактировать">
                                                             <i class="fas fa-edit"></i>
                                                         </a>
+                                                        @if($report->status === 'published' && $report->hasAnalysis())
+                                                            <a href="{{ route('reports.analysis', $report) }}" 
+                                                               class="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300"
+                                                               title="Посмотреть анализ">
+                                                                <i class="fas fa-crystal-ball"></i>
+                                                            </a>
+                                                        @endif
                                                         <form action="{{ route('reports.destroy', $report) }}" 
                                                               method="POST" 
                                                               class="inline"
