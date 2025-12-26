@@ -45,25 +45,28 @@
         <!-- Основной контент -->
         <div class="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <main class="space-y-6 w-full" 
-                  x-data="{ viewMode: localStorage.getItem('reportsViewMode') || 'grid' }"
-                  x-init="
-                    // Функция проверки и переключения на плитку для мобильных
-                    const checkMobileView = () => {
-                        if (window.innerWidth < 768 && viewMode === 'table') {
-                            viewMode = 'grid';
+                  x-data="{ 
+                    viewMode: (() => {
+                        const saved = localStorage.getItem('reportsViewMode') || 'grid';
+                        // Если мобильные и сохранена таблица - вернуть grid, но НЕ сохранять
+                        if (window.innerWidth < 768 && saved === 'table') {
+                            return 'grid';
                         }
-                    };
-                    
-                    // Проверяем при загрузке
-                    checkMobileView();
-                    
-                    // Следим за изменениями viewMode и всегда сохраняем
+                        return saved;
+                    })()
+                  }"
+                  x-init="
+                    // Следим за изменениями viewMode и сохраняем
                     $watch('viewMode', value => {
                         localStorage.setItem('reportsViewMode', value);
                     });
                     
                     // Следим за изменением размера окна
-                    window.addEventListener('resize', checkMobileView);
+                    window.addEventListener('resize', () => {
+                        if (window.innerWidth < 768 && viewMode === 'table') {
+                            viewMode = 'grid';
+                        }
+                    });
                   ">
                     <!-- Заголовок и кнопка создания -->
                     <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
@@ -135,7 +138,7 @@
                                            name="search" 
                                            value="{{ request('search') }}"
                                            placeholder="Поиск по названию или описанию снов..."
-                                           class="block w-full border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                           class="block w-full border-2 border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
                                 </div>
 
                                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -179,7 +182,7 @@
                                                id="date_from" 
                                                name="date_from" 
                                                value="{{ request('date_from') }}"
-                                               class="block w-full border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                               class="block w-full border-2 border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
                                     </div>
 
                                     <!-- Фильтр по дате (до) -->
@@ -199,7 +202,7 @@
                                         <label for="status" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Статус</label>
                                         <select id="status" 
                                                 name="status" 
-                                                class="block w-full border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                                class="block w-full border-2 border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
                                             <option value="">Все</option>
                                             <option value="published" {{ request('status') === 'published' ? 'selected' : '' }}>Опубликованные</option>
                                             <option value="draft" {{ request('status') === 'draft' ? 'selected' : '' }}>Черновики</option>
@@ -211,7 +214,7 @@
                                         <label for="sort_by" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Сортировать по</label>
                                         <select id="sort_by" 
                                                 name="sort_by" 
-                                                class="block w-full border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                                class="block w-full border-2 border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
                                             <option value="report_date" {{ request('sort_by', 'report_date') === 'report_date' ? 'selected' : '' }}>Дате отчета</option>
                                             <option value="created_at" {{ request('sort_by') === 'created_at' ? 'selected' : '' }}>Дате создания</option>
                                         </select>
@@ -221,7 +224,7 @@
                                         <label for="sort_order" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Порядок</label>
                                         <select id="sort_order" 
                                                 name="sort_order" 
-                                                class="block w-full border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                                class="block w-full border-2 border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
                                             <option value="desc" {{ request('sort_order', 'desc') === 'desc' ? 'selected' : '' }}>По убыванию</option>
                                             <option value="asc" {{ request('sort_order') === 'asc' ? 'selected' : '' }}>По возрастанию</option>
                                         </select>
