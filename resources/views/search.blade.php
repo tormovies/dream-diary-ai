@@ -327,21 +327,27 @@
                                             </select>
                                         </div>
 
-                                        <div>
-                                            <label for="sort_order" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Порядок</label>
+                                        <div class="form-group">
+                                            <label for="sort_order" class="form-label">
+                                                <i class="fas fa-arrow-down-wide-short"></i>
+                                                Порядок
+                                            </label>
                                             <select id="sort_order" 
                                                     name="sort_order" 
-                                                    class="block w-full border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                                    class="form-select">
                                                 <option value="desc" {{ request('sort_order', 'desc') === 'desc' ? 'selected' : '' }}>По убыванию</option>
                                                 <option value="asc" {{ request('sort_order') === 'asc' ? 'selected' : '' }}>По возрастанию</option>
                                             </select>
                                         </div>
 
-                                        <div>
-                                            <label for="per_page" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">На странице</label>
+                                        <div class="form-group">
+                                            <label for="per_page" class="form-label">
+                                                <i class="fas fa-list-ol"></i>
+                                                На странице
+                                            </label>
                                             <select id="per_page" 
                                                     name="per_page" 
-                                                    class="block w-full border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                                    class="form-select">
                                                 <option value="10" {{ request('per_page', 20) == 10 ? 'selected' : '' }}>10</option>
                                                 <option value="20" {{ request('per_page', 20) == 20 ? 'selected' : '' }}>20</option>
                                                 <option value="50" {{ request('per_page') == 50 ? 'selected' : '' }}>50</option>
@@ -350,11 +356,13 @@
                                         </div>
                                     </div>
 
-                                    <div class="flex gap-2">
-                                        <button type="submit" class="gradient-primary text-white font-bold py-2 px-4 rounded hover:shadow-lg transition-all">
-                                            <i class="fas fa-search mr-2"></i>Применить фильтры
+                                    <div class="form-actions" style="justify-content: flex-start; gap: 12px;">
+                                        <button type="submit" class="btn-form-primary">
+                                            <i class="fas fa-search mr-2"></i>
+                                            Применить фильтры
                                         </button>
-                                        <a href="{{ route('reports.search') }}" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
+                                        <a href="{{ route('reports.search') }}" class="btn-form-secondary">
+                                            <i class="fas fa-redo mr-2"></i>
                                             Сбросить
                                         </a>
                                     </div>
