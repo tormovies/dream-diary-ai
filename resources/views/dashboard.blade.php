@@ -46,11 +46,34 @@
         <div class="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <main class="space-y-6 w-full">
                     <!-- Заголовок и кнопка создания -->
-                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700 flex justify-between items-center">
-                        <h2 class="text-2xl font-bold text-purple-600 dark:text-purple-400">Мои отчёты</h2>
-                        <a href="{{ route('reports.create') }}" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition-all">
-                            <i class="fas fa-plus mr-2"></i>Создать отчет
-                        </a>
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700" 
+                         x-data="{ viewMode: localStorage.getItem('reportsViewMode') || 'grid' }"
+                         x-init="$watch('viewMode', value => localStorage.setItem('reportsViewMode', value))">
+                        <div class="flex justify-between items-center flex-wrap gap-4">
+                            <h2 class="text-2xl font-bold text-purple-600 dark:text-purple-400">Мои отчёты</h2>
+                            
+                            <div class="flex items-center gap-3">
+                                <!-- Переключатель вида -->
+                                <div class="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+                                    <button @click="viewMode = 'grid'" 
+                                            :class="viewMode === 'grid' ? 'bg-white dark:bg-gray-600 shadow-sm' : ''"
+                                            class="px-3 py-2 rounded-md transition-all"
+                                            title="Плитка">
+                                        <i class="fas fa-th-large" :class="viewMode === 'grid' ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500 dark:text-gray-400'"></i>
+                                    </button>
+                                    <button @click="viewMode = 'table'" 
+                                            :class="viewMode === 'table' ? 'bg-white dark:bg-gray-600 shadow-sm' : ''"
+                                            class="px-3 py-2 rounded-md transition-all"
+                                            title="Таблица">
+                                        <i class="fas fa-list" :class="viewMode === 'table' ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500 dark:text-gray-400'"></i>
+                                    </button>
+                                </div>
+                                
+                                <a href="{{ route('reports.create') }}" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition-all whitespace-nowrap">
+                                    <i class="fas fa-plus mr-2"></i>Создать отчет
+                                </a>
+                            </div>
+                        </div>
                     </div>
 
                     @if(session('success'))
@@ -212,7 +235,8 @@
                     </div>
 
                     @if($reports->count() > 0)
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- Вид плиткой -->
+                        <div x-show="viewMode === 'grid'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             @foreach($reports as $report)
                                 <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm card-shadow border border-gray-200 dark:border-gray-700 relative">
                                     <div class="p-6">
@@ -333,6 +357,141 @@
                                     </div>
                                 </div>
                             @endforeach
+                        </div>
+
+                        <!-- Вид таблицей -->
+                        <div x-show="viewMode === 'table'" class="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden card-shadow border border-gray-200 dark:border-gray-700">
+                            <div class="overflow-x-auto">
+                                <table class="w-full">
+                                    <thead class="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
+                                        <tr>
+                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                                <i class="fas fa-calendar mr-1"></i>Дата
+                                            </th>
+                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                                <i class="fas fa-moon mr-1"></i>Сны
+                                            </th>
+                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden md:table-cell">
+                                                <i class="fas fa-info-circle mr-1"></i>Статус
+                                            </th>
+                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden lg:table-cell">
+                                                <i class="fas fa-lock mr-1"></i>Доступ
+                                            </th>
+                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden sm:table-cell">
+                                                <i class="fas fa-comment mr-1"></i>Комментарии
+                                            </th>
+                                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                                Действия
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                                        @foreach($reports as $report)
+                                            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                                <!-- Дата -->
+                                                <td class="px-4 py-3 whitespace-nowrap">
+                                                    <div class="flex items-center">
+                                                        <i class="fas fa-calendar-day text-purple-500 mr-2"></i>
+                                                        <span class="text-sm font-medium text-gray-900 dark:text-white">
+                                                            {{ $report->report_date->format('d.m.Y') }}
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                
+                                                <!-- Сны -->
+                                                <td class="px-4 py-3">
+                                                    <div class="flex items-start gap-2">
+                                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-300 whitespace-nowrap">
+                                                            <i class="fas fa-moon mr-1"></i>{{ $report->dreams->count() }}
+                                                        </span>
+                                                        @if($report->dreams->count() > 0)
+                                                            <div class="text-sm text-gray-600 dark:text-gray-400 truncate max-w-xs">
+                                                                @php
+                                                                    $firstDream = $report->dreams->first();
+                                                                @endphp
+                                                                @if($firstDream && $firstDream->title)
+                                                                    {{ $firstDream->title }}
+                                                                    @if($report->dreams->count() > 1)
+                                                                        <span class="text-gray-400 dark:text-gray-500">+{{ $report->dreams->count() - 1 }}</span>
+                                                                    @endif
+                                                                @endif
+                                                            </div>
+                                                        @endif
+                                                    </div>
+                                                </td>
+                                                
+                                                <!-- Статус -->
+                                                <td class="px-4 py-3 whitespace-nowrap hidden md:table-cell">
+                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
+                                                        @if($report->status === 'published') bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300
+                                                        @else bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300
+                                                        @endif">
+                                                        <i class="fas @if($report->status === 'published') fa-check-circle @else fa-file-alt @endif mr-1"></i>
+                                                        @if($report->status === 'published') Опубликован @else Черновик @endif
+                                                    </span>
+                                                </td>
+                                                
+                                                <!-- Доступ -->
+                                                <td class="px-4 py-3 whitespace-nowrap hidden lg:table-cell">
+                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
+                                                        @if($report->access_level === 'all') bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300
+                                                        @elseif($report->access_level === 'friends') bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-300
+                                                        @else bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300
+                                                        @endif">
+                                                        <i class="fas @if($report->access_level === 'all') fa-globe @elseif($report->access_level === 'friends') fa-user-friends @else fa-lock @endif mr-1"></i>
+                                                        @if($report->access_level === 'all') Всем
+                                                        @elseif($report->access_level === 'friends') Друзьям
+                                                        @else Никому
+                                                        @endif
+                                                    </span>
+                                                </td>
+                                                
+                                                <!-- Комментарии -->
+                                                <td class="px-4 py-3 whitespace-nowrap hidden sm:table-cell">
+                                                    @php
+                                                        $commentsCount = $report->comments->count();
+                                                    @endphp
+                                                    @if($commentsCount > 0)
+                                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-300">
+                                                            <i class="fas fa-comment mr-1"></i>{{ $commentsCount }}
+                                                        </span>
+                                                    @else
+                                                        <span class="text-xs text-gray-400 dark:text-gray-500">—</span>
+                                                    @endif
+                                                </td>
+                                                
+                                                <!-- Действия -->
+                                                <td class="px-4 py-3 whitespace-nowrap text-right">
+                                                    <div class="flex items-center justify-end gap-2">
+                                                        <a href="{{ route('reports.show', $report) }}" 
+                                                           class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
+                                                           title="Просмотр">
+                                                            <i class="fas fa-eye"></i>
+                                                        </a>
+                                                        <a href="{{ route('reports.edit', $report) }}" 
+                                                           class="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300"
+                                                           title="Редактировать">
+                                                            <i class="fas fa-edit"></i>
+                                                        </a>
+                                                        <form action="{{ route('reports.destroy', $report) }}" 
+                                                              method="POST" 
+                                                              class="inline"
+                                                              onsubmit="return confirm('Вы уверены, что хотите удалить этот отчет?');">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button type="submit" 
+                                                                    class="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300"
+                                                                    title="Удалить">
+                                                                <i class="fas fa-trash"></i>
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
 
                         <div class="mt-6">
