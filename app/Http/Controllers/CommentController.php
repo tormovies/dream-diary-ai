@@ -18,7 +18,18 @@ class CommentController extends Controller
     {
         // Проверяем, может ли пользователь комментировать этот отчет
         if (!$this->canComment($report)) {
-            abort(403, 'У вас нет доступа для комментирования этого отчета');
+            $owner = $report->user;
+            
+            // Определяем причину отказа
+            if ($owner->diary_privacy === 'private') {
+                session()->flash('access_reason', 'private_diary');
+            } elseif ($owner->diary_privacy === 'friends' || $report->access_level === 'friends') {
+                session()->flash('access_reason', 'friends_only');
+            }
+            session()->flash('owner_name', $owner->nickname);
+            session()->flash('owner_id', $owner->id);
+            
+            abort(403);
         }
 
         $comment = Comment::create([
@@ -179,15 +190,46 @@ class CommentController extends Controller
     private function canComment(Report $report): bool
     {
         $user = auth()->user();
+        $diaryOwner = $report->user;
 
-        // Владелец отчёта всегда может комментировать свой отчёт
+        // Владелец отчёта всегда может комментировать свой отчёт (если разрешает себе)
         if ($report->user_id === $user->id) {
-            return true;
+            return $diaryOwner->comment_privacy !== 'none';
         }
 
         // Администратор всегда может комментировать любой отчёт
         if ($user->isAdmin()) {
             return true;
+        }
+
+        // Проверяем настройки приватности комментариев владельца отчета
+        $commentPrivacy = $diaryOwner->comment_privacy ?? 'all';
+        
+        // Если владелец запретил все комментарии
+        if ($commentPrivacy === 'none') {
+            return false;
+        }
+        
+        // Если только сам владелец может комментировать
+        if ($commentPrivacy === 'only_me') {
+            return false;
+        }
+        
+        // Если только друзья могут комментировать
+        if ($commentPrivacy === 'friends') {
+            $areFriends = \App\Models\Friendship::where(function ($query) use ($user, $diaryOwner) {
+                $query->where('user_id', $user->id)
+                    ->where('friend_id', $diaryOwner->id)
+                    ->where('status', 'accepted');
+            })->orWhere(function ($query) use ($user, $diaryOwner) {
+                $query->where('user_id', $diaryOwner->id)
+                    ->where('friend_id', $user->id)
+                    ->where('status', 'accepted');
+            })->exists();
+            
+            if (!$areFriends) {
+                return false;
+            }
         }
 
         // Если отчет не опубликован, нельзя комментировать
@@ -213,10 +255,7 @@ class CommentController extends Controller
             })->exists();
         }
 
-        // Если дневник публичный или доступ "всем", можно комментировать
-        // Но нужно проверить настройки приватности дневника
-        $diaryOwner = $report->user;
-        
+        // Проверяем настройки приватности дневника
         if ($diaryOwner->diary_privacy === 'private') {
             return false;
         }
@@ -233,7 +272,7 @@ class CommentController extends Controller
             })->exists();
         }
 
-        // Публичный дневник - все могут комментировать
+        // Публичный дневник и настройки комментариев "all" - все могут комментировать
         return true;
     }
 

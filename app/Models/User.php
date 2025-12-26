@@ -27,6 +27,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'avatar',
         'bio',
         'diary_privacy',
+        'comment_privacy',
         'public_link',
         'diary_name',
         'theme',

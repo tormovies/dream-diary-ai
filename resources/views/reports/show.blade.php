@@ -68,6 +68,21 @@
                     display: block;
                 }
             }
+            /* Адаптивные названия традиций в модальном окне */
+            .tradition-short {
+                display: inline;
+            }
+            .tradition-full {
+                display: none;
+            }
+            @media (min-width: 1024px) {
+                .tradition-short {
+                    display: none !important;
+                }
+                .tradition-full {
+                    display: inline !important;
+                }
+            }
         </style>
         <x-header-styles />
     </head>
@@ -231,13 +246,30 @@
                                     <i class="fas fa-book mr-2"></i>Страница дневника
                                 </a>
                                 
-                                <!-- Кнопка "Редактировать" (только для владельца) -->
+                                <!-- Кнопка "Посмотреть анализ" (видна всем, если анализ существует) -->
+                                @if($report->status === 'published' && $report->hasAnalysis())
+                                    <a href="{{ route('reports.analysis', $report) }}" 
+                                       class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg transition-colors text-center w-full sm:w-auto sm:flex-1">
+                                        <i class="fas fa-crystal-ball mr-2"></i>Посмотреть анализ
+                                    </a>
+                                @endif
+                                
+                                <!-- Кнопки для владельца -->
                                 @auth
                                     @if(auth()->id() === $report->user_id)
                                         <a href="{{ route('reports.edit', $report) }}" 
                                            class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors text-center w-full sm:w-auto sm:flex-1">
                                             <i class="fas fa-edit mr-2"></i>Редактировать
                                         </a>
+                                        
+                                        <!-- Кнопка "Анализировать" (только для владельца, если анализа нет) -->
+                                        @if($report->status === 'published' && !$report->hasAnalysis())
+                                            <button type="button" 
+                                                    onclick="openAnalysisModal()"
+                                                    class="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition-colors text-center w-full sm:w-auto sm:flex-1">
+                                                <i class="fas fa-crystal-ball mr-2"></i>Анализировать
+                                            </button>
+                                        @endif
                                     @endif
                                 @endauth
                             </div>
@@ -299,22 +331,58 @@
                             <!-- Форма добавления комментария (только для авторизованных) -->
                             @auth
                                 @php
-                                    // Владелец всегда может комментировать свой отчёт, админ тоже может
-                                    $isOwner = $report->user_id === auth()->id();
-                                    $isAdmin = auth()->user()->isAdmin();
-                                    $canView = auth()->user()->can('view', $report);
-                                    $canComment = $isOwner || $isAdmin || $canView;
+                                    $user = auth()->user();
+                                    $diaryOwner = $report->user;
+                                    $isOwner = $report->user_id === $user->id;
+                                    $isAdmin = $user->isAdmin();
+                                    $commentPrivacy = $diaryOwner->comment_privacy ?? 'all';
                                     
-                                    // Временная отладка (удалить после проверки)
-                                    if (!$canComment) {
-                                        \Log::info('Comment access denied', [
-                                            'user_id' => auth()->id(),
-                                            'user_role' => auth()->user()->role,
-                                            'report_user_id' => $report->user_id,
-                                            'isOwner' => $isOwner,
-                                            'isAdmin' => $isAdmin,
-                                            'canView' => $canView,
-                                        ]);
+                                    // Определяем, может ли пользователь комментировать
+                                    $canComment = false;
+                                    $commentDeniedReason = null;
+                                    
+                                    // Владелец может комментировать, если не запретил сам себе
+                                    if ($isOwner) {
+                                        $canComment = $commentPrivacy !== 'none';
+                                        if (!$canComment) {
+                                            $commentDeniedReason = 'owner_disabled';
+                                        }
+                                    }
+                                    // Админ всегда может
+                                    elseif ($isAdmin) {
+                                        $canComment = true;
+                                    }
+                                    // Проверяем настройки приватности комментариев
+                                    elseif ($commentPrivacy === 'none') {
+                                        $commentDeniedReason = 'disabled_by_owner';
+                                    }
+                                    elseif ($commentPrivacy === 'only_me') {
+                                        $commentDeniedReason = 'only_owner';
+                                    }
+                                    elseif ($commentPrivacy === 'friends') {
+                                        // Проверяем дружбу
+                                        $areFriends = \App\Models\Friendship::where(function ($query) use ($user, $diaryOwner) {
+                                            $query->where('user_id', $user->id)
+                                                ->where('friend_id', $diaryOwner->id)
+                                                ->where('status', 'accepted');
+                                        })->orWhere(function ($query) use ($user, $diaryOwner) {
+                                            $query->where('user_id', $diaryOwner->id)
+                                                ->where('friend_id', $user->id)
+                                                ->where('status', 'accepted');
+                                        })->exists();
+                                        
+                                        if (!$areFriends) {
+                                            $commentDeniedReason = 'friends_only';
+                                        } else {
+                                            $canComment = true;
+                                        }
+                                    }
+                                    else {
+                                        // comment_privacy === 'all' - проверяем доступ к отчету
+                                        $canComment = $user->can('view', $report);
+                                        if (!$canComment) {
+                                            $commentDeniedReason = 'no_access';
+                                        }
                                     }
                                 @endphp
                                 @if($canComment)
@@ -336,7 +404,17 @@
                                     </form>
                                 @else
                                     <div class="mb-6 p-4 bg-yellow-100 dark:bg-yellow-900 border border-yellow-400 dark:border-yellow-700 text-yellow-700 dark:text-yellow-300 rounded-lg">
-                                        <p class="text-sm">У вас нет доступа для комментирования этого отчета.</p>
+                                        @if($commentDeniedReason === 'disabled_by_owner')
+                                            <p class="text-sm"><i class="fas fa-ban mr-2"></i>Владелец отчёта отключил возможность комментирования.</p>
+                                        @elseif($commentDeniedReason === 'only_owner')
+                                            <p class="text-sm"><i class="fas fa-lock mr-2"></i>Только владелец может комментировать этот отчёт.</p>
+                                        @elseif($commentDeniedReason === 'friends_only')
+                                            <p class="text-sm"><i class="fas fa-user-friends mr-2"></i>Только друзья владельца могут комментировать этот отчёт.</p>
+                                        @elseif($commentDeniedReason === 'owner_disabled')
+                                            <p class="text-sm"><i class="fas fa-info-circle mr-2"></i>Вы отключили комментарии в настройках профиля.</p>
+                                        @else
+                                            <p class="text-sm"><i class="fas fa-exclamation-circle mr-2"></i>У вас нет доступа для комментирования этого отчета.</p>
+                                        @endif
                                     </div>
                                 @endif
                             @else
@@ -380,5 +458,122 @@
                 localStorage.setItem('theme', newTheme);
             }
         </script>
+
+        <!-- Модальное окно выбора традиций для анализа -->
+        @auth
+            @if(auth()->id() === $report->user_id && $report->status === 'published' && !$report->hasAnalysis())
+                <div id="analysisModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden overflow-y-auto">
+                    <div class="min-h-screen flex items-start justify-center p-4 sm:p-6 pt-20 sm:pt-10 pb-20">
+                        <div class="bg-white dark:bg-gray-800 rounded-2xl max-w-3xl w-full card-shadow">
+                            <div class="p-6 sm:p-8">
+                        <div class="flex justify-between items-start mb-6">
+                            <h2 class="text-xl sm:text-2xl font-bold text-purple-600 dark:text-purple-400">
+                                <i class="fas fa-crystal-ball mr-2"></i>Анализ отчёта
+                            </h2>
+                            <button onclick="closeAnalysisModal()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 flex-shrink-0 ml-4">
+                                <i class="fas fa-times text-xl sm:text-2xl"></i>
+                            </button>
+                        </div>
+
+                        <div class="mb-6">
+                            <p class="text-gray-700 dark:text-gray-300 mb-4">
+                                Выберите традиции толкования снов для анализа отчёта. 
+                                Если не выбрать ни одну, будет использован комплексный анализ.
+                            </p>
+                            <div class="bg-yellow-100 dark:bg-yellow-900 border border-yellow-400 dark:border-yellow-700 text-yellow-800 dark:text-yellow-300 px-4 py-3 rounded-lg">
+                                <p class="text-sm">
+                                    <i class="fas fa-hourglass-half mr-2"></i>
+                                    <strong>Важно:</strong> Анализ может занять до 3 минут. После запуска вы будете перенаправлены на страницу результатов, где сможете отслеживать прогресс.
+                                </p>
+                            </div>
+                        </div>
+
+                        <form id="analysisForm" action="{{ route('reports.analyze', $report) }}" method="POST">
+                            @csrf
+                            
+                            <div class="mb-6">
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                                    Выберите традиции (необязательно):
+                                </label>
+                                <div class="grid grid-cols-2 lg:grid-cols-3 gap-3">
+                                    @php
+                                        $traditions = [
+                                            'freudian' => ['short' => 'Фрейдистская', 'full' => 'Фрейдистский анализ'],
+                                            'jungian' => ['short' => 'Юнгианская', 'full' => 'Юнгианский анализ'],
+                                            'cognitive' => ['short' => 'Когнитивная', 'full' => 'Когнитивная психология сна'],
+                                            'symbolic' => ['short' => 'Символическая', 'full' => 'Символическая трактовка'],
+                                            'shamanic' => ['short' => 'Шаманская', 'full' => 'Шаманистическая трактовка'],
+                                            'gestalt' => ['short' => 'Гештальт', 'full' => 'Гештальт-подход'],
+                                            'lucid_centered' => ['short' => 'Практика ОС', 'full' => 'Анализ осознанности'],
+                                            'eclectic' => ['short' => 'Комплексная', 'full' => 'Комплексный анализ'],
+                                        ];
+                                    @endphp
+                                    
+                                    @foreach($traditions as $key => $names)
+                                        <label class="flex items-center p-3 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                                            <input type="checkbox" 
+                                                   name="traditions[]" 
+                                                   value="{{ $key }}"
+                                                   class="rounded border-gray-300 text-purple-600 shadow-sm focus:ring-purple-500">
+                                            <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                                                <span class="tradition-short">{{ $names['short'] }}</span>
+                                                <span class="tradition-full">{{ $names['full'] }}</span>
+                                            </span>
+                                        </label>
+                                    @endforeach
+                                </div>
+                            </div>
+
+                            <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 mt-6">
+                                <button type="button" onclick="closeAnalysisModal()" class="w-full sm:flex-1 bg-gray-500 hover:bg-gray-700 text-white font-bold py-3 px-4 sm:px-6 rounded-lg transition-colors">
+                                    <i class="fas fa-times mr-2"></i>Отмена
+                                </button>
+                                <button type="submit" class="w-full sm:flex-1 bg-purple-500 hover:bg-purple-700 text-white font-bold py-3 px-4 sm:px-6 rounded-lg transition-colors" id="startAnalysisBtn">
+                                    <i class="fas fa-crystal-ball mr-2"></i>Начать анализ
+                                </button>
+                            </div>
+                        </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <script>
+                    function openAnalysisModal() {
+                        const modal = document.getElementById('analysisModal');
+                        modal.classList.remove('hidden');
+                        document.body.style.overflow = 'hidden';
+                        // Прокручиваем модалку наверх
+                        modal.scrollTop = 0;
+                    }
+
+                    function closeAnalysisModal() {
+                        document.getElementById('analysisModal').classList.add('hidden');
+                        document.body.style.overflow = '';
+                    }
+
+                    // Закрытие по клику вне модалки
+                    document.getElementById('analysisModal')?.addEventListener('click', function(e) {
+                        if (e.target === this) {
+                            closeAnalysisModal();
+                        }
+                    });
+
+                    // Закрытие по Escape
+                    document.addEventListener('keydown', function(e) {
+                        if (e.key === 'Escape') {
+                            closeAnalysisModal();
+                        }
+                    });
+
+                    // Обработка отправки формы
+                    document.getElementById('analysisForm')?.addEventListener('submit', function(e) {
+                        const btn = document.getElementById('startAnalysisBtn');
+                        btn.disabled = true;
+                        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Запуск анализа...';
+                    });
+                </script>
+            @endif
+        @endauth
     </body>
 </html>

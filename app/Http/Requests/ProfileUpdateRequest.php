@@ -86,6 +86,7 @@ class ProfileUpdateRequest extends FormRequest
             'bio' => ['nullable', 'string', 'max:1000'],
             'avatar' => ['nullable', 'string', 'max:255'],
             'diary_privacy' => ['required', 'in:public,private,friends'],
+            'comment_privacy' => ['required', 'in:all,friends,only_me,none'],
             'diary_name' => ['nullable', 'string', 'max:160'],
         ];
     }

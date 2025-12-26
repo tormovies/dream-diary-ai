@@ -134,6 +134,22 @@
         </div>
 
         <div class="form-group">
+            <label class="form-label" for="comment_privacy">
+                <i class="fas fa-comment"></i> {{ __('Кто может комментировать мои отчёты') }}
+            </label>
+            <select id="comment_privacy" 
+                    name="comment_privacy" 
+                    class="form-select">
+                <option value="all" {{ old('comment_privacy', $user->comment_privacy) === 'all' ? 'selected' : '' }}>Все</option>
+                <option value="friends" {{ old('comment_privacy', $user->comment_privacy) === 'friends' ? 'selected' : '' }}>Только друзья</option>
+                <option value="only_me" {{ old('comment_privacy', $user->comment_privacy) === 'only_me' ? 'selected' : '' }}>Только я</option>
+                <option value="none" {{ old('comment_privacy', $user->comment_privacy) === 'none' ? 'selected' : '' }}>Никто</option>
+            </select>
+            <div class="form-hint">Управление доступом к комментированию ваших отчётов</div>
+            <x-input-error :messages="$errors->get('comment_privacy')" class="mt-2" />
+        </div>
+
+        <div class="form-group">
             <label class="form-label" for="diary_name">
                 <i class="fas fa-book"></i> {{ __('Название дневника') }}
             </label>
