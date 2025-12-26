@@ -422,12 +422,9 @@
                                                 
                                                 <!-- Сны -->
                                                 <td class="px-4 py-3">
-                                                    <div class="flex items-start gap-2">
-                                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-300 whitespace-nowrap">
-                                                            <i class="fas fa-moon mr-1"></i>{{ $report->dreams->count() }}
-                                                        </span>
+                                                    <div class="flex items-start gap-2 flex-wrap">
                                                         @if($report->dreams->count() > 0)
-                                                            <div class="text-sm max-w-xs">
+                                                            <div class="text-sm max-w-xs flex items-center gap-2 flex-wrap">
                                                                 @php
                                                                     // Собираем все названия снов
                                                                     $dreamTitles = $report->dreams
@@ -439,6 +436,8 @@
                                                                     if(empty($dreamTitles)) {
                                                                         $dreamTitles = 'Без названия';
                                                                     }
+                                                                    
+                                                                    $commentsCount = $report->comments->count();
                                                                 @endphp
                                                                 <a href="{{ route('reports.show', $report) }}" 
                                                                    class="text-gray-900 dark:text-white hover:text-purple-600 dark:hover:text-purple-400 hover:underline line-clamp-2">
@@ -447,6 +446,14 @@
                                                                         <span class="text-gray-400 dark:text-gray-500">...</span>
                                                                     @endif
                                                                 </a>
+                                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-300 whitespace-nowrap">
+                                                                    <i class="fas fa-moon mr-1"></i>{{ $report->dreams->count() }}
+                                                                </span>
+                                                                @if($commentsCount > 0)
+                                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-300 whitespace-nowrap">
+                                                                        <i class="fas fa-comment mr-1"></i>{{ $commentsCount }}
+                                                                    </span>
+                                                                @endif
                                                             </div>
                                                         @endif
                                                     </div>
