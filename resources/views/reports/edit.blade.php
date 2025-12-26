@@ -338,8 +338,12 @@
                         <label class="form-label required">Описание</label>
                         <textarea name="dreams[${dreamIndex}][description]" 
                                   rows="4"
-                                  class="form-textarea"
+                                  class="form-textarea dream-description"
+                                  data-dream-index="${dreamIndex}"
+                                  oninput="checkDreamSeries(this)"
                                   required>${description}</textarea>
+                        <div class="form-hint">Если хотите написать несколько снов в одно окно - используйте разделитель три и более тире (-----)</div>
+                        <div id="dream-count-${dreamIndex}" class="mt-2 text-sm font-semibold" style="display: none;"></div>
                     </div>
                     
                     <div class="form-group">
@@ -502,6 +506,34 @@
                 }
                 
                 localStorage.setItem('theme', newTheme);
+            }
+
+            // Проверка на серию снов (разделитель ---)
+            function checkDreamSeries(textarea) {
+                const text = textarea.value;
+                const dreamIndex = textarea.dataset.dreamIndex;
+                const countDiv = document.getElementById(`dream-count-${dreamIndex}`);
+                
+                if (!countDiv) return;
+                
+                // Проверяем наличие разделителя (3 и более дефисов)
+                const hasSeparator = /---+/.test(text);
+                
+                if (hasSeparator) {
+                    // Разбиваем текст по разделителю
+                    const parts = text.split(/---+/).filter(part => part.trim() !== '');
+                    const dreamCount = parts.length;
+                    
+                    if (dreamCount > 1) {
+                        countDiv.style.display = 'block';
+                        countDiv.className = 'mt-2 text-sm font-semibold text-green-600 dark:text-green-400';
+                        countDiv.innerHTML = `<i class="fas fa-info-circle mr-1"></i>Обнаружено ${dreamCount} снов в этом окне (будут разделены при сохранении)`;
+                    } else {
+                        countDiv.style.display = 'none';
+                    }
+                } else {
+                    countDiv.style.display = 'none';
+                }
             }
         </script>
     </body>

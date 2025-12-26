@@ -8,6 +8,7 @@ use App\Http\Requests\UpdateReportRequest;
 use App\Models\Report;
 use App\Models\Dream;
 use App\Models\Tag;
+use App\Models\DreamInterpretation;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Http\RedirectResponse;
@@ -73,7 +74,7 @@ class ReportController extends Controller
     public function index(Request $request): View
     {
         $perPage = $request->get('per_page', 20);
-        $query = auth()->user()->reports()->with(['dreams', 'tags']);
+        $query = auth()->user()->reports()->with(['dreams', 'tags', 'analysis']);
 
         // Поиск по тексту
         if ($request->filled('search')) {
@@ -229,6 +230,9 @@ class ReportController extends Controller
 
         // SEO данные
         $seo = SeoHelper::get('dashboard');
+        
+        // Поисковый запрос для отображения контекста
+        $searchQuery = $request->filled('search') ? $request->search : null;
 
         return view('dashboard', compact(
             'reports', 
@@ -239,7 +243,8 @@ class ReportController extends Controller
             'friendsOnline',
             'popularTags',
             'dreamDictionary',
-            'seo'
+            'seo',
+            'searchQuery'
         ));
     }
 
@@ -252,11 +257,11 @@ class ReportController extends Controller
         $user = auth()->user();
         
         // Базовый запрос - только опубликованные отчеты
+        // Учитываем иерархию: diary_privacy (главное) -> access_level
         $query = Report::with(['user', 'dreams', 'tags'])
-            ->where('status', 'published')
-            ->where('access_level', '!=', 'none');
+            ->where('status', 'published');
         
-        // Фильтрация по доступу
+        // Фильтрация по доступу с учетом diary_privacy
         if ($user) {
             // Получаем ID друзей
             $friendIds = [];
@@ -273,17 +278,39 @@ class ReportController extends Controller
             })->toArray();
             
             $query->where(function ($q) use ($user, $friendIds) {
-                $q->where('access_level', 'all')
-                  ->orWhere(function ($subQ) use ($friendIds) {
-                      if (!empty($friendIds)) {
-                          $subQ->whereIn('user_id', $friendIds)
-                               ->where('access_level', 'friends');
-                      }
+                // 1. Свои отчеты
+                $q->where('user_id', $user->id)
+                  // 2. Публичные дневники с правильным access_level
+                  ->orWhere(function ($publicQuery) use ($friendIds) {
+                      $publicQuery->whereHas('user', function ($uq) {
+                          $uq->where('diary_privacy', 'public');
+                      })
+                      ->where(function ($accessQuery) use ($friendIds) {
+                          $accessQuery->where('access_level', 'all')
+                                      ->orWhere(function ($friendQuery) use ($friendIds) {
+                                          if (!empty($friendIds)) {
+                                              $friendQuery->where('access_level', 'friends')
+                                                         ->whereIn('user_id', $friendIds);
+                                          }
+                                      });
+                      });
                   })
-                  ->orWhere('user_id', $user->id);
+                  // 3. Дневники друзей (diary_privacy = 'friends')
+                  ->orWhere(function ($friendDiaryQuery) use ($friendIds) {
+                      if (!empty($friendIds)) {
+                          $friendDiaryQuery->whereHas('user', function ($uq) {
+                              $uq->where('diary_privacy', 'friends');
+                          })
+                          ->whereIn('user_id', $friendIds);
+                      }
+                  });
             });
         } else {
-            $query->where('access_level', 'all');
+            // Для неавторизованных: только публичные дневники + access_level = 'all'
+            $query->whereHas('user', function ($userQuery) {
+                $userQuery->where('diary_privacy', 'public');
+            })
+            ->where('access_level', 'all');
         }
 
         // Поиск по тексту
@@ -686,8 +713,44 @@ class ReportController extends Controller
                 $autoTitleCreated = true;
             }
 
+            // Обрабатываем каждое окно сна - проверяем на серию
+            $processedDreams = [];
+            $seriesCount = 0;
+            
+            foreach ($dreamsData as $dreamData) {
+                if (!isset($dreamData['description']) || !isset($dreamData['dream_type'])) {
+                    continue;
+                }
+                
+                $description = $dreamData['description'];
+                $dreamType = $dreamData['dream_type'];
+                $title = isset($dreamData['title']) ? trim($dreamData['title']) : '';
+                
+                // Проверяем, является ли это серией снов
+                if ($this->isDreamSeries($description)) {
+                    // Разбиваем на отдельные сны
+                    $splitDreams = $this->splitDreams($description);
+                    $seriesCount += count($splitDreams);
+                    
+                    foreach ($splitDreams as $splitIndex => $splitDescription) {
+                        $processedDreams[] = [
+                            'title' => ($splitIndex === 0) ? $title : '', // Название только первому сну серии
+                            'description' => $splitDescription,
+                            'dream_type' => $dreamType,
+                        ];
+                    }
+                } else {
+                    // Обычный сон
+                    $processedDreams[] = [
+                        'title' => $title,
+                        'description' => $description,
+                        'dream_type' => $dreamType,
+                    ];
+                }
+            }
+            
             // Создаем новые сны
-            foreach ($dreamsData as $index => $dreamData) {
+            foreach ($processedDreams as $index => $dreamData) {
                 // Обрабатываем title: если пустой, только пробелы или строка "null" - устанавливаем null
                 $title = isset($dreamData['title']) ? trim($dreamData['title']) : '';
                 // Проверяем, что это не строка "null"
@@ -705,6 +768,11 @@ class ReportController extends Controller
                     'dream_type' => $dreamData['dream_type'],
                     'order' => $index,
                 ]);
+            }
+            
+            // Уведомляем пользователя, если были разделены сны
+            if ($seriesCount > 0) {
+                session()->flash('info', "Некоторые описания были автоматически разделены на несколько снов по разделителю (---).");
             }
             
             // Если создали автоматическое название, уведомляем пользователя
@@ -772,5 +840,470 @@ class ReportController extends Controller
 
         return redirect()->route('dashboard')
             ->with('success', 'Отчет снят с публикации');
+    }
+
+    /**
+     * Анализ отчёта через DeepSeek
+     */
+    public function analyze(Request $request, Report $report): RedirectResponse
+    {
+        \Log::info('Analyze method called', ['report_id' => $report->id, 'user_id' => auth()->id()]);
+        
+        // Проверяем права доступа
+        if ($report->user_id !== auth()->id() && !auth()->user()->isAdmin()) {
+            \Log::warning('Access denied for analysis', ['report_user' => $report->user_id, 'current_user' => auth()->id()]);
+            abort(403, 'У вас нет прав для анализа этого отчёта');
+        }
+
+        // Проверяем, что отчёт опубликован
+        if ($report->status !== 'published') {
+            \Log::info('Report is not published', ['status' => $report->status]);
+            return back()->with('error', 'Можно анализировать только опубликованные отчёты');
+        }
+
+        // Проверяем, что у отчёта нет анализа
+        if ($report->hasAnalysis()) {
+            \Log::info('Report already has analysis', ['analysis_id' => $report->analysis_id]);
+            return redirect()->route('reports.analysis', $report)
+                ->with('info', 'У этого отчёта уже есть анализ');
+        }
+
+        // Валидация традиций
+        $validated = $request->validate([
+            'traditions' => 'nullable|array',
+            'traditions.*' => 'in:freudian,jungian,cognitive,symbolic,shamanic,gestalt,lucid_centered,eclectic',
+        ]);
+
+        // Если традиции не выбраны, используем комплексный анализ
+        $traditions = $validated['traditions'] ?? ['eclectic'];
+
+        // Загружаем сны отчёта
+        $report->load('dreams');
+
+        // Определяем тип анализа: серия или одиночный
+        $dreamsCount = $report->dreams->count();
+        
+        if ($dreamsCount === 0) {
+            return back()->with('error', 'В отчёте нет снов для анализа');
+        }
+
+        // Проверяем, что все сны не пустые
+        $validDreams = $report->dreams->filter(function ($dream) {
+            return !empty(trim($dream->description));
+        });
+
+        if ($validDreams->count() === 0) {
+            return back()->with('error', 'Все сны в отчёте пустые');
+        }
+
+        $isSeries = $dreamsCount > 1;
+
+        // Формируем данные для анализа
+        $dreamDescriptions = [];
+        foreach ($report->dreams as $dream) {
+            if (!empty(trim($dream->description))) {
+                $dreamDescriptions[] = trim($dream->description);
+            }
+        }
+
+        // Для DeepSeek нужен один текст (для логирования и сохранения)
+        $dreamDescriptionFull = implode("\n---\n", $dreamDescriptions);
+        
+        // Определяем тип анализа
+        $analysisType = $isSeries ? 'series_integrated' : 'single';
+
+        // Создаём запись анализа через DreamAnalyzerController
+        try {
+            // Проверяем наличие полей в БД
+            $hasColumn = DB::getSchemaBuilder()->hasColumn('reports', 'analysis_id');
+            \Log::info('DB column check', ['has_analysis_id' => $hasColumn]);
+            
+            if (!$hasColumn) {
+                \Log::error('Migration not executed - analysis_id column missing');
+                return back()->with('error', 'Необходимо выполнить миграцию: php artisan migrate');
+            }
+            
+            \Log::info('Starting analysis', [
+                'traditions' => $traditions,
+                'dreams_count' => $dreamsCount,
+                'is_series' => $isSeries,
+                'analysis_type' => $analysisType
+            ]);
+            
+            // Генерируем уникальный хеш
+            $hash = DreamInterpretation::generateHash();
+            
+            // Создаём запись анализа со статусом pending
+            $interpretation = DreamInterpretation::create([
+                'hash' => $hash,
+                'user_id' => auth()->id(),
+                'ip_address' => request()->ip(),
+                'dream_description' => $dreamDescriptionFull,
+                'context' => null,
+                'traditions' => $traditions,
+                'analysis_type' => $analysisType,
+                'processing_status' => 'pending',
+            ]);
+            
+            \Log::info('Created interpretation (async)', [
+                'id' => $interpretation->id,
+                'hash' => $hash,
+                'dreams_count' => $dreamsCount,
+                'is_series' => $isSeries
+            ]);
+            
+            // Связываем анализ с отчётом
+            DB::transaction(function () use ($report, $interpretation) {
+                $report->analysis_id = $interpretation->id;
+                $report->analyzed_at = now();
+                $report->save();
+                
+                // Связываем отчёт с анализом (обратная связь)
+                $interpretation->report_id = $report->id;
+                $interpretation->save();
+            });
+            
+            \Log::info('Report linked to interpretation (async)', [
+                'report_id' => $report->id,
+                'interpretation_id' => $interpretation->id
+            ]);
+            
+            // Редирект на страницу анализа отчёта (анализ запущен, обрабатывается асинхронно)
+            return redirect()->route('reports.analysis', $report);
+                
+        } catch (\Exception $e) {
+            return back()->with('error', 'Ошибка при анализе: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Просмотр анализа отчёта
+     */
+    public function showAnalysis(Report $report): View|RedirectResponse
+    {
+        // Проверяем права доступа через Policy (учитывает diary_privacy + access_level)
+        // Анализ наследует доступ от отчета
+        if (!\Illuminate\Support\Facades\Gate::allows('view', $report)) {
+            $owner = $report->user;
+            
+            // Определяем причину отказа
+            if (!auth()->check()) {
+                session()->flash('access_reason', 'not_authenticated');
+            } elseif ($owner->diary_privacy === 'private') {
+                session()->flash('access_reason', 'private_diary');
+            } elseif ($owner->diary_privacy === 'friends' || $report->access_level === 'friends') {
+                session()->flash('access_reason', 'friends_only');
+            }
+            session()->flash('owner_name', $owner->nickname);
+            session()->flash('owner_id', $owner->id);
+            
+            abort(403);
+        }
+
+        // Проверяем наличие анализа
+        if (!$report->hasAnalysis()) {
+            return redirect()->route('reports.show', $report)
+                ->with('error', 'У этого отчёта нет анализа');
+        }
+
+        // Загружаем анализ с результатом
+        $report->load(['analysis.result', 'dreams']);
+        
+        $interpretation = $report->analysis;
+        
+        // НЕ запускаем обработку здесь - страница должна загружаться быстро
+        // Обработка запустится автоматически через фоновый AJAX запрос
+        
+        // Если обработка застряла (более 5 минут в processing) - сбрасываем на pending
+        if ($interpretation->processing_status === 'processing' && 
+            $interpretation->processing_started_at && 
+            $interpretation->processing_started_at->diffInMinutes(now()) > 5) {
+            \Log::warning('Analysis processing timeout', [
+                'interpretation_id' => $interpretation->id,
+                'started_at' => $interpretation->processing_started_at
+            ]);
+            $interpretation->update(['processing_status' => 'pending', 'processing_started_at' => null]);
+        }
+        
+        // Генерируем SEO данные
+        $seo = \App\Helpers\SeoHelper::forReportAnalysis($report, $interpretation);
+        
+        // Статистика для sidebar (как в DreamAnalyzerController)
+        $user = auth()->user();
+        $userStats = null;
+        $todayReportsCount = 0;
+        
+        // Общая статистика для гостей
+        $stats = [
+            'users' => \App\Models\User::count(),
+            'reports' => \App\Models\Report::count(),
+            'dreams' => \App\Models\Dream::count(),
+            'comments' => \App\Models\Comment::count(),
+            'tags' => \App\Models\Tag::count(),
+        ];
+        
+        if ($user) {
+            $userReportsCount = $user->reports()->count();
+            $userDreamsCount = $user->reports()->withCount('dreams')->get()->sum('dreams_count');
+            
+            // Друзья - используем friendships
+            $friendsCount = $user->friendships()->count();
+            
+            // Средняя активность
+            $monthsSinceRegistration = $user->created_at->diffInMonths(now());
+            if ($monthsSinceRegistration < 1) {
+                $monthsSinceRegistration = 1;
+            }
+            $avgDreamsPerMonth = round($userReportsCount / $monthsSinceRegistration, 1);
+            
+            $userStats = [
+                'reports' => $userReportsCount,
+                'dreams' => $userDreamsCount,
+                'friends' => $friendsCount,
+                'avg_per_month' => $avgDreamsPerMonth,
+            ];
+            
+            $todayReportsCount = \App\Models\Report::whereDate('report_date', today())->where('status', 'published')->count();
+        }
+        
+        return view('reports.analysis', compact('report', 'interpretation', 'seo', 'userStats', 'todayReportsCount', 'stats'));
+    }
+
+    /**
+     * Запустить обработку анализа (вызывается через AJAX)
+     */
+    public function processAnalysis(Report $report)
+    {
+        // Проверяем права доступа
+        if ($report->user_id !== auth()->id() && !auth()->user()->isAdmin()) {
+            return response()->json(['error' => 'Access denied'], 403);
+        }
+
+        // Проверяем наличие анализа
+        if (!$report->hasAnalysis()) {
+            return response()->json(['error' => 'No analysis found'], 404);
+        }
+
+        $interpretation = $report->analysis;
+
+        // Проверяем статус
+        if ($interpretation->processing_status !== 'pending') {
+            return response()->json([
+                'status' => $interpretation->processing_status,
+                'message' => 'Analysis is already ' . $interpretation->processing_status
+            ]);
+        }
+
+        // Запускаем обработку
+        try {
+            $this->processAnalysisAsync($interpretation, $report);
+            
+            return response()->json([
+                'status' => 'completed',
+                'message' => 'Analysis completed successfully'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('AJAX analysis processing failed', [
+                'interpretation_id' => $interpretation->id,
+                'error' => $e->getMessage()
+            ]);
+            
+            return response()->json([
+                'status' => 'failed',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Отвязать анализ от отчёта (не удаляя сам анализ)
+     */
+    public function detachAnalysis(Report $report): RedirectResponse
+    {
+        // Проверяем права доступа
+        if ($report->user_id !== auth()->id() && !auth()->user()->isAdmin()) {
+            abort(403, 'У вас нет прав для управления анализом этого отчёта');
+        }
+
+        // Проверяем наличие анализа
+        if (!$report->hasAnalysis()) {
+            return back()->with('error', 'У этого отчёта нет анализа');
+        }
+
+        // Отвязываем анализ
+        $interpretation = $report->analysis;
+        
+        $report->analysis_id = null;
+        $report->analyzed_at = null;
+        $report->save();
+        
+        // Отвязываем отчёт от анализа (обратная связь)
+        if ($interpretation) {
+            $interpretation->report_id = null;
+            $interpretation->save();
+        }
+
+        return redirect()->route('reports.show', $report)
+            ->with('success', 'Анализ отвязан от отчёта. Теперь можно создать новый анализ');
+    }
+    
+    /**
+     * Асинхронная обработка анализа
+     */
+    private function processAnalysisAsync(DreamInterpretation $interpretation, Report $report): void
+    {
+        try {
+            // Проверяем, не обрабатывается ли уже
+            if ($interpretation->processing_status === 'processing') {
+                return;
+            }
+            
+            // Устанавливаем статус processing
+            $interpretation->update([
+                'processing_status' => 'processing',
+                'processing_started_at' => now()
+            ]);
+            
+            \Log::info('Starting async analysis', [
+                'interpretation_id' => $interpretation->id,
+                'report_id' => $report->id
+            ]);
+            
+            // Получаем данные снов из отчёта
+            $dreams = $report->dreams;
+            $isSeries = $dreams->count() > 1;
+            
+            $dreamDescriptions = [];
+            foreach ($dreams as $dream) {
+                if (!empty(trim($dream->description))) {
+                    $dreamDescriptions[] = trim($dream->description);
+                }
+            }
+            
+            $dreamDescriptionFull = implode("\n---\n", $dreamDescriptions);
+            
+            // Выполняем анализ через DeepSeek API
+            set_time_limit(180); // 3 минуты
+            $deepSeekService = new \App\Services\DeepSeekService();
+            
+            $result = $deepSeekService->analyzeDream(
+                $dreamDescriptionFull,
+                null, // context
+                $interpretation->traditions ?? [],
+                $interpretation->analysis_type,
+                $isSeries ? $dreamDescriptions : null
+            );
+            
+            // Обновляем запись с результатами
+            $interpretation->update([
+                'analysis_data' => $result['analysis_data'] ?? null,
+                'raw_api_request' => $result['raw_request'] ?? null,
+                'raw_api_response' => $result['raw_response'] ?? null,
+                'api_error' => $result['error'] ?? null,
+                'processing_status' => !empty($result['analysis_data']) ? 'completed' : 'failed',
+            ]);
+            
+            \Log::info('Async analysis completed', [
+                'interpretation_id' => $interpretation->id,
+                'has_result' => !empty($result['analysis_data'])
+            ]);
+            
+            // Обрабатываем и сохраняем нормализованные данные
+            if (!empty($result['analysis_data'])) {
+                $this->saveNormalizedData($interpretation, $result['analysis_data']);
+                \Log::info('Normalized data saved (async)', ['interpretation_id' => $interpretation->id]);
+            }
+            
+        } catch (\Exception $e) {
+            \Log::error('Async analysis failed', [
+                'interpretation_id' => $interpretation->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            $interpretation->update([
+                'processing_status' => 'failed',
+                'api_error' => $e->getMessage()
+            ]);
+        }
+    }
+    
+    /**
+     * Сохраняет нормализованные данные анализа
+     */
+    private function saveNormalizedData(DreamInterpretation $interpretation, array $rawAnalysisData): void
+    {
+        try {
+            // Определяем версию формата
+            $version = \App\Services\DreamAnalysisAdapters\DreamAnalysisAdapterFactory::detectVersion($rawAnalysisData);
+            
+            // Получаем адаптер и нормализуем данные
+            $adapter = \App\Services\DreamAnalysisAdapters\DreamAnalysisAdapterFactory::getAdapter($version);
+            $normalized = $adapter->normalize($rawAnalysisData);
+
+            // Сохраняем нормализованные данные
+            $result = \App\Models\DreamInterpretationResult::create([
+                'dream_interpretation_id' => $interpretation->id,
+                'type' => $normalized['type'],
+                'format_version' => $normalized['version'],
+                'traditions' => $normalized['traditions'],
+                'analysis_type' => $normalized['analysis_type'],
+                'recommendations' => $normalized['recommendations'],
+            ]);
+
+            if ($normalized['type'] === 'single') {
+                // Сохраняем данные для одиночного сна
+                $singleAnalysis = $normalized['single_analysis'];
+                $result->update([
+                    'dream_title' => $singleAnalysis['dream_title'] ?? null,
+                    'dream_detailed' => $singleAnalysis['dream_detailed'] ?? null,
+                    'dream_type' => $singleAnalysis['dream_type'] ?? null,
+                    'key_symbols' => $singleAnalysis['key_symbols'] ?? [],
+                    'unified_locations' => $singleAnalysis['unified_locations'] ?? [],
+                    'key_tags' => $singleAnalysis['key_tags'] ?? [],
+                    'summary_insight' => $singleAnalysis['summary_insight'] ?? null,
+                    'emotional_tone' => $singleAnalysis['emotional_tone'] ?? null,
+                ]);
+            } else {
+                // Сохраняем данные для серии снов
+                $seriesAnalysis = $normalized['series_analysis'];
+                $result->update([
+                    'series_title' => $seriesAnalysis['series_title'] ?? null,
+                    'overall_theme' => $seriesAnalysis['overall_theme'] ?? null,
+                    'emotional_arc' => $seriesAnalysis['emotional_arc'] ?? null,
+                    'key_connections' => $seriesAnalysis['key_connections'] ?? [],
+                ]);
+
+                // Сохраняем отдельные сны в серии
+                foreach ($seriesAnalysis['dreams'] ?? [] as $dreamData) {
+                    \App\Models\DreamInterpretationSeriesDream::create([
+                        'dream_interpretation_result_id' => $result->id,
+                        'dream_number' => $dreamData['dream_number'] ?? 1,
+                        'dream_title' => $dreamData['dream_title'] ?? null,
+                        'dream_detailed' => $dreamData['dream_detailed'] ?? null,
+                        'dream_type' => $dreamData['dream_type'] ?? null,
+                        'key_symbols' => $dreamData['key_symbols'] ?? [],
+                        'unified_locations' => $dreamData['unified_locations'] ?? [],
+                        'key_tags' => $dreamData['key_tags'] ?? [],
+                        'summary_insight' => $dreamData['summary_insight'] ?? null,
+                        'emotional_tone' => $dreamData['emotional_tone'] ?? null,
+                        'connection_to_previous' => $dreamData['connection_to_previous'] ?? null,
+                    ]);
+                }
+            }
+
+            \Log::info('Normalized data saved successfully', [
+                'interpretation_id' => $interpretation->id,
+                'result_id' => $result->id,
+                'type' => $normalized['type']
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Failed to save normalized data', [
+                'interpretation_id' => $interpretation->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            // Не бросаем исключение, чтобы не прерывать процесс создания анализа
+        }
     }
 }
