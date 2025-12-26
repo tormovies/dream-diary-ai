@@ -47,20 +47,25 @@
             <main class="space-y-6 w-full" 
                   x-data="{ viewMode: localStorage.getItem('reportsViewMode') || 'grid' }"
                   x-init="
-                    // Если на мобильных и выбрана таблица - переключаем на плитку
-                    if (window.innerWidth < 768 && viewMode === 'table') {
-                        viewMode = 'grid';
-                        localStorage.setItem('reportsViewMode', 'grid');
-                    }
-                    // Следим за изменениями
-                    $watch('viewMode', value => localStorage.setItem('reportsViewMode', value));
-                    // Следим за изменением размера окна
-                    window.addEventListener('resize', () => {
+                    // Функция проверки и переключения на плитку для мобильных
+                    const checkMobileView = () => {
                         if (window.innerWidth < 768 && viewMode === 'table') {
                             viewMode = 'grid';
-                            localStorage.setItem('reportsViewMode', 'grid');
+                        }
+                    };
+                    
+                    // Проверяем при загрузке
+                    checkMobileView();
+                    
+                    // Следим за изменениями viewMode и сохраняем только если не мобильные
+                    $watch('viewMode', value => {
+                        if (window.innerWidth >= 768 || value === 'grid') {
+                            localStorage.setItem('reportsViewMode', value);
                         }
                     });
+                    
+                    // Следим за изменением размера окна
+                    window.addEventListener('resize', checkMobileView);
                   ">
                     <!-- Заголовок и кнопка создания -->
                     <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
