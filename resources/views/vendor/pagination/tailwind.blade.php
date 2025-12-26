@@ -25,10 +25,9 @@
 
         </div>
 
-        <div class="hidden sm:flex sm:flex-col sm:gap-4 sm:items-center sm:w-full">
-
-            <div class="flex justify-center w-full">
-                <span class="inline-flex rtl:flex-row-reverse shadow-sm rounded-md">
+        <div class="hidden sm:block sm:w-full">
+            <div style="text-align: center; margin-bottom: 1rem; display: block;">
+                <span class="inline-flex rtl:flex-row-reverse shadow-sm rounded-md" style="display: inline-flex;">
 
                     {{-- Previous Page Link --}}
                     @if ($paginator->onFirstPage())
@@ -88,24 +87,23 @@
                             </span>
                         </span>
                     @endif
-                    </span>
-                </div>
-
-                <div style="display: block; text-align: center; margin-top: 1rem;">
-                    <p class="text-sm text-gray-700 leading-5 dark:text-gray-400">
-                        Показано
-                        @if ($paginator->firstItem())
-                            <span class="font-medium">{{ $paginator->firstItem() }}</span>
-                            -
-                            <span class="font-medium">{{ $paginator->lastItem() }}</span>
-                        @else
-                            {{ $paginator->count() }}
-                        @endif
-                        из
-                        <span class="font-medium">{{ $paginator->total() }}</span>
-                        результатов
-                    </p>
-                </div>
+                </span>
+            </div>
+            
+            <div style="text-align: center; margin-top: 1rem; display: block;">
+                <p class="text-sm text-gray-700 leading-5 dark:text-gray-400">
+                    Показано
+                    @if ($paginator->firstItem())
+                        <span class="font-medium">{{ $paginator->firstItem() }}</span>
+                        -
+                        <span class="font-medium">{{ $paginator->lastItem() }}</span>
+                    @else
+                        {{ $paginator->count() }}
+                    @endif
+                    из
+                    <span class="font-medium">{{ $paginator->total() }}</span>
+                    результатов
+                </p>
             </div>
         </div>
     </nav>

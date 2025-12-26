@@ -241,7 +241,7 @@
                 </aside>
                 
                 <!-- Центральная панель -->
-                <main class="space-y-6 min-w-0">
+                <main class="space-y-6 min-w-0 overflow-hidden">
                     <!-- Заголовок и форма поиска -->
                     <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
                         <h2 class="text-2xl font-bold mb-4 text-purple-600 dark:text-purple-400">Поиск сновидений</h2>
