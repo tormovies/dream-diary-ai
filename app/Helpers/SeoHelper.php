@@ -266,6 +266,73 @@ class SeoHelper
     }
     
     /**
+     * Получить SEO для анализа отчёта
+     */
+    public static function forReportAnalysis($report, $interpretation): array
+    {
+        // Приоритет: сначала нормализованные данные
+        $result = $interpretation->result ?? null;
+        
+        // Определяем тип анализа
+        $isSeries = $result ? ($result->type === 'series') : ($report->dreams->count() > 1);
+        
+        if ($isSeries) {
+            // Серия снов
+            $dreamTitle = $result ? ($result->series_title ?? 'Анализ серии снов') : 'Анализ серии снов';
+            $coreMessage = $result ? ($result->overall_theme ?? '') : '';
+            $traditions = $result ? ($result->traditions ?? []) : ($interpretation->traditions ?? []);
+        } else {
+            // Одиночный сон
+            $dreamTitle = $result ? ($result->dream_title ?? 'Анализ сна') : 'Анализ сна';
+            $coreMessage = $result ? ($result->summary_insight ?? '') : '';
+            $traditions = $result ? ($result->traditions ?? []) : ($interpretation->traditions ?? []);
+        }
+        
+        // Если нет core message, берем из dream_description
+        if (empty($coreMessage)) {
+            $coreMessage = mb_substr($interpretation->dream_description ?? '', 0, 160);
+        }
+        
+        // Традиции
+        $traditionsText = '';
+        if (!empty($traditions) && is_array($traditions)) {
+            $traditionNames = [
+                'freudian' => 'Фрейдистский',
+                'jungian' => 'Юнгианский',
+                'cognitive' => 'Когнитивный',
+                'symbolic' => 'Символический',
+                'shamanic' => 'Шаманистический',
+                'gestalt' => 'Гештальт',
+                'eclectic' => 'Комплексный',
+            ];
+            
+            $translatedTraditions = array_map(function($t) use ($traditionNames) {
+                return $traditionNames[strtolower($t)] ?? ucfirst($t);
+            }, $traditions);
+            
+            $traditionsText = implode(', ', $translatedTraditions);
+        }
+        
+        // Формируем title и description
+        $dreamWord = $isSeries ? 'снов' : 'сна';
+        $title = 'Толкование ' . $dreamWord . ' - ' . $dreamTitle . ' | ' . config('app.name');
+        
+        $description = mb_substr($coreMessage, 0, 160);
+        
+        $h1Text = $isSeries ? 'Расшифровка снов' : 'Расшифровка сна';
+        
+        return [
+            'title' => $title,
+            'description' => $description,
+            'h1' => $h1Text,
+            'og_title' => 'Толкование ' . $dreamWord . ' - ' . $dreamTitle,
+            'og_description' => $description,
+            'og_type' => 'article',
+            'canonical' => route('reports.analysis', $report),
+        ];
+    }
+
+    /**
      * Получить SEO для результата анализа сна
      */
     public static function forDreamAnalyzerResult($interpretation): array
@@ -435,6 +502,17 @@ class SeoHelper
         return $seoResult;
     }
 }
+
+
+
+
+
+
+
+
+
+
+
 
 
 
