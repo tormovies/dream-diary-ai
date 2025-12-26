@@ -623,7 +623,7 @@
                                                             @else border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300
                                                             @endif">
                                                             <i class="fas @if($report->access_level === 'all') fa-globe @elseif($report->access_level === 'friends') fa-user-friends @else fa-lock @endif mr-1"></i>
-                                                            @if($report->access_level === 'all') Все
+                                                            @if($report->access_level === 'all') Всем
                                                             @elseif($report->access_level === 'friends') Друзьям
                                                             @else Никому
                                                             @endif
