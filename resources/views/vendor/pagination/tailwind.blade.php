@@ -91,8 +91,8 @@
                     </span>
                 </div>
 
-                <div class="flex justify-center w-full">
-                    <p class="text-sm text-gray-700 leading-5 dark:text-gray-400 text-center">
+                <div style="display: block; text-align: center; margin-top: 1rem;">
+                    <p class="text-sm text-gray-700 leading-5 dark:text-gray-400">
                         Показано
                         @if ($paginator->firstItem())
                             <span class="font-medium">{{ $paginator->firstItem() }}</span>
