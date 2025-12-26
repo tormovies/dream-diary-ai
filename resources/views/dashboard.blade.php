@@ -360,7 +360,7 @@
                         </div>
 
                         <!-- Вид таблицей (только на десктопе) -->
-                        <div class="hidden bg-white dark:bg-gray-800 rounded-2xl overflow-hidden card-shadow border border-gray-200 dark:border-gray-700" :class="{ 'md:block': viewMode === 'table' }">
+                        <div x-show="viewMode === 'table'" class="hidden md:block bg-white dark:bg-gray-800 rounded-2xl overflow-hidden card-shadow border border-gray-200 dark:border-gray-700">
                             <div class="overflow-x-auto">
                                 <table class="w-full">
                                     <thead class="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
