@@ -25,9 +25,9 @@
 
         </div>
 
-        <div class="hidden sm:block sm:w-full">
-            <div style="text-align: center; margin-bottom: 1rem; display: block;">
-                <span class="inline-flex rtl:flex-row-reverse shadow-sm rounded-md" style="display: inline-flex;">
+        <div class="hidden sm:block sm:w-full" style="display: block !important;">
+            <div style="text-align: center; margin-bottom: 1rem; display: block !important;">
+                <span class="inline-flex rtl:flex-row-reverse shadow-sm rounded-md">
 
                     {{-- Previous Page Link --}}
                     @if ($paginator->onFirstPage())

@@ -1,0 +1,18 @@
+Update: Template optimization and UI improvements
+
+- Add custom favicon with moon and stars theme (SVG + ICO)
+- Restore welcome.blade.php with diary name display in feed
+- Fix statistics page layout (2-column grid for activity charts)
+- Add global CSS styles to app.css (gradients, shadows, grids)
+- Create reusable Blade components for future optimization:
+  * layout.blade.php - unified layout template
+  * welcome-card.blade.php - welcome card component
+  * sidebar-menu.blade.php - navigation menu component
+  * user-card.blade.php - user profile card
+  * report-card-row.blade.php - compact feed row
+  * sidebar.blade.php - sidebar wrapper
+
+Changes improve code maintainability and prepare for template optimization.
+
+
+

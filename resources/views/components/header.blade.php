@@ -65,12 +65,12 @@
                 <a href="{{ route('dream-analyzer.create') }}" class="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors">
                     <i class="fas fa-magic mr-2"></i>Толкование снов
                 </a>
+                <a href="{{ route('reports.search') }}" class="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors">
+                    <i class="fas fa-search mr-2"></i>Поиск
+                </a>
                 @auth
                     <a href="{{ route('statistics.index') }}" class="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors">
                         <i class="fas fa-chart-bar mr-2"></i>Статистика
-                    </a>
-                    <a href="{{ route('reports.search') }}" class="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors">
-                        <i class="fas fa-search mr-2"></i>Поиск
                     </a>
                     <a href="{{ route('users.search') }}" class="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors">
                         <i class="fas fa-user-friends mr-2"></i>Сообщество
