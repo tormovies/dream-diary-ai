@@ -594,16 +594,16 @@
                                                 
                                                 <!-- Статус (кнопка публикации) -->
                                                 <td class="px-4 py-3 whitespace-nowrap">
-                                                    @if($report->status === 'draft')
-                                                        <form action="{{ route('reports.publish', $report) }}" method="POST" class="inline">
-                                                            @csrf
-                                                            <button type="submit" 
-                                                                    class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors">
-                                                                <i class="fas fa-eye mr-1"></i>Опубликовать
-                                                            </button>
-                                                        </form>
-                                                    @else
-                                                        <div class="flex items-center gap-2">
+                                                    <div class="flex items-center gap-2">
+                                                        @if($report->status === 'draft')
+                                                            <form action="{{ route('reports.publish', $report) }}" method="POST" class="inline">
+                                                                @csrf
+                                                                <button type="submit" 
+                                                                        class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors">
+                                                                    <i class="fas fa-eye mr-1"></i>Опубликовать
+                                                                </button>
+                                                            </form>
+                                                        @else
                                                             <span class="inline-flex items-center text-green-600 dark:text-green-400">
                                                                 <i class="fas fa-check-circle text-lg"></i>
                                                             </span>
@@ -614,8 +614,21 @@
                                                                     Снять с публикации
                                                                 </button>
                                                             </form>
-                                                        </div>
-                                                    @endif
+                                                        @endif
+                                                        
+                                                        <!-- Информация о доступе -->
+                                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border-2
+                                                            @if($report->access_level === 'all') border-green-300 dark:border-green-700 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300
+                                                            @elseif($report->access_level === 'friends') border-yellow-300 dark:border-yellow-700 bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-300
+                                                            @else border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300
+                                                            @endif">
+                                                            <i class="fas @if($report->access_level === 'all') fa-globe @elseif($report->access_level === 'friends') fa-user-friends @else fa-lock @endif mr-1"></i>
+                                                            @if($report->access_level === 'all') Все
+                                                            @elseif($report->access_level === 'friends') Друзьям
+                                                            @else Никому
+                                                            @endif
+                                                        </span>
+                                                    </div>
                                                 </td>
                                                 
                                                 <!-- Доступ -->
