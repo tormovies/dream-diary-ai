@@ -171,9 +171,10 @@
         <!-- Основной контент -->
         <div class="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <div class="main-grid w-full">
-                <!-- Левая панель (только для авторизованных) -->
-                @auth
+                <!-- Левая панель -->
                 <aside class="space-y-6">
+                @auth
+                    <!-- Для авторизованных -->
                     <!-- Быстрое меню -->
                     <div class="sidebar-menu bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
                         <h3 class="text-lg font-semibold mb-4 text-purple-600 dark:text-purple-400 flex items-center gap-2">
@@ -295,33 +296,42 @@
                                         </div>
 
                                         <!-- Фильтр по дате (от) -->
-                                        <div>
-                                            <label for="date_from" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Дата от</label>
+                                        <div class="form-group">
+                                            <label for="date_from" class="form-label">
+                                                <i class="fas fa-calendar"></i>
+                                                Дата от
+                                            </label>
                                             <input type="date" 
                                                    id="date_from" 
                                                    name="date_from" 
                                                    value="{{ request('date_from') }}"
-                                                   class="block w-full border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                                   class="form-input">
                                         </div>
 
                                         <!-- Фильтр по дате (до) -->
-                                        <div>
-                                            <label for="date_to" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Дата до</label>
+                                        <div class="form-group">
+                                            <label for="date_to" class="form-label">
+                                                <i class="fas fa-calendar"></i>
+                                                Дата до
+                                            </label>
                                             <input type="date" 
                                                    id="date_to" 
                                                    name="date_to" 
                                                    value="{{ request('date_to') }}"
-                                                   class="block w-full border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                                   class="form-input">
                                         </div>
                                     </div>
 
-                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div class="form-row" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr))">
                                         <!-- Сортировка -->
-                                        <div>
-                                            <label for="sort_by" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Сортировать по</label>
+                                        <div class="form-group">
+                                            <label for="sort_by" class="form-label">
+                                                <i class="fas fa-sort"></i>
+                                                Сортировать по
+                                            </label>
                                             <select id="sort_by" 
                                                     name="sort_by" 
-                                                    class="block w-full border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                                    class="form-select">
                                                 <option value="created_at" {{ request('sort_by', 'created_at') === 'created_at' ? 'selected' : '' }}>Дате создания</option>
                                                 <option value="report_date" {{ request('sort_by') === 'report_date' ? 'selected' : '' }}>Дате отчета</option>
                                             </select>
