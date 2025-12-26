@@ -236,7 +236,7 @@
 
                     @if($reports->count() > 0)
                         <!-- Вид плиткой (всегда на мобильных, переключаемый на десктопе) -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" :class="{ 'md:hidden': viewMode === 'table' }">
+                        <div x-show="viewMode === 'grid'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             @foreach($reports as $report)
                                 <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm card-shadow border border-gray-200 dark:border-gray-700 relative">
                                     <div class="p-6">
@@ -360,7 +360,7 @@
                         </div>
 
                         <!-- Вид таблицей (только на десктопе) -->
-                        <div x-show="viewMode === 'table'" class="hidden md:block bg-white dark:bg-gray-800 rounded-2xl overflow-hidden card-shadow border border-gray-200 dark:border-gray-700">
+                        <div x-show="viewMode === 'table'" class="hidden md:block bg-white dark:bg-gray-800 rounded-2xl overflow-hidden card-shadow border border-gray-200 dark:border-gray-700" style="display: none;">
                             <div class="overflow-x-auto">
                                 <table class="w-full">
                                     <thead class="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
