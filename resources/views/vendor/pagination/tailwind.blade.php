@@ -88,23 +88,24 @@
                             </span>
                         </span>
                     @endif
-                </span>
-            </div>
+                    </span>
+                </div>
 
-            <div class="flex justify-center w-full">
-                <p class="text-sm text-gray-700 leading-5 dark:text-gray-400">
-                    Показано
-                    @if ($paginator->firstItem())
-                        <span class="font-medium">{{ $paginator->firstItem() }}</span>
-                        -
-                        <span class="font-medium">{{ $paginator->lastItem() }}</span>
-                    @else
-                        {{ $paginator->count() }}
-                    @endif
-                    из
-                    <span class="font-medium">{{ $paginator->total() }}</span>
-                    результатов
-                </p>
+                <div class="flex justify-center w-full">
+                    <p class="text-sm text-gray-700 leading-5 dark:text-gray-400 text-center">
+                        Показано
+                        @if ($paginator->firstItem())
+                            <span class="font-medium">{{ $paginator->firstItem() }}</span>
+                            -
+                            <span class="font-medium">{{ $paginator->lastItem() }}</span>
+                        @else
+                            {{ $paginator->count() }}
+                        @endif
+                        из
+                        <span class="font-medium">{{ $paginator->total() }}</span>
+                        результатов
+                    </p>
+                </div>
             </div>
         </div>
     </nav>
