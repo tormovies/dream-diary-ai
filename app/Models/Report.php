@@ -14,12 +14,15 @@ class Report extends Model
         'report_date',
         'access_level',
         'status',
+        'analysis_id',
+        'analyzed_at',
     ];
 
     protected function casts(): array
     {
         return [
             'report_date' => 'date',
+            'analyzed_at' => 'datetime',
         ];
     }
 
@@ -53,5 +56,27 @@ class Report extends Model
     public function comments(): HasMany
     {
         return $this->hasMany(Comment::class);
+    }
+
+    /**
+     * Анализ отчета
+     */
+    public function analysis(): BelongsTo
+    {
+        return $this->belongsTo(DreamInterpretation::class, 'analysis_id');
+    }
+
+    /**
+     * Проверка наличия анализа
+     */
+    public function hasAnalysis(): bool
+    {
+        try {
+            return !is_null($this->analysis_id);
+        } catch (\Exception $e) {
+            // Если поле analysis_id не существует в БД, возвращаем false
+            \Log::warning('hasAnalysis() error - possibly missing migration', ['error' => $e->getMessage()]);
+            return false;
+        }
     }
 }
