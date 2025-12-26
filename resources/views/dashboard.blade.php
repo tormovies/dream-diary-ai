@@ -53,8 +53,8 @@
                             <h2 class="text-2xl font-bold text-purple-600 dark:text-purple-400">Мои отчёты</h2>
                             
                             <div class="flex items-center gap-3">
-                                <!-- Переключатель вида -->
-                                <div class="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+                                <!-- Переключатель вида (скрыт на мобильных) -->
+                                <div class="hidden md:flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
                                     <button @click="viewMode = 'grid'" 
                                             :class="viewMode === 'grid' ? 'bg-white dark:bg-gray-600 shadow-sm' : ''"
                                             class="px-3 py-2 rounded-md transition-all"
