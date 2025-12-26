@@ -301,7 +301,7 @@
                         <input type="text" 
                                name="dreams[${dreamIndex}][title]" 
                                class="form-input"
-                               placeholder="Оставьте пустым, если сон не важен" />
+                               placeholder="Оставьте пустым, если не придумать" />
                         <div class="form-hint">Хотя бы у одного сна в отчете должно быть название</div>
                     </div>
                     
@@ -311,6 +311,7 @@
                                   rows="4"
                                   class="form-textarea"
                                   required></textarea>
+                        <div class="form-hint">Если хотите написать несколько снов в одно окно - используйте разделитель три и более тире (-----)</div>
                     </div>
                     
                     <div class="form-group">
