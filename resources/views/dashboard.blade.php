@@ -405,16 +405,24 @@
                                                             <i class="fas fa-moon mr-1"></i>{{ $report->dreams->count() }}
                                                         </span>
                                                         @if($report->dreams->count() > 0)
-                                                            <div class="text-sm truncate max-w-xs">
+                                                            <div class="text-sm max-w-xs">
                                                                 @php
-                                                                    $firstDream = $report->dreams->first();
-                                                                    $dreamTitle = $firstDream && $firstDream->title ? $firstDream->title : 'Без названия';
+                                                                    // Собираем все названия снов
+                                                                    $dreamTitles = $report->dreams
+                                                                        ->filter(fn($dream) => !empty($dream->title))
+                                                                        ->pluck('title')
+                                                                        ->take(3)
+                                                                        ->join(', ');
+                                                                    
+                                                                    if(empty($dreamTitles)) {
+                                                                        $dreamTitles = 'Без названия';
+                                                                    }
                                                                 @endphp
                                                                 <a href="{{ route('reports.show', $report) }}" 
-                                                                   class="text-gray-900 dark:text-white hover:text-purple-600 dark:hover:text-purple-400 hover:underline">
-                                                                    {{ $dreamTitle }}
-                                                                    @if($report->dreams->count() > 1)
-                                                                        <span class="text-gray-400 dark:text-gray-500">+{{ $report->dreams->count() - 1 }}</span>
+                                                                   class="text-gray-900 dark:text-white hover:text-purple-600 dark:hover:text-purple-400 hover:underline line-clamp-2">
+                                                                    {{ $dreamTitles }}
+                                                                    @if($report->dreams->filter(fn($d) => !empty($d->title))->count() > 3)
+                                                                        <span class="text-gray-400 dark:text-gray-500">...</span>
                                                                     @endif
                                                                 </a>
                                                             </div>
@@ -422,15 +430,25 @@
                                                     </div>
                                                 </td>
                                                 
-                                                <!-- Статус -->
+                                                <!-- Статус (кнопка публикации) -->
                                                 <td class="px-4 py-3 whitespace-nowrap hidden md:table-cell">
-                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
-                                                        @if($report->status === 'published') bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300
-                                                        @else bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300
-                                                        @endif">
-                                                        <i class="fas @if($report->status === 'published') fa-check-circle @else fa-file-alt @endif mr-1"></i>
-                                                        @if($report->status === 'published') Опубликован @else Черновик @endif
-                                                    </span>
+                                                    @if($report->status === 'draft')
+                                                        <form action="{{ route('reports.publish', $report) }}" method="POST" class="inline">
+                                                            @csrf
+                                                            <button type="submit" 
+                                                                    class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors">
+                                                                <i class="fas fa-eye mr-1"></i>Опубликовать
+                                                            </button>
+                                                        </form>
+                                                    @else
+                                                        <form action="{{ route('reports.unpublish', $report) }}" method="POST" class="inline">
+                                                            @csrf
+                                                            <button type="submit" 
+                                                                    class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-800 transition-colors">
+                                                                <i class="fas fa-check-circle mr-1"></i>Снять с публикации
+                                                            </button>
+                                                        </form>
+                                                    @endif
                                                 </td>
                                                 
                                                 <!-- Доступ -->
