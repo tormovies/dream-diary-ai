@@ -266,8 +266,7 @@
                                 <i class="fas fa-save mr-2"></i>Создать отчет
                             </button>
                         </div>
-                        </form>
-                    </div>
+                    </form>
                 </div>
             </main>
         </div>
