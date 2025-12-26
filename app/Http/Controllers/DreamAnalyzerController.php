@@ -102,7 +102,7 @@ class DreamAnalyzerController extends Controller
             'dream_description' => 'required|string|min:10|max:10000',
             'context' => 'nullable|string|max:2000',
             'traditions' => 'nullable|array',
-            'traditions.*' => 'in:freudian,jungian,cognitive,symbolic,shamanic,gestalt,eclectic',
+            'traditions.*' => 'in:freudian,jungian,cognitive,symbolic,shamanic,gestalt,lucid_centered,eclectic',
             'analysis_type' => [
                 'nullable',
                 'in:integrated,comparative',
@@ -113,16 +113,31 @@ class DreamAnalyzerController extends Controller
                     }
                 },
             ],
+            'force_series' => 'nullable|boolean', // Явно указать, что это серия снов
         ]);
 
         // Проверяем, является ли описание серией снов
         $dreamDescription = $validated['dream_description'];
-        $isSeries = $this->isDreamSeries($dreamDescription);
-        $dreams = [];
         
-        if ($isSeries) {
-            // Разбиваем на отдельные сны
-            $dreams = $this->splitDreams($dreamDescription);
+        // Явное указание на серию имеет приоритет над автоопределением
+        if (isset($validated['force_series'])) {
+            // Если параметр передан (true или false), используем его значение
+            $isSeries = (bool) $validated['force_series'];
+            $dreams = [];
+            
+            if ($isSeries) {
+                // Для явно указанной серии разбиваем по разделителям
+                $dreams = $this->splitDreams($dreamDescription);
+            }
+        } else {
+            // Автоопределение по разделителям (только если force_series не указан)
+            $isSeries = $this->isDreamSeries($dreamDescription);
+            $dreams = [];
+            
+            if ($isSeries) {
+                // Разбиваем на отдельные сны
+                $dreams = $this->splitDreams($dreamDescription);
+            }
         }
 
         // Определяем тип анализа

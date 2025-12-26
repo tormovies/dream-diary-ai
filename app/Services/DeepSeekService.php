@@ -218,6 +218,7 @@ class DeepSeekService
             'symbolic' => 'символической',
             'shamanic' => 'шаманистической',
             'gestalt' => 'гештальт',
+            'lucid_centered' => 'практики осознанных сновидений',
             'eclectic' => 'комплексной',
         ];
         
@@ -330,6 +331,7 @@ class DeepSeekService
             'symbolic' => 'символической',
             'shamanic' => 'шаманистической',
             'gestalt' => 'гештальт',
+            'lucid_centered' => 'практики осознанных сновидений',
             'eclectic' => 'комплексной',
         ];
         
@@ -420,13 +422,19 @@ class DeepSeekService
     {
         // Пытаемся найти JSON в ответе (может быть обернут в markdown код)
         $originalContent = $content;
+        
+        // Исправляем кодировку UTF-8 если нужно
+        if (!mb_check_encoding($content, 'UTF-8')) {
+            $content = mb_convert_encoding($content, 'UTF-8', 'UTF-8');
+        }
+        
         $content = trim($content);
 
         // Сначала пытаемся найти JSON внутри markdown блока ```json ... ```
         // Поддержка обрезанного JSON (может не быть закрывающего ```)
         if (preg_match('/```json\s*\n(.*?)(?:\n```|$)/is', $content, $matches)) {
             $jsonString = trim($matches[1]);
-            $decoded = json_decode($jsonString, true);
+            $decoded = json_decode($jsonString, true, 512, JSON_INVALID_UTF8_SUBSTITUTE);
             if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
                 Log::info('DeepSeek API JSON Parsed Successfully (from markdown block)');
                 return $decoded;
@@ -460,7 +468,7 @@ class DeepSeekService
             
             if ($lastValidPos > 0) {
                 $jsonString = substr($jsonString, 0, $lastValidPos + 1);
-                $decoded = json_decode($jsonString, true);
+                $decoded = json_decode($jsonString, true, 512, JSON_INVALID_UTF8_SUBSTITUTE);
                 if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
                     Log::info('DeepSeek API JSON Parsed Successfully (from markdown block, repaired)');
                     return $decoded;
@@ -501,7 +509,7 @@ class DeepSeekService
                     }
                     
                     // Пытаемся распарсить
-                    $decoded = json_decode($jsonString, true);
+                    $decoded = json_decode($jsonString, true, 512, JSON_INVALID_UTF8_SUBSTITUTE);
                     if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
                         Log::info('DeepSeek API JSON Parsed Successfully (from markdown block, potentially truncated)');
                         return $decoded;
@@ -516,7 +524,7 @@ class DeepSeekService
         $content = trim($content);
 
         // Пытаемся распарсить весь контент как JSON
-        $decoded = json_decode($content, true);
+        $decoded = json_decode($content, true, 512, JSON_INVALID_UTF8_SUBSTITUTE);
         if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
             Log::info('DeepSeek API JSON Parsed Successfully (direct)');
             return $decoded;
@@ -533,7 +541,7 @@ class DeepSeekService
             if ($jsonEnd !== false && $jsonEnd > $jsonStart) {
                 // Пробуем распарсить с закрывающей скобкой
                 $jsonString = substr($content, $jsonStart, $jsonEnd - $jsonStart + 1);
-                $decoded = json_decode($jsonString, true);
+                $decoded = json_decode($jsonString, true, 512, JSON_INVALID_UTF8_SUBSTITUTE);
 
                 if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
                     Log::info('DeepSeek API JSON Parsed Successfully (extracted)');
@@ -549,7 +557,7 @@ class DeepSeekService
             $lastBrace = strrpos($jsonString, '}');
             if ($lastBrace !== false) {
                 $jsonString = substr($jsonString, 0, $lastBrace + 1);
-                $decoded = json_decode($jsonString, true);
+                $decoded = json_decode($jsonString, true, 512, JSON_INVALID_UTF8_SUBSTITUTE);
                 if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
                     Log::info('DeepSeek API JSON Parsed Successfully (extracted, potentially truncated)');
                     return $decoded;
@@ -578,6 +586,17 @@ class DeepSeekService
         ];
     }
 }
+
+
+
+
+
+
+
+
+
+
+
 
 
 

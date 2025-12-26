@@ -6,6 +6,7 @@
         'symbolic' => 'Символический',
         'shamanic' => 'Шаманистический',
         'gestalt' => 'Гештальт',
+        'lucid_centered' => 'Практика ОС',
         'eclectic' => 'Комплексный',
     ];
     
@@ -233,10 +234,21 @@
             <i class="fab fa-telegram mr-2"></i>Telegram
         </button>
         <button onclick="copyShareLink(event)" class="cursor-pointer font-semibold text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors py-2 px-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-            <i class="fas fa-copy mr-2"></i>Копировать
+            <i class="fas fa-link mr-2"></i>Копировать
         </button>
     </div>
 </div>
+
+
+
+
+
+
+
+
+
+
+
 
 
 

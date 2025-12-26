@@ -145,7 +145,7 @@
                                             <i class="fab fa-telegram mr-2"></i>Telegram
                                         </a>
                                         <a href="#" onclick="copyShareLink(event)" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-                                            <i class="fas fa-copy mr-2"></i>Копировать
+                                            <i class="fas fa-link mr-2"></i>Копировать
                                         </a>
                                     </div>
                                 </div>
@@ -316,6 +316,7 @@
                                             'symbolic' => 'Символический',
                                             'shamanic' => 'Шаманистический',
                                             'gestalt' => 'Гештальт',
+                                            'lucid_centered' => 'Практика ОС',
                                             'eclectic' => 'Комплексный',
                                         ];
                                     @endphp
@@ -403,6 +404,7 @@
                                                 'freudian' => 'фрейдистской',
                                                 'jungian' => 'юнгианской',
                                                 'cognitive' => 'когнитивной',
+                                                'lucid_centered' => 'практики осознанных сновидений',
                                             ];
                                             
                                             // Сначала добавляем переносы строк и выделяем фразы с традициями после знаков препинания
@@ -838,6 +840,17 @@
         </script>
     </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
 
 
 
