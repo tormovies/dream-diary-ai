@@ -44,11 +44,11 @@
 
         <!-- Основной контент -->
         <div class="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <main class="space-y-6 w-full">
+            <main class="space-y-6 w-full" 
+                  x-data="{ viewMode: localStorage.getItem('reportsViewMode') || 'grid' }"
+                  x-init="$watch('viewMode', value => localStorage.setItem('reportsViewMode', value))">
                     <!-- Заголовок и кнопка создания -->
-                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700" 
-                         x-data="{ viewMode: localStorage.getItem('reportsViewMode') || 'grid' }"
-                         x-init="$watch('viewMode', value => localStorage.setItem('reportsViewMode', value))">
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
                         <div class="flex justify-between items-center flex-wrap gap-4">
                             <h2 class="text-2xl font-bold text-purple-600 dark:text-purple-400">Мои отчёты</h2>
                             
@@ -405,16 +405,18 @@
                                                             <i class="fas fa-moon mr-1"></i>{{ $report->dreams->count() }}
                                                         </span>
                                                         @if($report->dreams->count() > 0)
-                                                            <div class="text-sm text-gray-600 dark:text-gray-400 truncate max-w-xs">
+                                                            <div class="text-sm truncate max-w-xs">
                                                                 @php
                                                                     $firstDream = $report->dreams->first();
+                                                                    $dreamTitle = $firstDream && $firstDream->title ? $firstDream->title : 'Без названия';
                                                                 @endphp
-                                                                @if($firstDream && $firstDream->title)
-                                                                    {{ $firstDream->title }}
+                                                                <a href="{{ route('reports.show', $report) }}" 
+                                                                   class="text-gray-900 dark:text-white hover:text-purple-600 dark:hover:text-purple-400 hover:underline">
+                                                                    {{ $dreamTitle }}
                                                                     @if($report->dreams->count() > 1)
                                                                         <span class="text-gray-400 dark:text-gray-500">+{{ $report->dreams->count() - 1 }}</span>
                                                                     @endif
-                                                                @endif
+                                                                </a>
                                                             </div>
                                                         @endif
                                                     </div>
