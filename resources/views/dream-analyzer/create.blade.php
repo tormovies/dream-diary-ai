@@ -153,19 +153,10 @@
                                     </p>
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                                         @php
-                                            $traditions = [
-                                                'freudian' => 'Фрейдистский анализ',
-                                                'jungian' => 'Юнгианский анализ',
-                                                'cognitive' => 'Когнитивная психология сна',
-                                                'symbolic' => 'Символическая трактовка',
-                                                'shamanic' => 'Шаманистическая трактовка',
-                                                'gestalt' => 'Гештальт-подход',
-                                                'lucid_centered' => 'Анализ осознанности',
-                                                'eclectic' => 'Комплексный анализ',
-                                            ];
                                             $oldTraditions = old('traditions', []);
                                         @endphp
-                                        @foreach($traditions as $key => $label)
+                                        @foreach(config('traditions') as $key => $tradition)
+                                            @if($tradition['enabled'])
                                             <label class="flex items-center p-3 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
                                                 <input type="checkbox" 
                                                        name="traditions[]" 
@@ -174,8 +165,9 @@
                                                        {{ in_array($key, $oldTraditions) ? 'checked' : '' }}
                                                        class="tradition-checkbox rounded border-gray-300 text-purple-600 shadow-sm focus:ring-purple-500"
                                                        onchange="updateAnalysisTypeVisibility()">
-                                                <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">{{ $label }}</span>
+                                                <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">{{ $tradition['name_full'] }}</span>
                                             </label>
+                                            @endif
                                         @endforeach
                                     </div>
                                     <x-input-error :messages="$errors->get('traditions')" class="mt-2" />

@@ -496,30 +496,19 @@
                                     Выберите традиции (необязательно):
                                 </label>
                                 <div class="grid grid-cols-2 lg:grid-cols-3 gap-3">
-                                    @php
-                                        $traditions = [
-                                            'freudian' => ['short' => 'Фрейдистская', 'full' => 'Фрейдистский анализ'],
-                                            'jungian' => ['short' => 'Юнгианская', 'full' => 'Юнгианский анализ'],
-                                            'cognitive' => ['short' => 'Когнитивная', 'full' => 'Когнитивная психология сна'],
-                                            'symbolic' => ['short' => 'Символическая', 'full' => 'Символическая трактовка'],
-                                            'shamanic' => ['short' => 'Шаманская', 'full' => 'Шаманистическая трактовка'],
-                                            'gestalt' => ['short' => 'Гештальт', 'full' => 'Гештальт-подход'],
-                                            'lucid_centered' => ['short' => 'Практика ОС', 'full' => 'Анализ осознанности'],
-                                            'eclectic' => ['short' => 'Комплексная', 'full' => 'Комплексный анализ'],
-                                        ];
-                                    @endphp
-                                    
-                                    @foreach($traditions as $key => $names)
+                                    @foreach(config('traditions') as $key => $tradition)
+                                        @if($tradition['enabled'])
                                         <label class="flex items-center p-3 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
                                             <input type="checkbox" 
                                                    name="traditions[]" 
                                                    value="{{ $key }}"
                                                    class="rounded border-gray-300 text-purple-600 shadow-sm focus:ring-purple-500">
                                             <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">
-                                                <span class="tradition-short">{{ $names['short'] }}</span>
-                                                <span class="tradition-full">{{ $names['full'] }}</span>
+                                                <span class="tradition-short">{{ $tradition['name_short'] }}</span>
+                                                <span class="tradition-full">{{ $tradition['name_full'] }}</span>
                                             </span>
                                         </label>
+                                        @endif
                                     @endforeach
                                 </div>
                             </div>

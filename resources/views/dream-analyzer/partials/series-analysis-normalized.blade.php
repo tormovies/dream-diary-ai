@@ -1,15 +1,4 @@
 @php
-    $traditionNames = [
-        'freudian' => 'Фрейдистский',
-        'jungian' => 'Юнгианский',
-        'cognitive' => 'Когнитивный',
-        'symbolic' => 'Символический',
-        'shamanic' => 'Шаманистический',
-        'gestalt' => 'Гештальт',
-        'lucid_centered' => 'Практика ОС',
-        'eclectic' => 'Комплексный',
-    ];
-    
     $seriesDreams = $result->seriesDreams;
 @endphp
 
@@ -26,7 +15,7 @@
                 @foreach($result->traditions as $tradition)
                     @php
                         $traditionKey = strtolower($tradition);
-                        $traditionName = $traditionNames[$traditionKey] ?? ucfirst($tradition);
+                        $traditionName = config("traditions.{$traditionKey}.name_short", ucfirst($tradition));
                     @endphp
                     <span class="inline-block bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-3 py-1 rounded-full text-sm">
                         {{ $traditionName }}

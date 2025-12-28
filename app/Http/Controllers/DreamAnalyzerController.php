@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\TraditionHelper;
 use App\Models\Comment;
 use App\Models\DreamInterpretation;
 use App\Models\DreamInterpretationResult;
@@ -102,7 +103,7 @@ class DreamAnalyzerController extends Controller
             'dream_description' => 'required|string|min:10|max:10000',
             'context' => 'nullable|string|max:2000',
             'traditions' => 'nullable|array',
-            'traditions.*' => 'in:freudian,jungian,cognitive,symbolic,shamanic,gestalt,lucid_centered,eclectic',
+            'traditions.*' => 'in:' . TraditionHelper::validationKeys(),
             'analysis_type' => [
                 'nullable',
                 'in:integrated,comparative',

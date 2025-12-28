@@ -147,22 +147,10 @@
             <div class="mb-4">
                 <div class="flex items-center flex-wrap gap-2">
                     <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Традиции анализа:</span>
-                    @php
-                        $traditionNames = [
-                            'freudian' => 'Фрейдистский',
-                            'jungian' => 'Юнгианский',
-                            'cognitive' => 'Когнитивный',
-                            'symbolic' => 'Символический',
-                            'shamanic' => 'Шаманистический',
-                            'gestalt' => 'Гештальт',
-                            'lucid_centered' => 'Практика ОС',
-                            'eclectic' => 'Комплексный',
-                        ];
-                    @endphp
                     @foreach($dreamAnalysis['traditions'] as $tradition)
                         @php
                             $traditionKey = strtolower($tradition);
-                            $traditionName = $traditionNames[$traditionKey] ?? ucfirst($tradition);
+                            $traditionName = config("traditions.{$traditionKey}.name_short", ucfirst($tradition));
                         @endphp
                         <span class="inline-block bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-3 py-1 rounded-full text-sm">
                             {{ $traditionName }}
@@ -195,21 +183,12 @@
                 <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Традиция:</h3>
                 <div class="flex flex-wrap gap-2">
                     @php
-                        $traditionNames = [
-                            'freudian' => 'Фрейдистский',
-                            'jungian' => 'Юнгианский',
-                            'cognitive' => 'Когнитивный',
-                            'symbolic' => 'Символический',
-                            'shamanic' => 'Шаманистический',
-                            'gestalt' => 'Гештальт',
-                            'eclectic' => 'Комплексный',
-                        ];
                         $traditionValue = is_array($dreamAnalysis['tradition']) ? $dreamAnalysis['tradition'] : [$dreamAnalysis['tradition']];
                     @endphp
                     @foreach($traditionValue as $tradition)
                         @php
                             $traditionKey = strtolower($tradition);
-                            $traditionName = $traditionNames[$traditionKey] ?? ucfirst($tradition);
+                            $traditionName = config("traditions.{$traditionKey}.name_short", ucfirst($tradition));
                         @endphp
                         <span class="inline-block bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 px-3 py-1 rounded-full text-sm">
                             {{ $traditionName }}

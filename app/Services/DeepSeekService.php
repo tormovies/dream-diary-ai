@@ -210,17 +210,8 @@ class DeepSeekService
      */
     private function buildSinglePrompt(string $dreamDescription, ?string $context, array $traditions, string $analysisType): string
     {
-        // Переводим традиции в читаемый формат
-        $traditionNames = [
-            'freudian' => 'фрейдистской',
-            'jungian' => 'юнгианской',
-            'cognitive' => 'когнитивной',
-            'symbolic' => 'символической',
-            'shamanic' => 'шаманистической',
-            'gestalt' => 'гештальт',
-            'lucid_centered' => 'практики осознанных сновидений',
-            'eclectic' => 'комплексной',
-        ];
+        // Получаем описания традиций из конфига
+        $traditionNames = TraditionHelper::deepSeekDescriptions();
         
         $traditionsText = [];
         foreach ($traditions as $tradition) {
@@ -323,17 +314,8 @@ class DeepSeekService
      */
     private function buildSeriesPrompt(array $dreams, ?string $context, array $traditions, string $analysisType): string
     {
-        // Переводим традиции в читаемый формат
-        $traditionNames = [
-            'freudian' => 'фрейдистской',
-            'jungian' => 'юнгианской',
-            'cognitive' => 'когнитивной',
-            'symbolic' => 'символической',
-            'shamanic' => 'шаманистической',
-            'gestalt' => 'гештальт',
-            'lucid_centered' => 'практики осознанных сновидений',
-            'eclectic' => 'комплексной',
-        ];
+        // Получаем описания традиций из конфига
+        $traditionNames = TraditionHelper::deepSeekDescriptions();
         
         $traditionsText = [];
         foreach ($traditions as $tradition) {

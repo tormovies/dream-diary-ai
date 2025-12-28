@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\SeoHelper;
+use App\Helpers\TraditionHelper;
 use App\Http\Requests\StoreReportRequest;
 use App\Http\Requests\UpdateReportRequest;
 use App\Models\Report;
@@ -871,7 +872,7 @@ class ReportController extends Controller
         // Валидация традиций
         $validated = $request->validate([
             'traditions' => 'nullable|array',
-            'traditions.*' => 'in:freudian,jungian,cognitive,symbolic,shamanic,gestalt,lucid_centered,eclectic',
+            'traditions.*' => 'in:' . TraditionHelper::validationKeys(),
         ]);
 
         // Если традиции не выбраны, используем комплексный анализ

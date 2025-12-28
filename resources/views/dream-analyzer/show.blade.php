@@ -308,22 +308,10 @@
                             <div class="mb-4">
                                 <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Традиции анализа:</h3>
                                 <div class="flex flex-wrap gap-2">
-                                    @php
-                                        $traditionNames = [
-                                            'freudian' => 'Фрейдистский',
-                                            'jungian' => 'Юнгианский',
-                                            'cognitive' => 'Когнитивный',
-                                            'symbolic' => 'Символический',
-                                            'shamanic' => 'Шаманистический',
-                                            'gestalt' => 'Гештальт',
-                                            'lucid_centered' => 'Практика ОС',
-                                            'eclectic' => 'Комплексный',
-                                        ];
-                                    @endphp
                                     @foreach($analysis['analysis']['traditions'] as $tradition)
                                         @php
                                             $traditionKey = strtolower($tradition);
-                                            $traditionName = $traditionNames[$traditionKey] ?? ucfirst($tradition);
+                                            $traditionName = config("traditions.{$traditionKey}.name_short", ucfirst($tradition));
                                         @endphp
                                         <span class="inline-block bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-3 py-1 rounded-full text-sm">
                                             {{ $traditionName }}
@@ -334,17 +322,8 @@
                         @elseif(isset($analysis['analysis']['tradition']))
                             <div class="mb-4">
                                 @php
-                                    $traditionNames = [
-                                        'freudian' => 'Фрейдистский',
-                                        'jungian' => 'Юнгианский',
-                                        'cognitive' => 'Когнитивный',
-                                        'symbolic' => 'Символический',
-                                        'shamanic' => 'Шаманистический',
-                                        'gestalt' => 'Гештальт',
-                                        'eclectic' => 'Комплексный',
-                                    ];
                                     $traditionKey = strtolower($analysis['analysis']['tradition']);
-                                    $traditionName = $traditionNames[$traditionKey] ?? $analysis['analysis']['tradition'];
+                                    $traditionName = config("traditions.{$traditionKey}.name_short", $analysis['analysis']['tradition']);
                                 @endphp
                                 <span class="inline-block bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-3 py-1 rounded-full text-sm">
                                     {{ $traditionName }}
