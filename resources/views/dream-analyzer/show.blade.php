@@ -376,15 +376,11 @@
                                         $interpretationText = $analysis['analysis']['interpretation'];
                                         // Для comparative типа выделяем упоминания традиций и добавляем переносы строк
                                         if (isset($analysis['analysis']['analysis_type']) && $analysis['analysis']['analysis_type'] === 'comparative' && isset($analysis['analysis']['traditions'])) {
-                                            $traditionNames = [
-                                                'symbolic' => 'символической',
-                                                'shamanic' => 'шаманской',
-                                                'gestalt' => 'гештальта',
-                                                'freudian' => 'фрейдистской',
-                                                'jungian' => 'юнгианской',
-                                                'cognitive' => 'когнитивной',
-                                                'lucid_centered' => 'практики осознанных сновидений',
-                                            ];
+                                            // Получаем описания традиций из конфига
+                                            $traditionNames = [];
+                                            foreach (config('traditions') as $key => $tradition) {
+                                                $traditionNames[$key] = $tradition['deepseek_description'];
+                                            }
                                             
                                             // Сначала добавляем переносы строк и выделяем фразы с традициями после знаков препинания
                                             foreach ($traditionNames as $key => $name) {

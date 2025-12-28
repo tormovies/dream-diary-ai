@@ -50,7 +50,7 @@ return [
         'icon' => 'fa-puzzle-piece',
     ],
     'lucid_centered' => [
-        'enabled' => true,
+        'enabled' => false,
         'key' => 'lucid_centered',
         'name_short' => 'Практика ОС',
         'name_full' => 'Анализ осознанности',
@@ -66,4 +66,5 @@ return [
         'icon' => 'fa-layer-group',
     ],
 ];
+
 

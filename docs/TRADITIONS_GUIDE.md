@@ -205,3 +205,4 @@ php artisan view:clear
 1. Проверь синтаксис PHP в `config/traditions.php`
 2. Запусти `php artisan config:clear`
 3. Проверь логи Laravel: `storage/logs/laravel.log`
+
