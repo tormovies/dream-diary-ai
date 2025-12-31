@@ -49,6 +49,17 @@ class LoginRequest extends FormRequest
             ]);
         }
 
+        // Проверка блокировки после успешной аутентификации
+        $user = Auth::user();
+        if ($user->isBanned()) {
+            $banReason = $user->ban_reason ?? 'Причина не указана';
+            Auth::logout();
+            
+            throw ValidationException::withMessages([
+                'email' => 'Ваш аккаунт заблокирован. Причина: ' . $banReason,
+            ]);
+        }
+
         RateLimiter::clear($this->throttleKey());
     }
 

@@ -206,3 +206,9 @@ php artisan view:clear
 2. Запусти `php artisan config:clear`
 3. Проверь логи Laravel: `storage/logs/laravel.log`
 
+
+
+
+
+
+

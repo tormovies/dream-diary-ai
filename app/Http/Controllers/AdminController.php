@@ -84,13 +84,91 @@ class AdminController extends Controller
     }
 
     /**
-     * Блокировка/разблокировка пользователя
+     * Блокировка пользователя
      */
-    public function toggleUserStatus(User $user): RedirectResponse
+    public function banUser(Request $request, User $user): RedirectResponse
     {
-        // Можно добавить поле is_blocked в будущем
-        // Пока просто редирект
-        return back()->with('success', 'Функция блокировки будет добавлена');
+        // Нельзя заблокировать самого себя
+        if ($user->id === auth()->id()) {
+            return back()->with('error', 'Вы не можете заблокировать самого себя');
+        }
+
+        // Нельзя заблокировать другого администратора
+        if ($user->isAdmin()) {
+            return back()->with('error', 'Нельзя заблокировать администратора');
+        }
+
+        $request->validate([
+            'ban_reason' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $user->ban($request->ban_reason);
+
+        return back()->with('success', "Пользователь {$user->nickname} заблокирован");
+    }
+
+    /**
+     * Разблокировка пользователя
+     */
+    public function unbanUser(User $user): RedirectResponse
+    {
+        $user->unban();
+
+        return back()->with('success', "Пользователь {$user->nickname} разблокирован");
+    }
+
+    /**
+     * Удаление пользователя со всем контентом
+     */
+    public function deleteUser(User $user): RedirectResponse
+    {
+        // Нельзя удалить самого себя
+        if ($user->id === auth()->id()) {
+            return back()->with('error', 'Вы не можете удалить самого себя');
+        }
+
+        // Нельзя удалить другого администратора
+        if ($user->isAdmin()) {
+            return back()->with('error', 'Нельзя удалить администратора');
+        }
+
+        $nickname = $user->nickname;
+
+        // Удаление всего контента пользователя вручную
+        // (на случай если каскадное удаление не настроено в миграциях)
+        
+        // 1. Удаляем анализы снов и связанные результаты
+        foreach ($user->dreamInterpretations as $interpretation) {
+            // Удаляем результат анализа и связанные сны серии
+            if ($interpretation->result) {
+                $interpretation->result->seriesDreams()->delete();
+                $interpretation->result->delete();
+            }
+            $interpretation->delete();
+        }
+        
+        // 2. Удаляем отчеты и связанные сны
+        foreach ($user->reports as $report) {
+            $report->dreams()->delete(); // Сны в отчете
+            $report->tags()->detach(); // Связи с тегами
+            $report->comments()->delete(); // Комментарии к отчету
+            $report->delete();
+        }
+        
+        // 3. Удаляем комментарии пользователя
+        $user->comments()->delete();
+        
+        // 4. Удаляем дружеские связи
+        $user->friendships()->delete();
+        \App\Models\Friendship::where('friend_id', $user->id)->delete();
+        
+        // 5. Удаляем уведомления
+        $user->notifications()->delete();
+        
+        // 6. Удаляем самого пользователя
+        $user->delete();
+
+        return redirect()->route('admin.users')->with('success', "Пользователь {$nickname} и весь его контент удалены");
     }
 
     /**

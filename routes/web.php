@@ -100,7 +100,9 @@ Route::middleware('auth')->group(function () {
         Route::get('/users', [\App\Http\Controllers\AdminController::class, 'users'])->name('users');
         Route::get('/users/{user}/edit', [\App\Http\Controllers\AdminController::class, 'editUser'])->name('users.edit');
         Route::patch('/users/{user}', [\App\Http\Controllers\AdminController::class, 'updateUser'])->name('users.update');
-        Route::post('/users/{user}/toggle-status', [\App\Http\Controllers\AdminController::class, 'toggleUserStatus'])->name('users.toggle-status');
+        Route::post('/users/{user}/ban', [\App\Http\Controllers\AdminController::class, 'banUser'])->name('users.ban');
+        Route::post('/users/{user}/unban', [\App\Http\Controllers\AdminController::class, 'unbanUser'])->name('users.unban');
+        Route::delete('/users/{user}', [\App\Http\Controllers\AdminController::class, 'deleteUser'])->name('users.delete');
         Route::get('/reports', [\App\Http\Controllers\AdminController::class, 'reports'])->name('reports');
         Route::get('/comments', [\App\Http\Controllers\AdminController::class, 'comments'])->name('comments');
         Route::delete('/comments/{comment}', [\App\Http\Controllers\AdminController::class, 'deleteComment'])->name('comments.destroy');
