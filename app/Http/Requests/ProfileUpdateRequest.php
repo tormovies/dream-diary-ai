@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\User;
+use App\Rules\NoSpam;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -67,13 +68,14 @@ class ProfileUpdateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:255', new NoSpam()],
             'nickname' => [
                 'required', 
                 'string', 
                 'max:255', 
                 'regex:/^[a-zA-Zа-яА-ЯёЁ0-9_.-]+$/u', // Только буквы, цифры, точка, дефис и подчеркивание
-                Rule::unique(User::class)->ignore($this->user()->id)
+                Rule::unique(User::class)->ignore($this->user()->id),
+                new NoSpam()
             ],
             'email' => [
                 'required',
@@ -83,11 +85,11 @@ class ProfileUpdateRequest extends FormRequest
                 'max:255',
                 Rule::unique(User::class)->ignore($this->user()->id),
             ],
-            'bio' => ['nullable', 'string', 'max:1000'],
+            'bio' => ['nullable', 'string', 'max:1000', new NoSpam()],
             'avatar' => ['nullable', 'string', 'max:255'],
             'diary_privacy' => ['required', 'in:public,private,friends'],
             'comment_privacy' => ['required', 'in:all,friends,only_me,none'],
-            'diary_name' => ['nullable', 'string', 'max:160'],
+            'diary_name' => ['nullable', 'string', 'max:160', new NoSpam()],
         ];
     }
 

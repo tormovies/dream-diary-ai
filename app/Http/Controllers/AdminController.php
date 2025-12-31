@@ -6,6 +6,7 @@ use App\Models\Comment;
 use App\Models\Report;
 use App\Models\Setting;
 use App\Models\User;
+use App\Rules\NoSpam;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -71,11 +72,12 @@ class AdminController extends Controller
     public function updateUser(Request $request, User $user): RedirectResponse
     {
         $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'nickname' => ['required', 'string', 'max:255', 'unique:users,nickname,' . $user->id],
+            'name' => ['required', 'string', 'max:255', new NoSpam()],
+            'nickname' => ['required', 'string', 'max:255', 'unique:users,nickname,' . $user->id, new NoSpam()],
             'email' => ['required', 'email', 'unique:users,email,' . $user->id],
             'role' => ['required', 'in:admin,user'],
             'diary_privacy' => ['required', 'in:public,private,friends'],
+            'bio' => ['nullable', 'string', 'max:1000', new NoSpam()],
         ]);
 
         $user->update($request->only(['name', 'nickname', 'email', 'role', 'diary_privacy', 'bio', 'avatar']));

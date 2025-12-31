@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Helpers\SeoHelper;
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Rules\NoSpam;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -83,13 +84,14 @@ class RegisteredUserController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
-            'name' => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:255', new NoSpam()],
             'nickname' => [
                 'required', 
                 'string', 
                 'max:255', 
                 'regex:/^[a-zA-Zа-яА-ЯёЁ0-9_.-]+$/u', // Только буквы, цифры, точка, дефис и подчеркивание
-                'unique:users,nickname'
+                'unique:users,nickname',
+                new NoSpam()
             ],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
