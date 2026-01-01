@@ -10,6 +10,7 @@ use App\Models\Report;
 use App\Models\Dream;
 use App\Models\Tag;
 use App\Models\DreamInterpretation;
+use App\Services\UnifiedDreamAnalysisService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Http\RedirectResponse;
@@ -876,7 +877,7 @@ class ReportController extends Controller
         ]);
 
         // Если традиции не выбраны, используем комплексный анализ
-        $traditions = $validated['traditions'] ?? ['eclectic'];
+        $traditions = $validated['traditions'] ?? ['complex_analysis'];
 
         // Загружаем сны отчёта
         $report->load('dreams');
@@ -1183,36 +1184,95 @@ class ReportController extends Controller
             
             $dreamDescriptionFull = implode("\n---\n", $dreamDescriptions);
             
-            // Выполняем анализ через DeepSeek API
-            set_time_limit(180); // 3 минуты
-            $deepSeekService = new \App\Services\DeepSeekService();
+            // Определяем режим анализа
+            $analysisType = $interpretation->analysis_type;
+            $traditions = $interpretation->traditions ?? [];
             
-            $result = $deepSeekService->analyzeDream(
-                $dreamDescriptionFull,
-                null, // context
-                $interpretation->traditions ?? [],
-                $interpretation->analysis_type,
-                $isSeries ? $dreamDescriptions : null
-            );
-            
-            // Обновляем запись с результатами
-            $interpretation->update([
-                'analysis_data' => $result['analysis_data'] ?? null,
-                'raw_api_request' => $result['raw_request'] ?? null,
-                'raw_api_response' => $result['raw_response'] ?? null,
-                'api_error' => $result['error'] ?? null,
-                'processing_status' => !empty($result['analysis_data']) ? 'completed' : 'failed',
-            ]);
-            
-            \Log::info('Async analysis completed', [
-                'interpretation_id' => $interpretation->id,
-                'has_result' => !empty($result['analysis_data'])
-            ]);
-            
-            // Обрабатываем и сохраняем нормализованные данные
-            if (!empty($result['analysis_data'])) {
-                $this->saveNormalizedData($interpretation, $result['analysis_data']);
-                \Log::info('Normalized data saved (async)', ['interpretation_id' => $interpretation->id]);
+            // Если это серия снов, используем старую систему (пока не реализовано в новой)
+            if ($analysisType === 'series_integrated') {
+                // Старая система для серий
+                set_time_limit(180); // 3 минуты
+                $deepSeekService = new \App\Services\DeepSeekService();
+                
+                $result = $deepSeekService->analyzeDream(
+                    $dreamDescriptionFull,
+                    null, // context
+                    $traditions,
+                    $analysisType,
+                    $dreamDescriptions
+                );
+                
+                // Обновляем запись с результатами
+                $interpretation->update([
+                    'analysis_data' => $result['analysis_data'] ?? null,
+                    'raw_api_request' => $result['raw_request'] ?? null,
+                    'raw_api_response' => $result['raw_response'] ?? null,
+                    'api_error' => $result['error'] ?? null,
+                    'processing_status' => !empty($result['analysis_data']) ? 'completed' : 'failed',
+                ]);
+                
+                \Log::info('Async analysis completed (old system)', [
+                    'interpretation_id' => $interpretation->id,
+                    'has_result' => !empty($result['analysis_data'])
+                ]);
+                
+                // Обрабатываем и сохраняем нормализованные данные
+                if (!empty($result['analysis_data'])) {
+                    $this->saveNormalizedData($interpretation, $result['analysis_data']);
+                    \Log::info('Normalized data saved (async)', ['interpretation_id' => $interpretation->id]);
+                }
+            } else {
+                // НОВАЯ СИСТЕМА для single/comparative/parallel/integrated
+                set_time_limit(180); // 3 минуты
+                $unifiedService = new UnifiedDreamAnalysisService();
+                
+                $traditionsCount = count($traditions);
+                $analysisMode = ($traditionsCount <= 1) ? 'single' : ($analysisType ?? 'integrated');
+                
+                if ($analysisMode === 'single') {
+                    // Single tradition
+                    $tradition = !empty($traditions) ? $traditions[0] : 'complex_analysis';
+                    $result = $unifiedService->analyzeSingle([
+                        'tradition' => $tradition,
+                        'dream_text' => $dreamDescriptionFull,
+                        'context' => null,
+                        'user_id' => $interpretation->user_id,
+                        'user_profile' => $this->buildUserProfileForReport($interpretation->user_id),
+                    ]);
+                } else {
+                    // Multitradition (comparative/parallel/integrated)
+                    $primaryTradition = $traditions[0];
+                    $secondaryTraditions = array_slice($traditions, 1);
+                    
+                    $result = $unifiedService->analyzeMultiTradition([
+                        'primary_tradition' => $primaryTradition,
+                        'secondary_traditions' => $secondaryTraditions,
+                        'mode' => $analysisMode,
+                        'dream_text' => $dreamDescriptionFull,
+                        'context' => null,
+                        'user_id' => $interpretation->user_id,
+                        'user_profile' => $this->buildUserProfileForReport($interpretation->user_id),
+                    ]);
+                }
+                
+                // Обновляем запись с raw запросом и ответом
+                $interpretation->update([
+                    'raw_api_request' => $result['raw_request'],
+                    'raw_api_response' => $result['raw_response'],
+                    'processing_status' => 'completed',
+                ]);
+                
+                // Парсим и сохраняем результаты в новую таблицу
+                $unifiedService->parseAndSaveResults(
+                    $interpretation,
+                    $result['api_response'],
+                    $result['analysis_mode']
+                );
+                
+                \Log::info('Async analysis completed (new system)', [
+                    'interpretation_id' => $interpretation->id,
+                    'analysis_mode' => $result['analysis_mode']
+                ]);
             }
             
         } catch (\Exception $e) {
@@ -1222,13 +1282,43 @@ class ReportController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
             
+            // Ограничиваем длину сообщения об ошибке
+            $errorMessage = $e->getMessage();
+            if (strlen($errorMessage) > 500) {
+                $errorMessage = substr($errorMessage, 0, 497) . '...';
+            }
+            
             $interpretation->update([
                 'processing_status' => 'failed',
-                'api_error' => $e->getMessage()
+                'api_error' => $errorMessage
             ]);
         }
     }
     
+    /**
+     * Построить профиль пользователя для запроса к API (для отчётов)
+     */
+    private function buildUserProfileForReport(int $userId): array
+    {
+        $user = \App\Models\User::find($userId);
+        if (!$user) {
+            return [];
+        }
+
+        return [
+            'user_id' => (string) $user->id,
+            'experience_level' => 'практик', // TODO: можно добавить поле в таблицу users
+            'years_of_practice' => 0, // TODO: можно вычислить из первого отчёта
+            'primary_goals' => ['осознанность', 'исследование'], // TODO: можно добавить в профиль
+            'current_practices' => [], // TODO: можно добавить в профиль
+            'tradition_background' => [
+                'familiar_with' => [],
+                'preferred_concepts' => [],
+                'learning_goals' => [],
+            ],
+        ];
+    }
+
     /**
      * Сохраняет нормализованные данные анализа
      */

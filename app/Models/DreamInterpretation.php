@@ -52,11 +52,19 @@ class DreamInterpretation extends Model
     }
 
     /**
-     * Нормализованный результат анализа (если есть)
+     * Нормализованный результат анализа (если есть) - для старой системы
      */
     public function result()
     {
         return $this->hasOne(DreamInterpretationResult::class, 'dream_interpretation_id');
+    }
+
+    /**
+     * Результаты анализа (для новой системы - может быть несколько)
+     */
+    public function results()
+    {
+        return $this->hasMany(DreamInterpretationResult::class, 'dream_interpretation_id');
     }
 
     /**

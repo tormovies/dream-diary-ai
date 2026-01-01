@@ -171,12 +171,28 @@
                         $result = $interpretation->result;
                         
                         // Проверяем, есть ли реальные данные в result
-                        $hasResultData = $result && (
-                            (is_array($result->general_interpretation) && count($result->general_interpretation) > 0) ||
-                            (is_array($result->key_symbols) && count($result->key_symbols) > 0) ||
-                            (is_array($result->emotional_state) && count($result->emotional_state) > 0) ||
-                            (is_array($result->practical_recommendations) && count($result->practical_recommendations) > 0)
-                        );
+                        // Новая система: проверяем analysis_data
+                        // Старая система: проверяем отдельные поля
+                        $hasResultData = false;
+                        $isNewSystem = false;
+                        
+                        if ($result) {
+                            // Проверяем новую систему (analysis_data)
+                            if (!empty($result->analysis_data) && is_array($result->analysis_data)) {
+                                $hasResultData = true;
+                                $isNewSystem = true;
+                            }
+                            // Проверяем старую систему (отдельные поля)
+                            elseif (
+                                (is_array($result->general_interpretation ?? null) && count($result->general_interpretation) > 0) ||
+                                (is_array($result->key_symbols ?? null) && count($result->key_symbols) > 0) ||
+                                (is_array($result->emotional_state ?? null) && count($result->emotional_state) > 0) ||
+                                (is_array($result->practical_recommendations ?? null) && count($result->practical_recommendations) > 0)
+                            ) {
+                                $hasResultData = true;
+                                $isNewSystem = false;
+                            }
+                        }
                         
                         $useNormalized = $hasResultData;
                         
@@ -194,7 +210,10 @@
                     @endphp
 
                     @if($useNormalized)
-                        @if($isSeries)
+                        @if($isNewSystem)
+                            <!-- Новая система: данные из analysis_data -->
+                            @include('dream-analyzer.partials.new-system-analysis', ['result' => $result, 'interpretation' => $interpretation, 'results' => $interpretation->results ?? collect()])
+                        @elseif($isSeries)
                             <!-- Анализ серии снов (нормализованные данные) -->
                             @include('dream-analyzer.partials.series-analysis-normalized', ['result' => $result, 'interpretation' => $interpretation])
                         @else

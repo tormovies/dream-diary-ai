@@ -12,6 +12,7 @@ use App\Models\Tag;
 use App\Models\User;
 use App\Services\DeepSeekService;
 use App\Services\DreamAnalysisAdapters\DreamAnalysisAdapterFactory;
+use App\Services\UnifiedDreamAnalysisService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -97,7 +98,7 @@ class DreamAnalyzerController extends Controller
     public function store(Request $request): RedirectResponse
     {
         // Увеличиваем время выполнения для длительных запросов к API
-        set_time_limit(180); // 3 минуты
+        set_time_limit(360); // 6 минут (больше чем таймаут API 5 минут)
 
         $validated = $request->validate([
             'dream_description' => 'required|string|min:10|max:10000',
@@ -106,7 +107,7 @@ class DreamAnalyzerController extends Controller
             'traditions.*' => 'in:' . TraditionHelper::validationKeys(),
             'analysis_type' => [
                 'nullable',
-                'in:integrated,comparative',
+                'in:integrated,comparative,parallel',
                 function ($attribute, $value, $fail) use ($request) {
                     $traditionsCount = count($request->input('traditions', []));
                     if ($traditionsCount > 1 && empty($value)) {
@@ -142,16 +143,62 @@ class DreamAnalyzerController extends Controller
         }
 
         // Определяем тип анализа
-        // Если это серия снов, всегда используем SERIES_INTEGRATED
+        // Если это серия снов, используем старую систему (пока не реализовано в новой)
         if ($isSeries) {
             $analysisType = 'series_integrated';
-        } else {
-            $traditionsCount = count($validated['traditions'] ?? []);
-            if ($traditionsCount <= 1) {
-                $analysisType = 'single';
-            } else {
-                $analysisType = $validated['analysis_type'] ?? 'integrated';
+            
+            // Старая система для серий (пока оставляем как есть)
+            $hash = DreamInterpretation::generateHash();
+            $interpretation = DreamInterpretation::create([
+                'hash' => $hash,
+                'user_id' => auth()->id(),
+                'ip_address' => $request->ip(),
+                'dream_description' => $dreamDescription,
+                'context' => $validated['context'] ?? null,
+                'traditions' => $validated['traditions'] ?? [],
+                'analysis_type' => $analysisType,
+            ]);
+
+            $deepSeekService = new DeepSeekService();
+            $result = $deepSeekService->analyzeDream(
+                $dreamDescription,
+                $validated['context'] ?? null,
+                $validated['traditions'] ?? [],
+                $analysisType,
+                $dreams
+            );
+
+            $interpretation->update([
+                'analysis_data' => $result['analysis_data'] ?? null,
+                'raw_api_request' => $result['raw_request'] ?? null,
+                'raw_api_response' => $result['raw_response'] ?? null,
+                'api_error' => $result['success'] ? null : ($result['error'] ?? 'Неизвестная ошибка'),
+            ]);
+
+            if (!$result['success']) {
+                return redirect()
+                    ->route('dream-analyzer.create')
+                    ->with('error', 'Ошибка при анализе: ' . ($result['error'] ?? 'Неизвестная ошибка'))
+                    ->withInput();
             }
+
+            if (!empty($result['analysis_data'])) {
+                $this->saveNormalizedData($interpretation, $result['analysis_data']);
+            }
+
+            return redirect()->route('dream-analyzer.show', $hash);
+        }
+
+        // НОВАЯ СИСТЕМА для single/comparative/parallel/integrated
+        $traditions = $validated['traditions'] ?? [];
+        $traditionsCount = count($traditions);
+        
+        // Определяем режим анализа
+        if ($traditionsCount <= 1) {
+            $analysisMode = 'single';
+            $tradition = !empty($traditions) ? $traditions[0] : 'complex_analysis';
+        } else {
+            $analysisMode = $validated['analysis_type'] ?? 'integrated'; // comparative | parallel | integrated
         }
 
         // Генерируем уникальный хеш
@@ -164,41 +211,75 @@ class DreamAnalyzerController extends Controller
             'ip_address' => $request->ip(),
             'dream_description' => $dreamDescription,
             'context' => $validated['context'] ?? null,
-            'traditions' => $validated['traditions'] ?? [],
-            'analysis_type' => $analysisType,
+            'traditions' => $traditions,
+            'analysis_type' => $analysisMode,
         ]);
 
-        // Выполняем анализ через API
-        $deepSeekService = new DeepSeekService();
-        $result = $deepSeekService->analyzeDream(
-            $dreamDescription,
-            $validated['context'] ?? null,
-            $validated['traditions'] ?? [],
-            $analysisType,
-            $isSeries ? $dreams : null
-        );
+        try {
+            // Используем новую унифицированную систему
+            $unifiedService = new UnifiedDreamAnalysisService();
+            
+            if ($analysisMode === 'single') {
+                // Single tradition
+                $result = $unifiedService->analyzeSingle([
+                    'tradition' => $tradition,
+                    'dream_text' => $dreamDescription,
+                    'context' => $validated['context'] ?? null,
+                    'user_id' => auth()->id(),
+                    'user_profile' => $this->buildUserProfile(auth()->user()),
+                ]);
+            } else {
+                // Multitradition (comparative/parallel/integrated)
+                $primaryTradition = $traditions[0];
+                $secondaryTraditions = array_slice($traditions, 1);
+                
+                $result = $unifiedService->analyzeMultiTradition([
+                    'primary_tradition' => $primaryTradition,
+                    'secondary_traditions' => $secondaryTraditions,
+                    'mode' => $analysisMode,
+                    'dream_text' => $dreamDescription,
+                    'context' => $validated['context'] ?? null,
+                    'user_id' => auth()->id(),
+                    'user_profile' => $this->buildUserProfile(auth()->user()),
+                ]);
+            }
 
-        // Обновляем запись с результатами
-        $interpretation->update([
-            'analysis_data' => $result['analysis_data'] ?? null,
-            'raw_api_request' => $result['raw_request'] ?? null,
-            'raw_api_response' => $result['raw_response'] ?? null,
-            'api_error' => $result['success'] ? null : ($result['error'] ?? 'Неизвестная ошибка'),
-        ]);
+            // Обновляем запись с raw запросом и ответом
+            $interpretation->update([
+                'raw_api_request' => $result['raw_request'],
+                'raw_api_response' => $result['raw_response'],
+            ]);
 
-        if (!$result['success']) {
+            // Парсим и сохраняем результаты в новую таблицу
+            $unifiedService->parseAndSaveResults(
+                $interpretation,
+                $result['api_response'],
+                $result['analysis_mode']
+            );
+
+            return redirect()->route('dream-analyzer.show', $hash);
+
+        } catch (\Exception $e) {
+            // Логируем ошибку
+            \Log::error('DreamAnalyzerController: Ошибка анализа', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            // Обновляем запись с ошибкой (ограничиваем длину сообщения)
+            $errorMessage = $e->getMessage();
+            if (strlen($errorMessage) > 500) {
+                $errorMessage = substr($errorMessage, 0, 497) . '...';
+            }
+            $interpretation->update([
+                'api_error' => $errorMessage,
+            ]);
+
             return redirect()
                 ->route('dream-analyzer.create')
-                ->with('error', 'Ошибка при анализе: ' . ($result['error'] ?? 'Неизвестная ошибка'))
+                ->with('error', 'Ошибка при анализе: ' . $e->getMessage())
                 ->withInput();
         }
-
-        // Нормализуем и сохраняем данные в новую таблицу
-        if (!empty($result['analysis_data'])) {
-            $this->saveNormalizedData($interpretation, $result['analysis_data']);
-        }
-
-        return redirect()->route('dream-analyzer.show', $hash);
     }
 
     /**
@@ -233,12 +314,24 @@ class DreamAnalyzerController extends Controller
             $result = \App\Models\DreamInterpretationResult::where('dream_interpretation_id', $preview->id)->first();
             
             // Проверяем, есть ли реальные данные в result
-            $hasNormalizedData = $result && (
-                (is_array($result->general_interpretation) && count($result->general_interpretation) > 0) ||
-                (is_array($result->key_symbols) && count($result->key_symbols) > 0) ||
-                (is_array($result->emotional_state) && count($result->emotional_state) > 0) ||
-                (is_array($result->practical_recommendations) && count($result->practical_recommendations) > 0)
-            );
+            // Новая система: проверяем analysis_data
+            // Старая система: проверяем отдельные поля
+            $hasNormalizedData = false;
+            if ($result) {
+                // Проверяем новую систему (analysis_data)
+                if (!empty($result->analysis_data) && is_array($result->analysis_data)) {
+                    $hasNormalizedData = true;
+                }
+                // Проверяем старую систему (отдельные поля)
+                elseif (
+                    (is_array($result->general_interpretation ?? null) && count($result->general_interpretation) > 0) ||
+                    (is_array($result->key_symbols ?? null) && count($result->key_symbols) > 0) ||
+                    (is_array($result->emotional_state ?? null) && count($result->emotional_state) > 0) ||
+                    (is_array($result->practical_recommendations ?? null) && count($result->practical_recommendations) > 0)
+                ) {
+                    $hasNormalizedData = true;
+                }
+            }
             
             // Если нормализованных данных нет, загружаем analysis_data (может быть parse_error)
             if (!$hasNormalizedData) {
@@ -247,7 +340,10 @@ class DreamAnalyzerController extends Controller
         }
         
         // Формируем основной запрос
-        $query = DreamInterpretation::with('result.seriesDreams')
+        $query = DreamInterpretation::with(['results' => function($q) {
+            // Загружаем все результаты для новой системы
+            $q->orderBy('id');
+        }])
             ->where('hash', $hash);
         
         // Если JSON не нужен, загружаем только необходимые поля (экономия ~20-50 KB на запрос)
@@ -265,6 +361,17 @@ class DreamAnalyzerController extends Controller
         }
         
         $interpretation = $query->firstOrFail();
+        
+        // Для совместимости со старым view, создаем виртуальное свойство result
+        // из первого результата новой системы
+        if ($interpretation->results->count() > 0 && !$interpretation->relationLoaded('result')) {
+            // Создаем виртуальный результат для совместимости
+            $firstResult = $interpretation->results->first();
+            $interpretation->setRelation('result', $firstResult);
+        } else {
+            // Загружаем старый результат если нет новых
+            $interpretation->load('result.seriesDreams');
+        }
         
         $layoutData = $this->getLayoutData();
         $seo = \App\Helpers\SeoHelper::forDreamAnalyzerResult($interpretation);
@@ -328,6 +435,29 @@ class DreamAnalyzerController extends Controller
         }
         
         return $dreams;
+    }
+
+    /**
+     * Построить профиль пользователя для запроса к API
+     */
+    private function buildUserProfile($user): array
+    {
+        if (!$user) {
+            return [];
+        }
+
+        return [
+            'user_id' => (string) $user->id,
+            'experience_level' => 'практик', // TODO: можно добавить поле в таблицу users
+            'years_of_practice' => 0, // TODO: можно вычислить из первого отчёта
+            'primary_goals' => ['осознанность', 'исследование'], // TODO: можно добавить в профиль
+            'current_practices' => [], // TODO: можно добавить в профиль
+            'tradition_background' => [
+                'familiar_with' => [],
+                'preferred_concepts' => [],
+                'learning_goals' => [],
+            ],
+        ];
     }
 
     /**

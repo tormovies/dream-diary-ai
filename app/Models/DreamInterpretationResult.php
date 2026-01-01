@@ -15,7 +15,7 @@ class DreamInterpretationResult extends Model
         'traditions',
         'analysis_type',
         'recommendations',
-        // Поля для одиночного сна
+        // Поля для одиночного сна (старая система)
         'dream_title',
         'dream_detailed',
         'dream_type',
@@ -24,11 +24,15 @@ class DreamInterpretationResult extends Model
         'key_tags',
         'summary_insight',
         'emotional_tone',
-        // Поля для серии снов
+        // Поля для серии снов (старая система)
         'series_title',
         'overall_theme',
         'emotional_arc',
         'key_connections',
+        // Новые поля для унифицированной системы
+        'tradition_name',
+        'result_type',
+        'analysis_data',
     ];
 
     protected $casts = [
@@ -38,6 +42,7 @@ class DreamInterpretationResult extends Model
         'unified_locations' => 'array',
         'key_tags' => 'array',
         'key_connections' => 'array',
+        'analysis_data' => 'array', // JSON для новой унифицированной системы
     ];
 
     /**

@@ -78,31 +78,17 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * Scope для получения только незаблокированных пользователей
-     */
-    public function scopeNotBanned($query)
-    {
-        return $query->where('is_banned', false);
-    }
-
-    /**
      * Заблокировать пользователя
-     * Автоматически делает дневник приватным (скрывает весь контент)
      */
     public function ban(?string $reason = null): void
     {
-        // Сохраняем текущую приватность для возможности восстановления
         $oldPrivacy = $this->diary_privacy;
-        
         $this->update([
             'is_banned' => true,
             'banned_at' => now(),
             'ban_reason' => $reason,
-            'diary_privacy' => 'private', // Скрываем весь контент
+            'diary_privacy' => 'private',
         ]);
-        
-        // Сохраняем старое значение в ban_reason если оно было 'public' или 'friends'
-        // Формат: "причина|старая_приватность"
         if (in_array($oldPrivacy, ['public', 'friends'])) {
             $reasonWithPrivacy = $reason ? "{$reason}|{$oldPrivacy}" : "|{$oldPrivacy}";
             $this->update(['ban_reason' => $reasonWithPrivacy]);
@@ -111,13 +97,10 @@ class User extends Authenticatable implements MustVerifyEmail
 
     /**
      * Разблокировать пользователя
-     * Восстанавливает предыдущую настройку приватности дневника
      */
     public function unban(): void
     {
-        // Пытаемся восстановить старую приватность из ban_reason
-        $oldPrivacy = 'public'; // По умолчанию
-        
+        $oldPrivacy = 'public';
         if ($this->ban_reason && str_contains($this->ban_reason, '|')) {
             $parts = explode('|', $this->ban_reason);
             $extractedPrivacy = end($parts);
@@ -125,13 +108,20 @@ class User extends Authenticatable implements MustVerifyEmail
                 $oldPrivacy = $extractedPrivacy;
             }
         }
-        
         $this->update([
             'is_banned' => false,
             'banned_at' => null,
             'ban_reason' => null,
             'diary_privacy' => $oldPrivacy,
         ]);
+    }
+
+    /**
+     * Scope для получения только незаблокированных пользователей
+     */
+    public function scopeNotBanned($query)
+    {
+        return $query->where('is_banned', 0);
     }
 
     /**
@@ -164,14 +154,6 @@ class User extends Authenticatable implements MustVerifyEmail
     public function notifications(): HasMany
     {
         return $this->hasMany(Notification::class);
-    }
-
-    /**
-     * Анализы снов пользователя
-     */
-    public function dreamInterpretations(): HasMany
-    {
-        return $this->hasMany(DreamInterpretation::class);
     }
 
     /**
