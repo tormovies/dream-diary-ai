@@ -256,11 +256,16 @@
                         @if($users->count() > 0)
                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 @foreach($users as $user)
-                                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all">
+                                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all {{ $user->is_banned ? 'ring-2 ring-red-500' : '' }}">
                                         <div class="flex items-center gap-4 mb-4">
                                             <x-avatar :user="$user" size="lg" />
                                             <div class="flex-1">
-                                                <h3 class="font-semibold text-lg text-gray-900 dark:text-white">{{ $user->nickname }}</h3>
+                                                <h3 class="font-semibold text-lg text-gray-900 dark:text-white">
+                                                    {{ $user->nickname }}
+                                                    @if($user->is_banned && auth()->check() && auth()->user()->isAdmin())
+                                                        <span class="ml-2 px-2 py-1 text-xs font-bold bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 rounded">ЗАБЛОКИРОВАН</span>
+                                                    @endif
+                                                </h3>
                                                 <p class="text-sm text-gray-600 dark:text-gray-400">{{ $user->name }}</p>
                                             </div>
                                         </div>
@@ -453,11 +458,16 @@
                         @if($users->count() > 0)
                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 @foreach($users as $user)
-                                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all">
+                                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all {{ $user->is_banned ? 'ring-2 ring-red-500' : '' }}">
                                         <div class="flex items-center gap-4 mb-4">
                                             <x-avatar :user="$user" size="lg" />
                                             <div class="flex-1">
-                                                <h3 class="font-semibold text-lg text-gray-900 dark:text-white">{{ $user->nickname }}</h3>
+                                                <h3 class="font-semibold text-lg text-gray-900 dark:text-white">
+                                                    {{ $user->nickname }}
+                                                    @if($user->is_banned && auth()->check() && auth()->user()->isAdmin())
+                                                        <span class="ml-2 px-2 py-1 text-xs font-bold bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 rounded">ЗАБЛОКИРОВАН</span>
+                                                    @endif
+                                                </h3>
                                                 <p class="text-sm text-gray-600 dark:text-gray-400">{{ $user->name }}</p>
                                             </div>
                                         </div>

@@ -14,6 +14,11 @@ class UserController extends Controller
      */
     public function profile(User $user): View
     {
+        // Если пользователь заблокирован, показываем 404 (кроме администраторов)
+        if ($user->isBanned() && (!auth()->check() || !auth()->user()->isAdmin())) {
+            abort(404);
+        }
+
         $reportsCount = $user->reports()->count();
         $lastReport = $user->reports()->orderBy('report_date', 'desc')->first();
         
@@ -53,7 +58,7 @@ class UserController extends Controller
         // Статистика проекта (с кэшированием на 15 минут)
         $globalStats = \Illuminate\Support\Facades\Cache::remember('global_statistics', 900, function () {
             return [
-                'users' => User::count(),
+                'users' => User::notBanned()->count(), // Только незаблокированные
                 'reports' => \App\Models\Report::where('status', 'published')->count(),
                 'dreams' => \Illuminate\Support\Facades\DB::table('dreams')
                     ->join('reports', 'dreams.report_id', '=', 'reports.id')
@@ -114,6 +119,7 @@ class UserController extends Controller
             // Друзья онлайн
             if (!empty($friendIds)) {
                 $friendsOnline = User::whereIn('id', $friendIds)
+                    ->notBanned() // Исключаем заблокированных
                     ->whereHas('reports', function ($q) {
                         $q->whereDate('created_at', '>=', now()->subDays(7));
                     })
@@ -143,6 +149,11 @@ class UserController extends Controller
 
         // Поиск пользователей
         $query = User::query();
+        
+        // Админы видят всех, обычные пользователи - только незаблокированных
+        if (!$user || !$user->isAdmin()) {
+            $query->notBanned();
+        }
 
         if ($request->filled('q')) {
             $search = $request->q;
