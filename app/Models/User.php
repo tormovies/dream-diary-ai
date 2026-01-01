@@ -78,6 +78,14 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Scope для получения только незаблокированных пользователей
+     */
+    public function scopeNotBanned($query)
+    {
+        return $query->where('is_banned', false);
+    }
+
+    /**
      * Заблокировать пользователя
      * Автоматически делает дневник приватным (скрывает весь контент)
      */
