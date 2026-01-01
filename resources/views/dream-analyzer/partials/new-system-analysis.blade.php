@@ -566,6 +566,24 @@
         </div>
     @endif
 
+    <!-- Блок "Поделиться" -->
+    <div class="bg-gray-50 dark:bg-gray-900 rounded-2xl p-5 border border-gray-200 dark:border-gray-700">
+        <p class="text-gray-700 dark:text-gray-300 mb-4 text-center text-sm">
+            💬 Понравился анализ? Поделитесь с друзьями!
+        </p>
+        <div class="flex flex-wrap justify-center gap-3">
+            <button onclick="shareToVK(event)" class="cursor-pointer font-semibold text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors py-2 px-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 text-sm">
+                <i class="fab fa-vk mr-2"></i>ВКонтакте
+            </button>
+            <button onclick="shareToTelegram(event)" class="cursor-pointer font-semibold text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors py-2 px-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 text-sm">
+                <i class="fab fa-telegram mr-2"></i>Telegram
+            </button>
+            <button onclick="copyShareLink(event)" class="cursor-pointer font-semibold text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors py-2 px-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 text-sm">
+                <i class="fas fa-link mr-2"></i>Копировать
+            </button>
+        </div>
+    </div>
+
     <!-- Debug: JSON dump для админов -->
     @if(auth()->check() && auth()->user()->isAdmin())
         <details class="bg-gray-100 dark:bg-gray-900 rounded-2xl p-5 border border-gray-200 dark:border-gray-700">
