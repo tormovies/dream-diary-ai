@@ -51,13 +51,22 @@
             'emotional_tags' => 'Эмоциональные теги',
             'theme_tags' => 'Тематические теги',
             'skill_tags' => 'Теги навыков',
-            'lucidity_index' => 'Индекс люцидности',
+            'lucidity_index' => 'Индекс осознанности',
             'lucidity_score' => 'Оценка люцидности',
-            'lucidity_level' => 'Уровень люцидности',
+            'lucidity_level' => 'Уровень осознанности',
+            'indicators' => 'Индикаторы',
+            'developmental_potential' => 'Потенциал развития',
+            'lucidity_type' => 'Тип',
+            'cautionary_notes' => 'Предупреждения',
+            'for_self_inquiry' => 'Для самоисследования',
+            'for_practice_development' => 'Для развития практики',
+            'calculation_basis' => 'Основа расчёта',
+            'missed_opportunities_for_lucidity' => 'Упущенные возможности для люцидности',
             'calculation' => 'Расчёт',
             'interpretation' => 'Интерпретация',
             'lucid_moments' => 'Люцидные моменты',
             'lucid_moment' => 'Люцидный момент',
+            'moment' => 'Момент',
             'moment_time' => 'Время момента',
             'moment_description' => 'Описание момента',
             'moment_type' => 'Тип момента',
@@ -90,6 +99,50 @@
             'characters' => 'Персонажи',
             'key_insights' => 'Ключевые инсайты',
             'life_context_connections' => 'Контекст жизни',
+            'context_summary' => 'Контекст',
+            'stabilization' => 'Стабилизация',
+            'phase_stabilization' => 'Стабилизация фазы',
+            'stabilization_techniques' => 'Техники стабилизации',
+            'stabilization_methods' => 'Методы стабилизации',
+            'techniques' => 'Техники',
+            'methods' => 'Методы',
+            'technique' => 'Техника',
+            'method' => 'Метод',
+            'technique_name' => 'Название техники',
+            'technique_description' => 'Описание техники',
+            'technique_steps' => 'Шаги техники',
+            'when_to_use' => 'Когда использовать',
+            'effectiveness' => 'Эффективность',
+            'difficulty' => 'Сложность',
+            'duration' => 'Длительность',
+            'frequency' => 'Частота',
+            'recommended_for' => 'Рекомендуется для',
+            'tips' => 'Советы',
+            'common_mistakes' => 'Частые ошибки',
+            'variations' => 'Вариации',
+            'prerequisites' => 'Предварительные условия',
+            'expected_results' => 'Ожидаемые результаты',
+            'phase' => 'Фаза',
+            'phase_type' => 'Тип фазы',
+            'stability' => 'Стабильность',
+            'stability_level' => 'Уровень стабильности',
+            'maintenance' => 'Поддержание',
+            'recovery' => 'Восстановление',
+            'prevention' => 'Предотвращение',
+            'signs' => 'Признаки',
+            'symptoms' => 'Симптомы',
+            'triggers' => 'Триггеры',
+            'response' => 'Реакция',
+            'immediate' => 'Немедленно',
+            'gradual' => 'Постепенно',
+            'current_actions' => 'Текущие действия',
+            'missed_techniques' => 'Упущенные техники',
+            'stabilization_failure_point' => 'Точка сбоя стабилизации',
+            'techniques_stabilization' => 'Техники стабилизации',
+            'risk_mitigation' => 'Снижение рисков',
+            'for_next_session' => 'Для следующей сессии',
+            'long_term_development' => 'Долгосрочное развитие',
+            'psychological_function' => 'Психологическая функция',
         ];
         
         $fieldNameLower = mb_strtolower($fieldName);
@@ -177,37 +230,76 @@
                 @endif
             @endif
             
-            @if(isset($dreamMetadata['context_summary']))
-                @php $contextSummary = $safeDisplay($dreamMetadata['context_summary'], 'context_summary'); @endphp
-                @if(!empty($contextSummary))
-                    <div class="mb-3">
-                        <span class="text-xs font-semibold text-gray-600 dark:text-gray-400">Контекст:</span>
-                        <span class="text-gray-700 dark:text-gray-300 text-sm ml-1">{{ $contextSummary }}</span>
-                    </div>
-                @endif
-            @endif
         </div>
     @endif
 
     <!-- Детальный анализ -->
     @if(isset($dreamMetadata['dream_detailed']))
         @php
+            // Функция для очистки только начала и конца текста (сохраняет переносы строк внутри)
+            $trimEdges = function($text) {
+                if (empty($text)) return '';
+                // Убираем все пробелы, табуляции и переносы строк в самом начале
+                $text = ltrim($text, " \t\n\r\0\x0B");
+                // Убираем все пробелы, табуляции и переносы строк в самом конце
+                $text = rtrim($text, " \t\n\r\0\x0B");
+                return $text;
+            };
+            
             $detailedTextRaw = $safeDisplay($dreamMetadata['dream_detailed'], 'dream_detailed');
-            $detailedText = '';
-            if (!empty($detailedTextRaw)) {
-                $detailedText = trim($detailedTextRaw);
-                // Убираем множественные пробелы и переносы строк
-                $detailedText = preg_replace('/\s+/', ' ', $detailedText);
-                // Убираем пробелы в начале и конце каждого предложения (после точки, восклицательного знака и т.д.)
-                $detailedText = preg_replace('/\s+([.!?])\s+/', '$1 ', $detailedText);
-                $detailedText = trim($detailedText);
+            $detailedText = $trimEdges($detailedTextRaw);
+            
+            // Для Комплексного анализа добавляем systemic_analysis и primary_interpretation
+            $isComplexAnalysis = in_array(strtolower($tradition ?? ''), ['complex_analysis', 'комплексный анализ', 'complex']);
+            if ($isComplexAnalysis) {
+                $textParts = [];
+                if (!empty($detailedText)) {
+                    $textParts[] = $trimEdges($detailedText);
+                }
+                
+                // Добавляем systemic_analysis
+                $systemicAnalysis = $analysisData['systemic_analysis'] ?? $coreAnalysis['systemic_analysis'] ?? null;
+                if (!empty($systemicAnalysis)) {
+                    $systemicTextRaw = $safeDisplay($systemicAnalysis, 'systemic_analysis');
+                    $systemicText = $trimEdges($systemicTextRaw);
+                    if (!empty($systemicText)) {
+                        $textParts[] = $systemicText;
+                    }
+                }
+                
+                // Добавляем primary_interpretation
+                $primaryInterpretation = $analysisData['primary_interpretation'] ?? $coreAnalysis['primary_interpretation'] ?? null;
+                if (!empty($primaryInterpretation)) {
+                    $primaryTextRaw = $safeDisplay($primaryInterpretation, 'primary_interpretation');
+                    $primaryText = $trimEdges($primaryTextRaw);
+                    if (!empty($primaryText)) {
+                        $textParts[] = $primaryText;
+                    }
+                }
+                
+                // Объединяем через двойной перенос строки
+                $detailedText = implode("\n\n", array_filter($textParts));
+                // Убираем переносы строк только в начале и конце итогового текста
+                $detailedText = $trimEdges($detailedText);
             }
         @endphp
         @if(!empty($detailedText))
             <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 card-shadow border border-gray-200 dark:border-gray-700">
                 <h2 class="text-xl font-bold text-purple-600 dark:text-purple-400 mb-3">Детальный анализ</h2>
-                <div class="text-gray-700 dark:text-gray-300 leading-relaxed text-sm bg-gray-50 dark:bg-gray-900/50 p-3 rounded-lg">
-                    {{ $detailedText }}
+                <div class="text-gray-700 dark:text-gray-300 leading-relaxed text-sm bg-gray-50 dark:bg-gray-900/50 p-3 rounded-lg whitespace-pre-line">
+                    @php
+                        // Финальная очистка: убираем все пробелы, табуляции и переносы строк в самом начале
+                        $displayText = $detailedText;
+                        // Многократная очистка начала (на случай множественных переносов строк)
+                        while (preg_match('/^[\s\r\n\t]+/', $displayText)) {
+                            $displayText = preg_replace('/^[\s\r\n\t]+/', '', $displayText);
+                        }
+                        // Многократная очистка конца
+                        while (preg_match('/[\s\r\n\t]+$/', $displayText)) {
+                            $displayText = preg_replace('/[\s\r\n\t]+$/', '', $displayText);
+                        }
+                    @endphp
+                    {{ $displayText }}
                 </div>
             </div>
         @endif
@@ -280,6 +372,182 @@
                 </div>
             @endif
             
+            {{-- Emotional Breakdown для Комплексного анализа --}}
+            @php
+                $isComplexAnalysis = in_array(strtolower($tradition ?? ''), ['complex_analysis', 'комплексный анализ', 'complex']);
+                $complexEmotionalBreakdown = null;
+                if ($isComplexAnalysis) {
+                    $complexEmotionalBreakdown = $coreAnalysis['emotional_breakdown'] ?? $analysisData['emotional_breakdown'] ?? null;
+                }
+            @endphp
+            @if($isComplexAnalysis && !empty($complexEmotionalBreakdown) && is_array($complexEmotionalBreakdown))
+                @php
+                    // Словарь переводов для эмоциональных переменных
+                    $emotionalTranslations = [
+                        // Основные эмоциональные измерения
+                        'control' => 'Контроль',
+                        'arousal' => 'Возбуждение',
+                        'valence' => 'Валентность',
+                        'intensity' => 'Интенсивность',
+                        'dominance' => 'Доминирование',
+                        'activation' => 'Активация',
+                        'pleasure' => 'Удовольствие',
+                        'tension' => 'Напряжение',
+                        'energy' => 'Энергия',
+                        'calmness' => 'Спокойствие',
+                        'stress' => 'Стресс',
+                        'relaxation' => 'Расслабление',
+                        'excitement' => 'Волнение',
+                        'peace' => 'Покой',
+                        'anxiety' => 'Тревога',
+                        'slight_anxiety' => 'Легкая тревога',
+                        'slight anxiety' => 'Легкая тревога',
+                        'curiosity' => 'Любопытство',
+                        'nostalgia' => 'Ностальгия',
+                        'detachment' => 'Отстраненность',
+                        'happiness' => 'Счастье',
+                        'satisfaction' => 'Удовлетворение',
+                        'frustration' => 'Фрустрация',
+                        'contentment' => 'Удовлетворенность',
+                        'worry' => 'Беспокойство',
+                        'ease' => 'Легкость',
+                        'discomfort' => 'Дискомфорт',
+                        'comfort' => 'Комфорт',
+                        'unease' => 'Неловкость',
+                        'serenity' => 'Безмятежность',
+                        'restlessness' => 'Беспокойство',
+                        'tranquility' => 'Спокойствие',
+                        'agitation' => 'Возбуждение',
+                        'composure' => 'Самообладание',
+                        // Базовые эмоции
+                        'fear' => 'Страх',
+                        'joy' => 'Радость',
+                        'sadness' => 'Печаль',
+                        'anger' => 'Гнев',
+                        'surprise' => 'Удивление',
+                        'disgust' => 'Отвращение',
+                        'trust' => 'Доверие',
+                        'anticipation' => 'Ожидание',
+                        'contempt' => 'Презрение',
+                        'love' => 'Любовь',
+                        'hate' => 'Ненависть',
+                        'envy' => 'Зависть',
+                        'pride' => 'Гордость',
+                        'shame' => 'Стыд',
+                        'guilt' => 'Вина',
+                        'embarrassment' => 'Смущение',
+                        'humiliation' => 'Унижение',
+                        'gratitude' => 'Благодарность',
+                        'relief' => 'Облегчение',
+                        'hope' => 'Надежда',
+                        'despair' => 'Отчаяние',
+                        'loneliness' => 'Одиночество',
+                        'belonging' => 'Принадлежность',
+                        'rejection' => 'Отвержение',
+                        'acceptance' => 'Принятие',
+                        'isolation' => 'Изоляция',
+                        'connection' => 'Связь',
+                        'alienation' => 'Отчуждение',
+                        'intimacy' => 'Близость',
+                        // Дополнительные эмоциональные состояния
+                        'confusion' => 'Смятение',
+                        'clarity' => 'Ясность',
+                        'uncertainty' => 'Неопределенность',
+                        'certainty' => 'Уверенность',
+                        'doubt' => 'Сомнение',
+                        'conviction' => 'Убежденность',
+                        'indecision' => 'Нерешительность',
+                        'determination' => 'Решительность',
+                        'hesitation' => 'Нерешительность',
+                        'confidence' => 'Уверенность',
+                        'insecurity' => 'Неуверенность',
+                        'self_esteem' => 'Самооценка',
+                        'self_worth' => 'Самоценность',
+                        'self_doubt' => 'Сомнение в себе',
+                        'self_confidence' => 'Уверенность в себе',
+                        // Социальные эмоции
+                        'empathy' => 'Эмпатия',
+                        'sympathy' => 'Сочувствие',
+                        'compassion' => 'Сострадание',
+                        'indifference' => 'Безразличие',
+                        'concern' => 'Обеспокоенность',
+                        'care' => 'Забота',
+                        'neglect' => 'Пренебрежение',
+                        'attention' => 'Внимание',
+                        'ignorance' => 'Игнорирование',
+                        // Энергетические состояния
+                        'vitality' => 'Жизненная сила',
+                        'fatigue' => 'Усталость',
+                        'exhaustion' => 'Истощение',
+                        'vigor' => 'Бодрость',
+                        'lethargy' => 'Вялость',
+                        'alertness' => 'Бдительность',
+                        'drowsiness' => 'Сонливость',
+                        'wakefulness' => 'Бодрствование',
+                        'sleepiness' => 'Сонливость',
+                    ];
+                    
+                    // Функция для получения перевода
+                    $getEmotionalTranslation = function($key) use ($emotionalTranslations) {
+                        // Нормализуем ключ: убираем пробелы, приводим к нижнему регистру
+                        $normalizedKey = strtolower(trim($key));
+                        // Заменяем подчеркивания и дефисы на пробелы для поиска
+                        $searchKey = str_replace(['_', '-'], '', $normalizedKey);
+                        
+                        // Ищем точное совпадение
+                        if (isset($emotionalTranslations[$normalizedKey])) {
+                            return $emotionalTranslations[$normalizedKey];
+                        }
+                        
+                        // Ищем совпадение без подчеркиваний
+                        foreach ($emotionalTranslations as $enKey => $ruValue) {
+                            if (str_replace(['_', '-'], '', strtolower($enKey)) === $searchKey) {
+                                return $ruValue;
+                            }
+                        }
+                        
+                        // Если не нашли, используем автоматический перевод
+                        $translated = str_replace('_', ' ', $key);
+                        $translated = preg_replace('/([a-z])([A-Z])/', '$1 $2', $translated); // camelCase
+                        return mb_ucfirst(mb_strtolower($translated));
+                    };
+                    
+                    // Фильтруем только числовые значения (исключаем уже обработанные поля)
+                    $excludedFields = ['primary_emotion', 'secondary_emotions', 'emotional_triggers', 'emotional_trajectory'];
+                    $numericFields = [];
+                    foreach ($complexEmotionalBreakdown as $key => $value) {
+                        if (!in_array(strtolower($key), $excludedFields) && (is_numeric($value) || is_float($value))) {
+                            $numericFields[$key] = $value;
+                        }
+                    }
+                @endphp
+                @if(!empty($numericFields))
+                    <div class="mb-4">
+                        <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Эмоциональный профиль</h3>
+                        <div class="flex flex-wrap gap-2">
+                            @foreach($numericFields as $key => $value)
+                                @php
+                                    $translatedKey = $getEmotionalTranslation($key);
+                                    $displayValue = is_float($value) ? number_format($value, 1) : $value;
+                                    // Определяем цвет на основе значения (0-1)
+                                    $normalizedValue = floatval($value);
+                                    if ($normalizedValue >= 0.7) {
+                                        $colorClass = 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-300';
+                                    } elseif ($normalizedValue >= 0.4) {
+                                        $colorClass = 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-300';
+                                    } else {
+                                        $colorClass = 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-300';
+                                    }
+                                @endphp
+                                <span class="px-3 py-1 rounded-full text-sm font-medium {{ $colorClass }}">
+                                    {{ $translatedKey }}: {{ $displayValue }}
+                                </span>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+            @endif
+            
             @php
                 // Проверяем archetypal_patterns в разных местах
                 $archetypalPatterns = null;
@@ -319,6 +587,8 @@
                                     // Старый формат: function, manifestation
                                     $function = $pattern['function'] ?? $pattern['функция'] ?? null;
                                     $manifestation = $pattern['manifestation'] ?? $pattern['проявление'] ?? null;
+                                    // Психологическая функция
+                                    $psychologicalFunction = $pattern['psychological_function'] ?? $pattern['psychologicalFunction'] ?? $pattern['психологическая_функция'] ?? null;
                                 } elseif (is_object($pattern)) {
                                     $patternName = $pattern->pattern_name ?? $pattern->patternName ?? $pattern->название_паттерна ?? 
                                                   $pattern->archetype ?? $pattern->архетип ?? $pattern->name ?? $pattern->название ?? '';
@@ -326,12 +596,14 @@
                                     $strength = $pattern->strength ?? $pattern->сила ?? null;
                                     $function = $pattern->function ?? $pattern->функция ?? null;
                                     $manifestation = $pattern->manifestation ?? $pattern->проявление ?? null;
+                                    $psychologicalFunction = $pattern->psychological_function ?? $pattern->psychologicalFunction ?? $pattern->психологическая_функция ?? null;
                                 } else {
                                     $patternName = '';
                                     $description = null;
                                     $strength = null;
                                     $function = null;
                                     $manifestation = null;
+                                    $psychologicalFunction = null;
                                 }
                                 $patternName = trim($safeDisplay($patternName, 'pattern_name'));
                             @endphp
@@ -362,8 +634,16 @@
                                     @if(!empty($manifestation))
                                         @php $manifestationText = $safeDisplay($manifestation, 'archetype_manifestation'); @endphp
                                         @if(!empty($manifestationText))
-                                            <p class="text-sm text-gray-700 dark:text-gray-300">
+                                            <p class="text-sm text-gray-700 dark:text-gray-300 mb-1">
                                                 <span class="font-medium">Проявление:</span> {{ $manifestationText }}
+                                            </p>
+                                        @endif
+                                    @endif
+                                    @if(!empty($psychologicalFunction))
+                                        @php $psychologicalFunctionText = $safeDisplay($psychologicalFunction, 'psychological_function'); @endphp
+                                        @if(!empty($psychologicalFunctionText))
+                                            <p class="text-sm text-gray-700 dark:text-gray-300">
+                                                {{ $psychologicalFunctionText }}
                                             </p>
                                         @endif
                                     @endif
@@ -371,6 +651,95 @@
                             @endif
                         @endforeach
                     </div>
+                </div>
+            @endif
+            
+            {{-- Контекст (объединенный: context_summary, life_context_integration, life_context_connections) --}}
+            @php
+                // Проверяем все возможные поля контекста
+                $contextSummary = $dreamMetadata['context_summary'] ?? $analysisData['context_summary'] ?? $coreAnalysis['context_summary'] ?? null;
+                $lifeContextIntegration = $analysisData['life_context_integration'] ?? $coreAnalysis['life_context_integration'] ?? null;
+                $lifeContextConnections = $coreAnalysis['life_context_connections'] ?? null;
+            @endphp
+            @if(!empty($contextSummary) || !empty($lifeContextIntegration) || !empty($lifeContextConnections))
+                <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Контекст</h3>
+                    @php
+                        $contextValues = [];
+                        
+                        // Обрабатываем context_summary
+                        if (!empty($contextSummary)) {
+                            if (is_array($contextSummary)) {
+                                foreach($contextSummary as $key => $value) {
+                                    $valueText = $safeDisplay($value, 'context_summary_field');
+                                    if (!empty($valueText)) {
+                                        $contextValues[] = $valueText;
+                                    }
+                                }
+                            } else {
+                                $contextSummaryText = $safeDisplay($contextSummary, 'context_summary');
+                                if (!empty($contextSummaryText)) {
+                                    $contextValues[] = $contextSummaryText;
+                                }
+                            }
+                        }
+                        
+                        // Добавляем life_context_integration, если не пустое
+                        if (!empty($lifeContextIntegration)) {
+                            if (is_array($lifeContextIntegration)) {
+                                foreach($lifeContextIntegration as $key => $value) {
+                                    $valueText = $safeDisplay($value, 'life_context_integration_field');
+                                    if (!empty($valueText)) {
+                                        $contextValues[] = $valueText;
+                                    }
+                                }
+                            } else {
+                                $lifeContextIntegrationText = $safeDisplay($lifeContextIntegration, 'life_context_integration');
+                                if (!empty($lifeContextIntegrationText)) {
+                                    $contextValues[] = $lifeContextIntegrationText;
+                                }
+                            }
+                        }
+                        
+                        // Добавляем life_context_connections, если не пустое
+                        if (!empty($lifeContextConnections)) {
+                            if (is_array($lifeContextConnections)) {
+                                // Если это простой массив строк
+                                if (isset($lifeContextConnections[0]) && is_string($lifeContextConnections[0])) {
+                                    foreach($lifeContextConnections as $item) {
+                                        $itemText = $safeDisplay($item, 'life_context_item');
+                                        if (!empty($itemText)) {
+                                            $contextValues[] = $itemText;
+                                        }
+                                    }
+                                } else {
+                                    // Ассоциативный массив - извлекаем только значения, пропуская Certainty level
+                                    foreach($lifeContextConnections as $key => $value) {
+                                        $keyLower = mb_strtolower($key);
+                                        // Пропускаем Certainty level
+                                        if (in_array($keyLower, ['certainty_level', 'certainty level'])) {
+                                            continue;
+                                        }
+                                        // Для Possible connections убираем только заголовок, но оставляем значение
+                                        $valueText = $safeDisplay($value, 'life_context_field');
+                                        if (!empty($valueText)) {
+                                            $contextValues[] = $valueText;
+                                        }
+                                    }
+                                }
+                            } else {
+                                $lifeContextText = $safeDisplay($lifeContextConnections, 'life_context_connections');
+                                if (!empty($lifeContextText)) {
+                                    $contextValues[] = $lifeContextText;
+                                }
+                            }
+                        }
+                        
+                        $contextSummaryText = implode(' ', $contextValues);
+                    @endphp
+                    @if(!empty($contextSummaryText))
+                        <p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{{ $contextSummaryText }}</p>
+                    @endif
                 </div>
             @endif
             
@@ -385,59 +754,6 @@
                             @endif
                         @endforeach
                     </ul>
-                </div>
-            @endif
-            
-            @if(!empty($coreAnalysis['life_context_connections']))
-                <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Контекст жизни</h3>
-                    @php
-                        $lifeContext = $coreAnalysis['life_context_connections'];
-                    @endphp
-                    @if(is_array($lifeContext))
-                        @if(isset($lifeContext[0]) && is_string($lifeContext[0]))
-                            {{-- Простой массив строк --}}
-                            <ul class="list-disc list-inside space-y-1 ml-2">
-                                @foreach($lifeContext as $item)
-                                    @php $itemText = $safeDisplay($item, 'life_context_item'); @endphp
-                                    @if(!empty($itemText))
-                                        <li class="text-sm text-gray-700 dark:text-gray-300">{{ $itemText }}</li>
-                                    @endif
-                                @endforeach
-                            </ul>
-                        @else
-                            {{-- Ассоциативный массив или массив объектов --}}
-                            <div class="space-y-2">
-                                @foreach($lifeContext as $key => $value)
-                                    @php
-                                        $keyLower = mb_strtolower($key);
-                                        // Пропускаем только Certainty level (и заголовок, и значение)
-                                        if (in_array($keyLower, ['certainty_level', 'certainty level'])) {
-                                            continue;
-                                        }
-                                        // Для Possible connections убираем только заголовок, но оставляем значение
-                                        $showTitle = !in_array($keyLower, ['possible_connections', 'possible connections']);
-                                        $fieldTitle = is_numeric($key) ? '' : ($showTitle ? $translateField($key) : '');
-                                        $valueText = $safeDisplay($value, 'life_context_field');
-                                    @endphp
-                                    @if(!empty($valueText))
-                                        <div>
-                                            @if(!empty($fieldTitle))
-                                                <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">{{ $fieldTitle }}:</span>
-                                            @endif
-                                            <p class="text-sm text-gray-700 dark:text-gray-300 {{ !empty($fieldTitle) ? 'mt-1' : '' }}">{{ $valueText }}</p>
-                                        </div>
-                                    @endif
-                                @endforeach
-                            </div>
-                        @endif
-                    @else
-                        {{-- Строка или другой тип --}}
-                        @php $lifeContextText = $safeDisplay($lifeContext, 'life_context_connections'); @endphp
-                        @if(!empty($lifeContextText))
-                            <p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{{ $lifeContextText }}</p>
-                        @endif
-                    @endif
                 </div>
             @endif
         </div>
@@ -476,12 +792,13 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                                 @foreach($elements as $element)
                                     @if(is_array($element))
-                                        <div class="px-3 py-2 bg-gray-50 dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700">
+                                        <div class="relative px-3 py-2 bg-gray-50 dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700">
                                             @php
                                                 $elementName = $safeDisplay($element['element'] ?? $element['name'] ?? '');
                                                 $emotionalCharge = $safeDisplay($element['emotional_charge'] ?? '');
                                                 $symbolicMeaning = $safeDisplay($element['symbolic_meaning_primary'] ?? $element['symbolic_meaning'] ?? '');
                                                 $symbolicMeaningSecondary = $safeDisplay($element['symbolic_meaning_secondary'] ?? '');
+                                                $category = $safeDisplay($element['category'] ?? $element['категория'] ?? '');
                                             @endphp
                                             
                                             @if(!empty($elementName) || !empty($emotionalCharge))
@@ -501,11 +818,24 @@
                                             @endif
                                             
                                             @if(!empty($symbolicMeaning))
-                                                <p class="text-xs text-gray-700 dark:text-gray-300 mb-1">{{ $symbolicMeaning }}</p>
+                                                <p class="text-xs text-gray-700 dark:text-gray-300 mb-1 pb-6">{{ $symbolicMeaning }}</p>
                                             @endif
                                             
                                             @if(!empty($symbolicMeaningSecondary))
-                                                <p class="text-xs text-gray-700 dark:text-gray-300 italic">{{ $symbolicMeaningSecondary }}</p>
+                                                <p class="text-xs text-gray-700 dark:text-gray-300 italic pb-6">{{ $symbolicMeaningSecondary }}</p>
+                                            @endif
+                                            
+                                            {{-- Метка category в правом нижнем углу --}}
+                                            @if(!empty($category))
+                                                @php
+                                                    // Заменяем подчеркивания на пробелы
+                                                    $categoryDisplay = str_replace('_', ' ', $category);
+                                                @endphp
+                                                <div class="absolute bottom-2 right-2">
+                                                    <span class="text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-300 px-2 py-0.5 rounded-full whitespace-nowrap">
+                                                        {{ $categoryDisplay }}
+                                                    </span>
+                                                </div>
                                             @endif
                                         </div>
                                     @else
@@ -636,14 +966,14 @@
                                          ($indexNum >= 0.4 ? 'bg-blue-400 dark:bg-blue-600 text-blue-900 dark:text-blue-100' : 
                                          'bg-gray-400 dark:bg-gray-600 text-gray-900 dark:text-gray-100');
                         @endphp
-                        <div class="flex items-center justify-center mb-4">
+                        <div class="flex items-center justify-start mb-4">
                             <div class="relative inline-flex items-center justify-center">
                                 <div class="absolute inset-0 bg-gradient-to-r from-purple-400 to-blue-400 rounded-full blur opacity-30"></div>
                                 <div class="relative {{ $badgeColor }} rounded-full px-6 py-3 shadow-lg">
                                     <div class="flex items-center gap-2">
                                         <span class="text-2xl">⭐</span>
                                         <div>
-                                            <div class="text-xs font-semibold opacity-80">Индекс люцидности</div>
+                                            <div class="text-xs font-semibold opacity-80">Индекс осознанности</div>
                                             <div class="text-2xl font-bold">{{ number_format($indexPercent, 0) }}%</div>
                                         </div>
                                     </div>
@@ -678,26 +1008,50 @@
                                 {{-- Специальная обработка для Lucid moments --}}
                                 <div class="mb-4">
                                     <h4 class="text-base font-semibold text-gray-800 dark:text-gray-200 mb-3">{{ $fieldTitle }}</h4>
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
                                         @foreach($value as $moment)
                                             @if(is_array($moment))
                                                 <div class="px-4 py-3 bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
-                                                    @foreach($moment as $momentKey => $momentValue)
-                                                        @php
-                                                            $momentTitle = $translateField($momentKey);
-                                                            $momentText = $safeDisplay($momentValue, 'lucid_moment_field');
-                                                        @endphp
-                                                        @if(!empty($momentText))
-                                                            <div class="mb-2 last:mb-0">
-                                                                @if(!empty($momentTitle) && $momentKey !== 'description' && $momentKey !== 'описание')
-                                                                    <span class="text-xs font-semibold text-purple-700 dark:text-purple-300">{{ $momentTitle }}:</span>
-                                                                    <p class="text-sm text-gray-700 dark:text-gray-300 mt-0.5">{{ $momentText }}</p>
-                                                                @else
-                                                                    <p class="text-sm text-gray-700 dark:text-gray-300">{{ $momentText }}</p>
-                                                                @endif
-                                                            </div>
-                                                        @endif
-                                                    @endforeach
+                                                    @php
+                                                        // Собираем поля для отображения
+                                                        $momentText = '';
+                                                        $otherFields = [];
+                                                        
+                                                        foreach($moment as $momentKey => $momentValue) {
+                                                            $momentKeyLower = mb_strtolower($momentKey);
+                                                            // Поле "moment" или "Moment" - выводим только значение без заголовка
+                                                            if (in_array($momentKeyLower, ['moment', 'момент'])) {
+                                                                $momentText = $safeDisplay($momentValue, 'lucid_moment_field');
+                                                            } else {
+                                                                // Остальные поля собираем для отображения в одну строку
+                                                                $momentTitle = $translateField($momentKey);
+                                                                $momentValueText = $safeDisplay($momentValue, 'lucid_moment_field');
+                                                                if (!empty($momentValueText)) {
+                                                                    $otherFields[] = [
+                                                                        'title' => $momentTitle,
+                                                                        'value' => $momentValueText
+                                                                    ];
+                                                                }
+                                                            }
+                                                        }
+                                                    @endphp
+                                                    
+                                                    {{-- Выводим основной текст момента (если есть) --}}
+                                                    @if(!empty($momentText))
+                                                        <p class="text-sm font-medium text-gray-800 dark:text-gray-200 mb-2">{{ $momentText }}</p>
+                                                    @endif
+                                                    
+                                                    {{-- Выводим остальные поля в одну строку --}}
+                                                    @if(!empty($otherFields))
+                                                        <div class="flex flex-wrap items-center gap-2 text-xs">
+                                                            @foreach($otherFields as $field)
+                                                                <span class="text-gray-600 dark:text-gray-400">
+                                                                    <span class="font-semibold">{{ $field['title'] }}:</span>
+                                                                    <span class="text-gray-700 dark:text-gray-300">{{ $field['value'] }}</span>
+                                                                </span>
+                                                            @endforeach
+                                                        </div>
+                                                    @endif
                                                 </div>
                                             @else
                                                 @php $momentText = $safeDisplay($moment, 'lucid_moment'); @endphp
@@ -733,12 +1087,23 @@
                                 </div>
                             @endif
                         @else
-                            @php $valueText = $safeDisplay($value, 'lucidity_analysis'); @endphp
+                            @php 
+                                $valueText = $safeDisplay($value, 'lucidity_analysis');
+                                // Для lucidity_level выводим в одну строку
+                                $isLucidityLevel = mb_strtolower($key) === 'lucidity_level';
+                            @endphp
                             @if(!empty($valueText))
-                                <div class="mb-2">
-                                    <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1">{{ $fieldTitle }}</h4>
-                                    <p class="text-sm text-gray-700 dark:text-gray-300">{{ $valueText }}</p>
-                                </div>
+                                @if($isLucidityLevel)
+                                    <div class="mb-2">
+                                        <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ $fieldTitle }}:</span>
+                                        <span class="text-sm text-gray-700 dark:text-gray-300 ml-1">{{ $valueText }}</span>
+                                    </div>
+                                @else
+                                    <div class="mb-2">
+                                        <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1">{{ $fieldTitle }}</h4>
+                                        <p class="text-sm text-gray-700 dark:text-gray-300">{{ $valueText }}</p>
+                                    </div>
+                                @endif
                             @endif
                         @endif
                     @endforeach
@@ -764,7 +1129,7 @@
                 <div class="mb-4 p-3 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-200 dark:border-blue-800">
                     <div class="flex items-center gap-3 mb-2">
                         <span class="text-lg font-bold text-blue-600 dark:text-blue-400">
-                            Индекс люцидности: {{ isset($lucidityIndex['индекс']) ? number_format($lucidityIndex['индекс'], 2) : ($lucidityIndex['индекс'] ?? 'N/A') }}
+                            Индекс осознанности: {{ isset($lucidityIndex['индекс']) ? number_format($lucidityIndex['индекс'], 2) : ($lucidityIndex['индекс'] ?? 'N/A') }}
                         </span>
                     </div>
                     @if(!empty($lucidityIndex['расчёт']))
@@ -807,30 +1172,88 @@
                                         {{-- Numeric array --}}
                                         @if(is_array($analysisValue[0]))
                                             {{-- Array of objects --}}
-                                            <div class="space-y-2">
-                                                @foreach($analysisValue as $item)
-                                                    @if(is_array($item))
-                                                        <div class="px-3 py-2 bg-gray-50 dark:bg-gray-900 rounded text-sm">
-                                                            @foreach($item as $itemKey => $itemValue)
-                                                                @php $itemValueText = $safeDisplay($itemValue, $itemKey); @endphp
-                                                                @if(!empty($itemValueText))
-                                                                    <div class="mb-1 last:mb-0">
-                                                                        <span class="font-semibold text-gray-700 dark:text-gray-300">{{ $translateField($itemKey) }}:</span>
-                                                                        <span class="text-gray-600 dark:text-gray-400 ml-1">
-                                                                            {{ $itemValueText }}
+                                            @php
+                                                // Определяем, нужно ли отображать как плитку (как символические элементы)
+                                                $analysisKeyLower = mb_strtolower($analysisKey);
+                                                $isTileLayout = in_array($analysisKeyLower, ['matrix_glitches', 'глюки_матрицы', 'глюки матрицы', 'matrix glitches']);
+                                            @endphp
+                                            @if($isTileLayout)
+                                                {{-- Отображение как плитка (как символические элементы) --}}
+                                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                    @foreach($analysisValue as $item)
+                                                        @if(is_array($item))
+                                                            <div class="px-3 py-2 bg-gray-50 dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 relative">
+                                                                @php
+                                                                    // Определяем основные поля для отображения
+                                                                    $glitchType = $safeDisplay($item['glitch_type'] ?? $item['тип_глюка'] ?? '');
+                                                                    $description = $safeDisplay($item['description'] ?? $item['описание'] ?? '');
+                                                                    $probableCause = $safeDisplay($item['probable_cause'] ?? $item['вероятная_причина'] ?? '');
+                                                                    $severity = $safeDisplay($item['severity'] ?? $item['вес'] ?? $item['важность'] ?? '');
+                                                                @endphp
+                                                                
+                                                                {{-- Пометка о весе (severity) в правом верхнем углу --}}
+                                                                @if(!empty($severity))
+                                                                    <div class="absolute top-2 right-2">
+                                                                        <span class="text-xs bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-300 px-2 py-0.5 rounded-full whitespace-nowrap">
+                                                                            {{ $severity }}
                                                                         </span>
                                                                     </div>
                                                                 @endif
-                                                            @endforeach
-                                                        </div>
-                                                    @else
-                                                        @php $itemText = $safeDisplay($item, 'analysis_item'); @endphp
-                                                        @if(!empty($itemText))
-                                                            <div class="text-sm text-gray-700 dark:text-gray-300">{{ $itemText }}</div>
+                                                                
+                                                                {{-- glitch_type жирным шрифтом --}}
+                                                                @if(!empty($glitchType))
+                                                                    <h4 class="text-sm font-bold text-gray-800 dark:text-gray-200 mb-2 pr-16">
+                                                                        {{ $glitchType }}
+                                                                    </h4>
+                                                                @endif
+                                                                
+                                                                {{-- description простым шрифтом --}}
+                                                                @if(!empty($description))
+                                                                    <p class="text-xs text-gray-700 dark:text-gray-300 mb-2">{{ $description }}</p>
+                                                                @endif
+                                                                
+                                                                {{-- probable_cause простым шрифтом --}}
+                                                                @if(!empty($probableCause))
+                                                                    <p class="text-xs text-gray-700 dark:text-gray-300">{{ $probableCause }}</p>
+                                                                @endif
+                                                            </div>
+                                                        @else
+                                                            @php $itemText = $safeDisplay($item, 'analysis_item'); @endphp
+                                                            @if(!empty($itemText))
+                                                                <div class="px-3 py-2 bg-gray-50 dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700">
+                                                                    <p class="text-sm text-gray-700 dark:text-gray-300">{{ $itemText }}</p>
+                                                                </div>
+                                                            @endif
                                                         @endif
-                                                    @endif
-                                                @endforeach
-                                            </div>
+                                                    @endforeach
+                                                </div>
+                                            @else
+                                                {{-- Обычное отображение списком --}}
+                                                <div class="space-y-2">
+                                                    @foreach($analysisValue as $item)
+                                                        @if(is_array($item))
+                                                            <div class="px-3 py-2 bg-gray-50 dark:bg-gray-900 rounded text-sm">
+                                                                @foreach($item as $itemKey => $itemValue)
+                                                                    @php $itemValueText = $safeDisplay($itemValue, $itemKey); @endphp
+                                                                    @if(!empty($itemValueText))
+                                                                        <div class="mb-1 last:mb-0">
+                                                                            <span class="font-semibold text-gray-700 dark:text-gray-300">{{ $translateField($itemKey) }}:</span>
+                                                                            <span class="text-gray-600 dark:text-gray-400 ml-1">
+                                                                                {{ $itemValueText }}
+                                                                            </span>
+                                                                        </div>
+                                                                    @endif
+                                                                @endforeach
+                                                            </div>
+                                                        @else
+                                                            @php $itemText = $safeDisplay($item, 'analysis_item'); @endphp
+                                                            @if(!empty($itemText))
+                                                                <div class="text-sm text-gray-700 dark:text-gray-300">{{ $itemText }}</div>
+                                                            @endif
+                                                        @endif
+                                                    @endforeach
+                                                </div>
+                                            @endif
                                         @else
                                             {{-- Array of strings --}}
                                             <ul class="list-disc list-inside space-y-1 ml-2">
@@ -1120,11 +1543,58 @@
                     <h3 class="text-base font-semibold text-gray-800 dark:text-gray-200 mb-2">Пошаговые руководства</h3>
                     <div class="space-y-3">
                         @foreach($stepByStepGuides as $guide)
-                            @if(is_array($guide))
+                            @if(is_string($guide))
+                                {{-- Если guide - это строка с нумерованным списком --}}
+                                @php
+                                    $stepsText = $guide;
+                                    // Парсим нумерованный список из строки
+                                    $stepItems = [];
+                                    
+                                    // Паттерн для поиска "1. текст 2. текст"
+                                    if (preg_match_all('/\d+\.\s*([^0-9]+?)(?=\s*\d+\.|$)/s', $stepsText, $matches)) {
+                                        $stepItems = array_map('trim', $matches[1]);
+                                    } else {
+                                        // Альтернативный способ: разбиваем по "число. "
+                                        $parts = preg_split('/(?=\d+\.\s)/', $stepsText, -1, PREG_SPLIT_NO_EMPTY);
+                                        foreach ($parts as $part) {
+                                            $part = trim($part);
+                                            $cleaned = preg_replace('/^\d+\.\s*/', '', $part);
+                                            if (!empty($cleaned) && strlen($cleaned) > 3) {
+                                                $stepItems[] = $cleaned;
+                                            }
+                                        }
+                                    }
+                                    
+                                    $stepItems = array_filter($stepItems, function($item) {
+                                        return !empty(trim($item)) && strlen(trim($item)) > 3;
+                                    });
+                                    $stepItems = array_values($stepItems);
+                                @endphp
+                                @if(!empty($stepItems) && count($stepItems) > 0)
+                                    <div class="px-3 py-2 bg-gray-50 dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700">
+                                        <ol class="list-decimal list-inside space-y-1.5 ml-2 text-xs text-gray-700 dark:text-gray-300">
+                                            @foreach($stepItems as $step)
+                                                @php
+                                                    $stepText = trim($step);
+                                                    $stepTextFormatted = preg_replace('/\*\*([^*]+)\*\*/', '<strong>$1</strong>', $stepText);
+                                                @endphp
+                                                @if(!empty($stepText))
+                                                    <li class="leading-relaxed">{!! $stepTextFormatted !!}</li>
+                                                @endif
+                                            @endforeach
+                                        </ol>
+                                    </div>
+                                @else
+                                    <div class="px-3 py-2 bg-gray-50 dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700">
+                                        <p class="text-xs text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{{ $stepsText }}</p>
+                                    </div>
+                                @endif
+                            @elseif(is_array($guide))
                                 <div class="px-3 py-2 bg-gray-50 dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700">
                                     @php
                                         $guideTitle = $safeDisplay($guide['title'] ?? $guide['название'] ?? $guide['guide'] ?? $guide['руководство'] ?? null, 'guide_title');
-                                        $guideSteps = $guide['steps'] ?? $guide['шаги'] ?? $guide['step_by_step'] ?? null;
+                                        // Проверяем все возможные поля для шагов
+                                        $guideSteps = $guide['steps'] ?? $guide['шаги'] ?? $guide['step_by_step'] ?? $guide['пошагово'] ?? $guide['description'] ?? $guide['описание'] ?? $guide['content'] ?? $guide['содержание'] ?? null;
                                     @endphp
                                     @if(!empty($guideTitle))
                                         <h4 class="text-sm font-semibold text-purple-600 dark:text-purple-400 mb-2">
@@ -1133,34 +1603,76 @@
                                     @endif
                                     @if(!empty($guideSteps))
                                         @if(is_array($guideSteps))
-                                            <ol class="list-decimal list-inside space-y-1 ml-2 text-xs text-gray-700 dark:text-gray-300">
+                                            <ol class="list-decimal list-inside space-y-1.5 ml-2 text-xs text-gray-700 dark:text-gray-300">
                                                 @foreach($guideSteps as $step)
-                                                    @php $stepText = $safeDisplay($step, 'guide_step'); @endphp
+                                                    @php 
+                                                        $stepText = $safeDisplay($step, 'guide_step');
+                                                        // Обрабатываем жирный текст **текст** в markdown
+                                                        $stepTextFormatted = preg_replace('/\*\*([^*]+)\*\*/', '<strong>$1</strong>', $stepText);
+                                                    @endphp
                                                     @if(!empty($stepText))
-                                                        <li>{{ $stepText }}</li>
+                                                        <li class="leading-relaxed">{!! $stepTextFormatted !!}</li>
                                                     @endif
                                                 @endforeach
                                             </ol>
                                         @else
                                             @php
                                                 $stepsText = $safeDisplay($guideSteps, 'guide_steps');
-                                                // Парсим шаги: ищем паттерн "1. текст 2. текст" и разбиваем на список
-                                                if (preg_match_all('/\d+\.\s*([^0-9]+?)(?=\d+\.|$)/', $stepsText, $matches)) {
-                                                    $stepItems = array_map('trim', $matches[1]);
-                                                } else {
-                                                    $stepItems = preg_split('/\n|\d+\.\s+/', $stepsText, -1, PREG_SPLIT_NO_EMPTY);
-                                                    $stepItems = array_map('trim', $stepItems);
-                                                    $stepItems = array_filter($stepItems, function($item) {
-                                                        return !empty($item) && strlen($item) > 3;
-                                                    });
+                                                // Улучшенный парсинг нумерованного списка
+                                                $stepItems = [];
+                                                
+                                                // Простой и надежный способ: разбиваем по паттерну "число. " (с пробелом после точки)
+                                                // Используем положительный lookahead, чтобы сохранить разделитель
+                                                $parts = preg_split('/(?=\d+\.\s)/', $stepsText, -1, PREG_SPLIT_NO_EMPTY);
+                                                
+                                                foreach ($parts as $part) {
+                                                    $part = trim($part);
+                                                    if (empty($part)) continue;
+                                                    
+                                                    // Убираем номер в начале (например, "1. " или "12. ")
+                                                    $cleaned = preg_replace('/^\d+\.\s*/', '', $part);
+                                                    $cleaned = trim($cleaned);
+                                                    
+                                                    if (!empty($cleaned) && strlen($cleaned) > 3) {
+                                                        $stepItems[] = $cleaned;
+                                                    }
                                                 }
+                                                
+                                                // Если не получилось разбить, пробуем другой подход - ищем все вхождения "число. "
+                                                if (empty($stepItems) || count($stepItems) < 2) {
+                                                    // Ищем все позиции, где начинается новый пункт (число. )
+                                                    if (preg_match_all('/\d+\.\s*/', $stepsText, $numberMatches, PREG_OFFSET_CAPTURE)) {
+                                                        $stepItems = [];
+                                                        $positions = $numberMatches[0];
+                                                        
+                                                        for ($i = 0; $i < count($positions); $i++) {
+                                                            $startPos = $positions[$i][1] + strlen($positions[$i][0]);
+                                                            $endPos = ($i + 1 < count($positions)) ? $positions[$i + 1][1] : strlen($stepsText);
+                                                            
+                                                            $stepText = trim(substr($stepsText, $startPos, $endPos - $startPos));
+                                                            if (!empty($stepText) && strlen($stepText) > 3) {
+                                                                $stepItems[] = $stepText;
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                                
+                                                // Фильтруем пустые элементы
+                                                $stepItems = array_filter($stepItems, function($item) {
+                                                    return !empty(trim($item)) && strlen(trim($item)) > 3;
+                                                });
+                                                $stepItems = array_values($stepItems); // Переиндексируем массив
                                             @endphp
-                                            @if(!empty($stepItems) && count($stepItems) > 1)
-                                                <ol class="list-decimal list-inside space-y-1 ml-2 text-xs text-gray-700 dark:text-gray-300">
+                                            @if(!empty($stepItems) && count($stepItems) > 0)
+                                                <ol class="list-decimal list-inside space-y-1.5 ml-2 text-xs text-gray-700 dark:text-gray-300">
                                                     @foreach($stepItems as $step)
-                                                        @php $stepText = $safeDisplay($step, 'guide_step'); @endphp
+                                                        @php
+                                                            $stepText = trim($step);
+                                                            // Обрабатываем жирный текст **текст** в markdown, преобразуя в HTML
+                                                            $stepTextFormatted = preg_replace('/\*\*([^*]+)\*\*/', '<strong>$1</strong>', $stepText);
+                                                        @endphp
                                                         @if(!empty($stepText))
-                                                            <li>{{ $stepText }}</li>
+                                                            <li class="leading-relaxed">{!! $stepTextFormatted !!}</li>
                                                         @endif
                                                     @endforeach
                                                 </ol>
@@ -1230,17 +1742,35 @@
                                 @foreach($value as $item)
                                     @if(is_array($item))
                                         {{-- Массив объектов --}}
+                                        @php
+                                            // Определяем, это "Техники стабилизации" или нет
+                                            $keyLower = mb_strtolower($key);
+                                            $isStabilizationTechniques = in_array($keyLower, ['stabilization_techniques', 'techniques_stabilization', 'техники_стабилизации', 'техники стабилизации']);
+                                            // Поля, которые нужно отображать в одну строку
+                                            $inlineFields = ['description', 'описание', 'when_to_use', 'когда_использовать', 'technique_name', 'название_техники'];
+                                        @endphp
                                         <div class="px-3 py-2 bg-gray-50 dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700">
                                             @foreach($item as $itemKey => $itemValue)
                                                 @php
+                                                    $itemKeyLower = mb_strtolower($itemKey);
                                                     $itemTitle = $translateField($itemKey);
                                                     $itemText = $safeDisplay($itemValue, 'practical_guidance_item');
+                                                    $isInline = $isStabilizationTechniques && in_array($itemKeyLower, $inlineFields);
                                                 @endphp
                                                 @if(!empty($itemText))
-                                                    <div class="mb-1">
-                                                        <span class="text-xs font-semibold text-gray-600 dark:text-gray-400">{{ $itemTitle }}:</span>
-                                                        <p class="text-sm text-gray-700 dark:text-gray-300 mt-1">{{ $itemText }}</p>
-                                                    </div>
+                                                    @if($isInline)
+                                                        {{-- Отображение в одну строку --}}
+                                                        <div class="mb-1">
+                                                            <span class="text-xs font-semibold text-gray-600 dark:text-gray-400">{{ $itemTitle }}:</span>
+                                                            <span class="text-sm text-gray-700 dark:text-gray-300 ml-1">{{ $itemText }}</span>
+                                                        </div>
+                                                    @else
+                                                        {{-- Обычное отображение (на разных строках) --}}
+                                                        <div class="mb-1">
+                                                            <span class="text-xs font-semibold text-gray-600 dark:text-gray-400">{{ $itemTitle }}:</span>
+                                                            <p class="text-sm text-gray-700 dark:text-gray-300 mt-1">{{ $itemText }}</p>
+                                                        </div>
+                                                    @endif
                                                 @endif
                                             @endforeach
                                         </div>

@@ -74,45 +74,30 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function isBanned(): bool
     {
-        return $this->is_banned;
+        return $this->is_banned === true;
     }
 
     /**
      * Заблокировать пользователя
      */
-    public function ban(?string $reason = null): void
+    public function ban(?string $reason = null): bool
     {
-        $oldPrivacy = $this->diary_privacy;
-        $this->update([
+        return $this->update([
             'is_banned' => true,
             'banned_at' => now(),
             'ban_reason' => $reason,
-            'diary_privacy' => 'private',
         ]);
-        if (in_array($oldPrivacy, ['public', 'friends'])) {
-            $reasonWithPrivacy = $reason ? "{$reason}|{$oldPrivacy}" : "|{$oldPrivacy}";
-            $this->update(['ban_reason' => $reasonWithPrivacy]);
-        }
     }
 
     /**
      * Разблокировать пользователя
      */
-    public function unban(): void
+    public function unban(): bool
     {
-        $oldPrivacy = 'public';
-        if ($this->ban_reason && str_contains($this->ban_reason, '|')) {
-            $parts = explode('|', $this->ban_reason);
-            $extractedPrivacy = end($parts);
-            if (in_array($extractedPrivacy, ['public', 'friends', 'private'])) {
-                $oldPrivacy = $extractedPrivacy;
-            }
-        }
-        $this->update([
+        return $this->update([
             'is_banned' => false,
             'banned_at' => null,
             'ban_reason' => null,
-            'diary_privacy' => $oldPrivacy,
         ]);
     }
 
@@ -121,7 +106,7 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function scopeNotBanned($query)
     {
-        return $query->where('is_banned', 0);
+        return $query->where('is_banned', false)->orWhereNull('is_banned');
     }
 
     /**
