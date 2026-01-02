@@ -1,0 +1,170 @@
+{
+    "request_metadata": {
+        "analysis_version": "2.0",
+        "request_type": "dream_analysis",
+        "request_id": "12065453-eede-4e3a-88bb-70a2291ebb40",
+        "client_platform": "web",
+        "analysis_depth": "глубокий"
+    },
+    "analysis_config": {
+        "mode": "single_tradition",
+        "tradition": {
+            "name": "complex_analysis",
+            "display_name": "Комплексный анализ",
+            "tradition_specific_clarification": {
+                "definition_source": "интегративный_подход",
+                "key_concepts": [
+                    "многоуровневость",
+                    "интеграция_методов",
+                    "системность",
+                    "контекстуальность"
+                ],
+                "methodology": [
+                    "комбинирование_традиций",
+                    "адаптация_к_клиенту",
+                    "гибкость"
+                ],
+                "core_terminology_ru": [
+                    "мета_анализ",
+                    "интеграция",
+                    "контекст",
+                    "многоуровневость"
+                ],
+                "approach": "холистический_интегративный",
+                "avoid_eclecticism": [
+                    "бессистемное_смешение",
+                    "противоречивые_методы"
+                ]
+            },
+            "analysis_parameters": {
+                "depth": "deep",
+                "include_multiple_perspectives": true,
+                "include_systemic_analysis": true,
+                "integrate_contradictions": true,
+                "holistic_approach": true,
+                "context_sensitive": true
+            },
+            "requested_aspects": [
+                "мультиперспективность",
+                "системный_анализ",
+                "интегративный_подход",
+                "контекстуальность",
+                "многоуровневость",
+                "синтез_методов",
+                "холистическое_видение"
+            ]
+        },
+        "output_format": "unified_schema_v1.1",
+        "response_language": "ru"
+    },
+    "user_profile": {
+        "user_id": 1,
+        "experience_level": "практик",
+        "years_of_practice": 2,
+        "primary_goals": [
+            "осознанность",
+            "исследование"
+        ],
+        "current_practices": [
+            "ведёт дневник"
+        ],
+        "tradition_background": {
+            "familiar_with": [],
+            "preferred_concepts": [],
+            "learning_goals": []
+        }
+    },
+    "context_summary": "Последние дни много работы, чувствую усталость. Хочется больше свободы и легкости в жизни.",
+    "dream_data": {
+        "raw_text": "Я летал над городом, видел знакомые места, но они были немного другими. Чувствовал легкость и свободу. Потом проснулся с ощущением радости.",
+        "recall_clarity": 0.9,
+        "sensory_details": {
+            "visual_vividness": 0.8,
+            "sound_presence": true,
+            "tactile_sensations": true,
+            "color_presence": "яркие",
+            "unusual_perceptions": []
+        },
+        "narrative_annotations": {
+            "plot_coherence": 0.9,
+            "character_consistency": 0.8,
+            "temporal_logic": 0.6,
+            "archetypal_density": 0.7,
+            "symbolic_layers_count": 3
+        }
+    },
+    "unified_schema_request": {
+        "analysis_mode": "single",
+        "traditions_to_compare": [],
+        "comparison_depth": "medium",
+        "required_sections": [
+            "dream_metadata",
+            "core_analysis",
+            "symbolic_elements",
+            "practical_guidance",
+            "recommendations",
+            "context_summary"
+        ],
+        "optional_sections": [
+            "tradition_specific",
+            "lucidity_analysis"
+        ],
+        "include_tags_and_categories": true,
+        "tag_types": [
+            "primary_tags",
+            "emotional_tags",
+            "theme_tags",
+            "skill_tags"
+        ],
+        "sections_configuration": {
+            "dream_metadata": {
+                "required_fields": [
+                    "dream_title",
+                    "dream_type",
+                    "summary_insight",
+                    "emotional_tone",
+                    "raw_text",
+                    "context_summary"
+                ],
+                "optional_fields": [
+                    "dream_detailed",
+                    "dream_date",
+                    "recall_quality"
+                ],
+                "field_guidelines": {
+                    "dream_title": "Метафоричное название на основе главного символа/механизма сна",
+                    "dream_type": "Тип из: обычный, осознанный, кошмар, пограничный, исследовательский, повторяющийся, пророческий",
+                    "summary_insight": "1-2 фразы с ключевым инсайтом о механизме/функции сна",
+                    "emotional_tone": "Основной эмоциональный фон: нейтральный, тревожный, радостный, исследовательский и т.д.",
+                    "dream_detailed": "3-5 предложений нарративного анализа: начало-развитие-кульминация-значение",
+                    "dream_date": "Дата в формате ГГГГ-ММ-ДД (если предоставлена)",
+                    "recall_quality": "Оценка 0-1 точности воспроизведения (если предоставлена)"
+                },
+                "dream_detailed_length": "long"
+            }
+        },
+        "symbolic_elements_config": {
+            "include_objects": true,
+            "include_locations": true,
+            "include_characters": true,
+            "include_actions": true,
+            "categorize_by": [
+                "emotional_charge",
+                "symbolic_meaning"
+            ]
+        },
+        "core_analysis_config": {
+            "include_emotional_breakdown": true,
+            "include_archetypal_patterns": true,
+            "include_life_context": true
+        },
+        "practical_guidance_config": {
+            "include_os_scenarios": true,
+            "include_therapeutic_approaches": true,
+            "include_immediate_actions": true
+        },
+        "response_structure": "v1.1",
+        "language": "ru",
+        "detail_level": "detailed"
+    }
+}

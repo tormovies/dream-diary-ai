@@ -19,6 +19,11 @@ return [
         'difficulty_level' => 'advanced',
         
         'category' => 'психоаналитическая',
+        'user_context_rules' => [
+            'recommended_level' => 'практик',
+            'compatible_goals' => ['терапия', 'исследование'],
+            'useful_practices' => ['ведёт дневник', 'психоанализ']
+        ],
         'tradition_specific_clarification' => [
             'definition_source' => 'классический_психоанализ_Фрейда',
             'key_concepts' => [
@@ -73,6 +78,11 @@ return [
         'difficulty_level' => 'intermediate',
         
         'category' => 'аналитическая_психология',
+        'user_context_rules' => [
+            'recommended_level' => 'практик',
+            'compatible_goals' => ['исследование', 'интеграция'],
+            'useful_practices' => ['ведёт дневник', 'активное воображение']
+        ],
         'tradition_specific_clarification' => [
             'definition_source' => 'аналитическая_психология_Юнга',
             'key_concepts' => [
@@ -128,6 +138,11 @@ return [
         'difficulty_level' => 'beginner',
         
         'category' => 'когнитивно_поведенческая',
+        'user_context_rules' => [
+            'recommended_level' => 'новичок',
+            'compatible_goals' => ['терапия', 'навыки'],
+            'useful_practices' => ['ведёт дневник', 'когнитивная переоценка']
+        ],
         'tradition_specific_clarification' => [
             'definition_source' => 'когнитивно_поведенческая_терапия_сновидений',
             'key_concepts' => [
@@ -180,6 +195,11 @@ return [
         'difficulty_level' => 'intermediate',
         
         'category' => 'универсальный_символизм',
+        'user_context_rules' => [
+            'recommended_level' => 'практик',
+            'compatible_goals' => ['исследование', 'творчество'],
+            'useful_practices' => ['ведёт дневник', 'работа с символами']
+        ],
         'tradition_specific_clarification' => [
             'definition_source' => 'универсальный_символизм',
             'key_concepts' => [
@@ -236,6 +256,11 @@ return [
         'difficulty_level' => 'advanced',
         
         'category' => 'традиционные_практики',
+        'user_context_rules' => [
+            'recommended_level' => 'практик',
+            'compatible_goals' => ['исследование', 'целительство'],
+            'useful_practices' => ['медитирует', 'шаманские практики']
+        ],
         'tradition_specific_clarification' => [
             'definition_source' => 'традиционный_шаманизм',
             'key_concepts' => [
@@ -292,6 +317,11 @@ return [
         'difficulty_level' => 'intermediate',
         
         'category' => 'терапевтическая',
+        'user_context_rules' => [
+            'recommended_level' => 'практик',
+            'compatible_goals' => ['терапия', 'интеграция'],
+            'useful_practices' => ['ведёт дневник', 'диалог с частями']
+        ],
         'tradition_specific_clarification' => [
             'definition_source' => 'гештальт_терапия_Перлза',
             'key_concepts' => [
@@ -349,6 +379,11 @@ return [
         'difficulty_level' => 'beginner',
         
         'category' => 'осознанные_сновидения',
+        'user_context_rules' => [
+            'recommended_level' => 'практик',
+            'compatible_goals' => ['осознанность', 'навыки'],
+            'useful_practices' => ['делает проверку реальности', 'медитирует']
+        ],
         'tradition_specific_clarification' => [
             'definition_source' => 'lucid_centered_approach',
             'key_concepts' => [
@@ -405,6 +440,11 @@ return [
         'difficulty_level' => 'intermediate',
         
         'category' => 'практики_ОС',
+        'user_context_rules' => [
+            'recommended_level' => 'новичок',
+            'compatible_goals' => ['осознанность', 'навыки', 'эксперименты'],
+            'useful_practices' => ['делает проверку реальности', 'ведёт дневник']
+        ],
         'tradition_specific_clarification' => [
             'definition_source' => 'субкультура_практиков_ОС',
             'key_sources' => [
@@ -415,9 +455,9 @@ return [
             'core_terminology' => [
                 'глюки_матрицы',
                 'стабилизация_фазы',
-                'ПР',
+                'проверка реальности',
                 'точка_входа',
-                'ФВО',
+                'фаза внетелесных ощущений',
                 'люцидность',
             ],
             'style' => 'практичный_технический_сленг',
@@ -462,6 +502,11 @@ return [
         'difficulty_level' => 'advanced',
         
         'category' => 'интегративный',
+        'user_context_rules' => [
+            'recommended_level' => 'эксперт',
+            'compatible_goals' => ['исследование', 'интеграция', 'терапия'],
+            'useful_practices' => ['ведёт дневник']
+        ],
         'tradition_specific_clarification' => [
             'definition_source' => 'интегративный_подход',
             'key_concepts' => [

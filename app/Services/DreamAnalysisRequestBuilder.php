@@ -62,13 +62,20 @@ class DreamAnalysisRequestBuilder
         $unifiedSchemaRequest['analysis_mode'] = 'single';
         $unifiedSchemaRequest['traditions_to_compare'] = [];
 
-        // Формируем user_profile
+        // Получаем user_context_rules из традиции
+        $userContextRules = $tradition['user_context_rules'] ?? [];
+        
+        // Формируем user_context
+        // Используем значения из традиции, если они не переданы в userProfile
         $userProfileData = array_merge(
-            $this->template['user_profile'] ?? [],
+            $this->template['user_context'] ?? [],
             [
                 'user_id' => $userId,
+                'experience_level' => $userProfile['experience_level'] ?? $userContextRules['recommended_level'] ?? 'практик',
+                'primary_goals' => $userProfile['primary_goals'] ?? $userContextRules['compatible_goals'] ?? [],
+                'current_practices' => $userProfile['current_practices'] ?? $userContextRules['useful_practices'] ?? [],
             ],
-            $userProfile
+            $userProfile // Переданные значения имеют приоритет
         );
 
         // Формируем dream_data
@@ -93,7 +100,7 @@ class DreamAnalysisRequestBuilder
                 'analysis_depth' => 'глубокий',
             ],
             'analysis_config' => $analysisConfig,
-            'user_profile' => $userProfileData,
+            'user_context' => $userProfileData,
             'context_summary' => $contextSummary,
             'dream_data' => $dreamData,
             'unified_schema_request' => $unifiedSchemaRequest,
@@ -142,11 +149,17 @@ class DreamAnalysisRequestBuilder
         // Получаем данные всех традиций
         $allTraditionKeys = array_merge([$primaryTradition], $secondaryTraditions);
         $traditionBlocks = [];
+        $primaryTraditionData = null; // Сохраняем данные primary традиции для user_context_rules
 
         foreach ($allTraditionKeys as $traditionKey) {
             $tradition = $this->traditions[$traditionKey] ?? null;
             if (!$tradition) {
                 throw new \InvalidArgumentException("Традиция '{$traditionKey}' не найдена");
+            }
+
+            // Сохраняем данные primary традиции
+            if ($traditionKey === $primaryTradition) {
+                $primaryTraditionData = $tradition;
             }
 
             $traditionBlocks[] = [
@@ -180,13 +193,20 @@ class DreamAnalysisRequestBuilder
         $unifiedSchemaRequest['traditions_to_compare'] = $allTraditionKeys;
         $unifiedSchemaRequest['comparison_depth'] = $params['comparison_depth'] ?? 'medium';
 
-        // Формируем user_profile
+        // Получаем user_context_rules из primary традиции
+        $userContextRules = $primaryTraditionData['user_context_rules'] ?? [];
+        
+        // Формируем user_context
+        // Используем значения из primary традиции, если они не переданы в userProfile
         $userProfileData = array_merge(
-            $this->template['user_profile'] ?? [],
+            $this->template['user_context'] ?? [],
             [
                 'user_id' => $userId,
+                'experience_level' => $userProfile['experience_level'] ?? $userContextRules['recommended_level'] ?? 'практик',
+                'primary_goals' => $userProfile['primary_goals'] ?? $userContextRules['compatible_goals'] ?? [],
+                'current_practices' => $userProfile['current_practices'] ?? $userContextRules['useful_practices'] ?? [],
             ],
-            $userProfile
+            $userProfile // Переданные значения имеют приоритет
         );
 
         // Формируем dream_data
@@ -211,7 +231,7 @@ class DreamAnalysisRequestBuilder
                 'analysis_depth' => 'глубокий',
             ],
             'analysis_config' => $analysisConfig,
-            'user_profile' => $userProfileData,
+            'user_context' => $userProfileData,
             'context_summary' => $contextSummary,
             'dream_data' => $dreamData,
             'unified_schema_request' => $unifiedSchemaRequest,
@@ -314,4 +334,9 @@ class DreamAnalysisRequestBuilder
         }
     }
 }
+
+
+
+
+
 
