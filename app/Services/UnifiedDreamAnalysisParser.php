@@ -81,9 +81,21 @@ class UnifiedDreamAnalysisParser
         if (isset($apiResponse['choices'][0]['message']['content'])) {
             $content = $apiResponse['choices'][0]['message']['content'];
             
+            // Временно сохраняем content в файл для отладки
+            try {
+                $debugFile = storage_path('logs/api_response_content_' . date('Y-m-d_His') . '.txt');
+                file_put_contents($debugFile, $content);
+                Log::info('UnifiedDreamAnalysisParser: Content сохранен в файл для отладки', [
+                    'file' => $debugFile,
+                ]);
+            } catch (\Exception $e) {
+                // Игнорируем ошибки записи файла
+            }
+            
             Log::info('UnifiedDreamAnalysisParser: Получен content', [
                 'content_length' => strlen($content),
                 'content_preview' => substr($content, 0, 500),
+                'content_start_chars' => substr($content, 0, 100),
             ]);
             
             // Пытаемся распарсить JSON
@@ -119,9 +131,28 @@ class UnifiedDreamAnalysisParser
                     return $jsonData; // Возвращаем весь JSON как analysis_report
                 }
                 
+                // Проверяем другие возможные ключи верхнего уровня
+                $otherPossibleKeys = ['analysis', 'result', 'interpretation', 'dream_interpretation', 'response'];
+                foreach ($otherPossibleKeys as $key) {
+                    if (isset($jsonData[$key]) && is_array($jsonData[$key])) {
+                        Log::info("UnifiedDreamAnalysisParser: Найден ключ верхнего уровня: {$key}");
+                        return $jsonData[$key];
+                    }
+                }
+                
+                // Если JSON распарсен, но нет нужных ключей - пробуем вернуть весь JSON
+                // (может быть структура полностью другая, но валидная)
+                if (!empty($jsonData) && is_array($jsonData)) {
+                    Log::warning('UnifiedDreamAnalysisParser: JSON распарсен, но не найдены ожидаемые ключи. Возвращаем весь JSON.', [
+                        'json_keys' => array_keys($jsonData),
+                        'content_preview' => substr($content, 0, 1000),
+                    ]);
+                    return $jsonData; // Возвращаем весь JSON на случай, если структура другая
+                }
+                
                 // Если JSON распарсен, но нет нужных ключей - логируем для отладки
-                Log::warning('UnifiedDreamAnalysisParser: JSON распарсен, но не найдены ожидаемые ключи', [
-                    'json_keys' => array_keys($jsonData),
+                Log::warning('UnifiedDreamAnalysisParser: JSON распарсен, но структура не распознана', [
+                    'json_keys' => array_keys($jsonData ?? []),
                     'content_preview' => substr($content, 0, 1000),
                 ]);
             } else {
@@ -131,10 +162,23 @@ class UnifiedDreamAnalysisParser
             }
         }
         
-        // Если структура не стандартная, логируем для отладки
+            // Если структура не стандартная, логируем для отладки
+        $contentPreview = '';
+        if (isset($apiResponse['choices'][0]['message']['content'])) {
+            $contentPreview = $apiResponse['choices'][0]['message']['content'];
+            // Сохраняем полный content в лог для отладки (первые 2000 символов)
+            Log::error('UnifiedDreamAnalysisParser: Не удалось извлечь analysis_report. Полный content:', [
+                'content_length' => strlen($contentPreview),
+                'content_full' => substr($contentPreview, 0, 2000),
+                'content_end' => substr($contentPreview, -500),
+            ]);
+        }
+        
         Log::error('UnifiedDreamAnalysisParser: Не удалось извлечь analysis_report', [
             'response_keys' => array_keys($apiResponse),
             'response_preview' => json_encode(array_slice($apiResponse, 0, 3), JSON_UNESCAPED_UNICODE),
+            'has_choices' => isset($apiResponse['choices']),
+            'has_content' => isset($apiResponse['choices'][0]['message']['content']),
         ]);
         
         return null;
@@ -148,6 +192,13 @@ class UnifiedDreamAnalysisParser
         // Пробуем найти JSON в markdown блоке (```json ... ```)
         if (preg_match('/```json\s*([\s\S]*?)\s*```/', $content, $matches)) {
             $jsonContent = json_decode($matches[1], true);
+            
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                Log::warning('UnifiedDreamAnalysisParser: Ошибка парсинга JSON из markdown блока', [
+                    'json_error' => json_last_error_msg(),
+                    'content_preview' => substr($matches[1], 0, 500),
+                ]);
+            }
             if ($jsonContent && json_last_error() === JSON_ERROR_NONE) {
                 Log::info('UnifiedDreamAnalysisParser: JSON найден в markdown блоке');
                 return $jsonContent;

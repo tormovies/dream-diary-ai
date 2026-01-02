@@ -153,11 +153,17 @@
                         </div>
                     </div>
 
-                @if($interpretation->api_error)
+                @php
+                    // Проверяем статус обработки
+                    $processingStatus = $interpretation->processing_status ?? 'completed'; // По умолчанию completed для старых записей
+                    $hasResults = $interpretation->results->count() > 0 || $interpretation->result;
+                @endphp
+
+                @if($processingStatus === 'failed' || $interpretation->api_error)
                     <!-- Ошибка API -->
                     <div class="bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-300 px-6 py-4 rounded-lg">
                         <h2 class="font-bold text-lg mb-2">Ошибка при анализе</h2>
-                        <p>{{ $interpretation->api_error }}</p>
+                        <p>{{ $interpretation->api_error ?? 'Анализ завершился с ошибкой' }}</p>
                         @if(isset($interpretation->raw_api_response) && $interpretation->raw_api_response)
                             <details class="mt-4">
                                 <summary class="cursor-pointer font-semibold">Ответ API</summary>
@@ -165,6 +171,58 @@
                             </details>
                         @endif
                     </div>
+                @elseif($processingStatus === 'pending' || $processingStatus === 'processing' || !$hasResults)
+                    <!-- Прогресс (если анализ еще выполняется) -->
+                    <div class="bg-blue-100 dark:bg-blue-900 border border-blue-400 dark:border-blue-700 rounded-2xl p-6">
+                        <div class="flex items-center gap-4">
+                            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+                            <div>
+                                <h3 class="text-lg font-semibold text-blue-800 dark:text-blue-200 mb-1">
+                                    Анализ выполняется...
+                                </h3>
+                                <p class="text-blue-700 dark:text-blue-300 text-sm">
+                                    Это может занять до 3 минут. Страница обновится автоматически.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <script>
+                        // Запускаем обработку через AJAX если статус pending
+                        @if($processingStatus === 'pending')
+                            // Запускаем обработку в фоне через 2 секунды (чтобы страница успела отрендериться)
+                            setTimeout(function() {
+                                fetch('{{ route('dream-analyzer.process', $interpretation->hash) }}', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                        'Accept': 'application/json'
+                                    }
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+                                    console.log('Analysis process started:', data);
+                                    // После запуска обработки - перезагружаем через 3 секунды
+                                    setTimeout(function() {
+                                        location.reload();
+                                    }, 3000);
+                                })
+                                .catch(error => {
+                                    console.error('Error starting analysis:', error);
+                                    // При ошибке тоже перезагружаем
+                                    setTimeout(function() {
+                                        location.reload();
+                                    }, 3000);
+                                });
+                            }, 2000);
+                        @else
+                            // Если уже в processing - просто ждем и перезагружаем
+                            setTimeout(function() {
+                                location.reload();
+                            }, 5000);
+                        @endif
+                    </script>
                 @else
                     @php
                         // Приоритет: сначала нормализованные данные, потом старые

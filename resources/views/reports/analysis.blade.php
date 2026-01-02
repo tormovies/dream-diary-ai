@@ -464,6 +464,78 @@
                 document.body.removeChild(textarea);
             }
         </script>
+        
+        @auth
+            @if(auth()->user()->isAdmin())
+                <!-- Отладочная информация для админа -->
+                <div class="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 mt-6">
+                    <div class="bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-400 dark:border-yellow-600 rounded-2xl p-6">
+                        <h3 class="text-lg font-bold text-yellow-800 dark:text-yellow-300 mb-4">
+                            <i class="fas fa-bug mr-2"></i>[Admin] Отладочная информация
+                        </h3>
+                        
+                        <div class="space-y-4">
+                            @php
+                                // Функция для безопасного форматирования JSON
+                                $formatJson = function($data) {
+                                    if (empty($data)) {
+                                        return null;
+                                    }
+                                    
+                                    // Если это уже массив/объект
+                                    if (is_array($data) || is_object($data)) {
+                                        return json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+                                    }
+                                    
+                                    // Если это строка, пытаемся декодировать
+                                    if (is_string($data)) {
+                                        $decoded = json_decode($data, true);
+                                        if (json_last_error() === JSON_ERROR_NONE) {
+                                            return json_encode($decoded, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+                                        }
+                                        // Если не JSON, возвращаем как есть
+                                        return $data;
+                                    }
+                                    
+                                    return (string) $data;
+                                };
+                                
+                                $formattedRequest = $formatJson($interpretation->raw_api_request);
+                                $formattedResponse = $formatJson($interpretation->raw_api_response);
+                            @endphp
+                            
+                            @if($formattedRequest)
+                                <div>
+                                    <h4 class="font-semibold text-yellow-800 dark:text-yellow-300 mb-2">JSON запрос к API:</h4>
+                                    <details class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-yellow-300 dark:border-yellow-700">
+                                        <summary class="cursor-pointer text-sm text-yellow-700 dark:text-yellow-400 hover:text-yellow-900 dark:hover:text-yellow-200 mb-2">
+                                            Показать запрос
+                                        </summary>
+                                        <pre class="text-xs overflow-auto max-h-96 mt-2 text-gray-800 dark:text-gray-200 whitespace-pre-wrap">{{ $formattedRequest }}</pre>
+                                    </details>
+                                </div>
+                            @endif
+                            
+                            @if($formattedResponse)
+                                <div>
+                                    <h4 class="font-semibold text-yellow-800 dark:text-yellow-300 mb-2">Полный JSON ответ:</h4>
+                                    <details class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-yellow-300 dark:border-yellow-700">
+                                        <summary class="cursor-pointer text-sm text-yellow-700 dark:text-yellow-400 hover:text-yellow-900 dark:hover:text-yellow-200 mb-2">
+                                            Показать ответ
+                                        </summary>
+                                        <pre class="text-xs overflow-auto max-h-96 mt-2 text-gray-800 dark:text-gray-200 whitespace-pre-wrap">{{ $formattedResponse }}</pre>
+                                    </details>
+                                </div>
+                            @endif
+                            
+                            @if(!$formattedRequest && !$formattedResponse)
+                                <p class="text-yellow-700 dark:text-yellow-400 text-sm">Отладочная информация недоступна (запрос и ответ не сохранены)</p>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            @endif
+        @endauth
     </body>
 </html>
 

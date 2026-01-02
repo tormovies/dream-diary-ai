@@ -9,7 +9,19 @@
     $practicalGuidance = $analysisData['practical_guidance'] ?? [];
     $recommendations = $analysisData['recommendations'] ?? [];
     $tagsAndCategories = $analysisData['tags_and_categories'] ?? [];
+    // Получаем tradition_specific, проверяя оба возможных ключа
     $traditionSpecific = $analysisData['tradition_specific'] ?? [];
+    $traditionSpecificAnalysis = $analysisData['tradition_specific_analysis'] ?? [];
+    
+    // Если tradition_specific_analysis существует, объединяем его с tradition_specific
+    if (!empty($traditionSpecificAnalysis)) {
+        if (empty($traditionSpecific)) {
+            $traditionSpecific = $traditionSpecificAnalysis;
+        } else {
+            // Объединяем массивы, приоритет у tradition_specific
+            $traditionSpecific = array_merge($traditionSpecificAnalysis, $traditionSpecific);
+        }
+    }
     // Проверяем lucidity_analysis на разных уровнях
     $lucidityAnalysis = $analysisData['lucidity_analysis'] ?? $coreAnalysis['lucidity_analysis'] ?? $traditionSpecific['lucidity_analysis'] ?? null;
     
@@ -143,6 +155,10 @@
             'for_next_session' => 'Для следующей сессии',
             'long_term_development' => 'Долгосрочное развитие',
             'psychological_function' => 'Психологическая функция',
+            'integration_advice' => 'Советы по интеграции',
+            'for_dream_exploration' => 'Для исследования снов',
+            'long_term_advice' => 'Долгосрочные советы',
+            'skill_development' => 'Развитие навыков',
         ];
         
         $fieldNameLower = mb_strtolower($fieldName);
@@ -234,7 +250,23 @@
     @endif
 
     <!-- Детальный анализ -->
-    @if(isset($dreamMetadata['dream_detailed']))
+    @php
+        // Для Комплексного анализа добавляем systemic_analysis и primary_interpretation
+        $isComplexAnalysis = in_array(strtolower($tradition ?? ''), ['complex_analysis', 'комплексный анализ', 'complex']);
+        // Для Хакеров сновидений добавляем primary_interpretation
+        $isDreamHackers = in_array(strtolower($tradition ?? ''), ['dream_hackers', 'хакеры сновидений', 'dream hackers']);
+        
+        // Определяем, нужно ли показывать блок "Детальный анализ"
+        $hasDetailedAnalysis = false;
+        if ($isDreamHackers) {
+            // Для хакеров сновидений: проверяем наличие dream_detailed из dream_metadata ИЛИ primary_interpretation из core_analysis
+            $hasDetailedAnalysis = isset($dreamMetadata['dream_detailed']) || !empty($coreAnalysis['primary_interpretation']);
+        } else {
+            // Для остальных: проверяем наличие dream_detailed
+            $hasDetailedAnalysis = isset($dreamMetadata['dream_detailed']);
+        }
+    @endphp
+    @if($hasDetailedAnalysis)
         @php
             // Функция для очистки только начала и конца текста (сохраняет переносы строк внутри)
             $trimEdges = function($text) {
@@ -246,11 +278,18 @@
                 return $text;
             };
             
-            $detailedTextRaw = $safeDisplay($dreamMetadata['dream_detailed'], 'dream_detailed');
-            $detailedText = $trimEdges($detailedTextRaw);
+            // Инициализируем detailedText
+            $detailedText = '';
             
-            // Для Комплексного анализа добавляем systemic_analysis и primary_interpretation
-            $isComplexAnalysis = in_array(strtolower($tradition ?? ''), ['complex_analysis', 'комплексный анализ', 'complex']);
+            if ($isDreamHackers) {
+                // Для хакеров сновидений обрабатываем отдельно
+                $detailedText = ''; // Будет заполнен ниже
+            } else {
+                // Для остальных традиций используем стандартную логику
+                $detailedTextRaw = $safeDisplay($dreamMetadata['dream_detailed'] ?? '', 'dream_detailed');
+                $detailedText = $trimEdges($detailedTextRaw);
+            }
+            
             if ($isComplexAnalysis) {
                 $textParts = [];
                 if (!empty($detailedText)) {
@@ -281,6 +320,49 @@
                 $detailedText = implode("\n\n", array_filter($textParts));
                 // Убираем переносы строк только в начале и конце итогового текста
                 $detailedText = $trimEdges($detailedText);
+            } elseif ($isDreamHackers) {
+                // Для Хакеров сновидений: dream_detailed из dream_metadata + primary_interpretation из core_analysis
+                $textParts = [];
+                
+                // Получаем dream_detailed из dream_metadata
+                $dreamDetailedFromMetadata = $dreamMetadata['dream_detailed'] ?? null;
+                if (!empty($dreamDetailedFromMetadata)) {
+                    $dreamDetailedRaw = $safeDisplay($dreamDetailedFromMetadata, 'dream_detailed');
+                    $dreamDetailedText = $trimEdges($dreamDetailedRaw);
+                    if (!empty($dreamDetailedText)) {
+                        $textParts[] = $dreamDetailedText;
+                    }
+                }
+                
+                // Получаем primary_interpretation из core_analysis
+                $primaryInterpretation = $coreAnalysis['primary_interpretation'] ?? null;
+                if (!empty($primaryInterpretation)) {
+                    $primaryTextRaw = $safeDisplay($primaryInterpretation, 'primary_interpretation');
+                    $primaryText = $trimEdges($primaryTextRaw);
+                    if (!empty($primaryText)) {
+                        $textParts[] = $primaryText;
+                    }
+                }
+                
+                // Если есть оба - через перенос строки, если только одно - без разделителя
+                if (count($textParts) === 2) {
+                    $detailedText = implode("\n", $textParts);
+                } elseif (count($textParts) === 1) {
+                    $detailedText = $textParts[0];
+                } else {
+                    $detailedText = '';
+                }
+                
+                // Убираем переносы строк только в начале и конце итогового текста
+                if (!empty($detailedText)) {
+                    $detailedText = $trimEdges($detailedText);
+                }
+            }
+            
+            // Для остальных традиций (не комплексный анализ и не хакеры сновидений)
+            if (!$isComplexAnalysis && !$isDreamHackers) {
+                $detailedTextRaw = $safeDisplay($dreamMetadata['dream_detailed'] ?? '', 'dream_detailed');
+                $detailedText = $trimEdges($detailedTextRaw);
             }
         @endphp
         @if(!empty($detailedText))
@@ -485,6 +567,17 @@
                         'drowsiness' => 'Сонливость',
                         'wakefulness' => 'Бодрствование',
                         'sleepiness' => 'Сонливость',
+                        // Новые эмоции из комплексного анализа
+                        'трансформирующий_покой' => 'Трансформирующий покой',
+                        'transforming_peace' => 'Трансформирующий покой',
+                        'осознанное_принятие' => 'Осознанное принятие',
+                        'conscious_acceptance' => 'Осознанное принятие',
+                        'авантюрный_подъём' => 'Авантюрный подъём',
+                        'adventurous_rise' => 'Авантюрный подъём',
+                        'глубокое_принятие_естественного_хода_вещей' => 'Глубокое принятие естественного хода вещей',
+                        'deep_acceptance_of_natural_course' => 'Глубокое принятие естественного хода вещей',
+                        'настойчивая_устойчивость' => 'Настойчивая устойчивость',
+                        'persistent_stability' => 'Настойчивая устойчивость',
                     ];
                     
                     // Функция для получения перевода
@@ -512,35 +605,68 @@
                         return mb_ucfirst(mb_strtolower($translated));
                     };
                     
-                    // Фильтруем только числовые значения (исключаем уже обработанные поля)
+                    // Обрабатываем все поля из emotional_breakdown
+                    // Исключаем только массивы и сложные структуры
                     $excludedFields = ['primary_emotion', 'secondary_emotions', 'emotional_triggers', 'emotional_trajectory'];
-                    $numericFields = [];
+                    $emotionalFields = [];
+                    
+                    // Словарь переводов для названий полей
+                    $fieldNameTranslations = [
+                        'final_emotion' => 'Финальная эмоция',
+                        'climax_emotion' => 'Эмоция кульминации',
+                        'initial_emotion' => 'Начальная эмоция',
+                        'dominant_feeling' => 'Доминирующее чувство',
+                        'mid_dream_emotion' => 'Эмоция середины сна',
+                    ];
+                    
                     foreach ($complexEmotionalBreakdown as $key => $value) {
-                        if (!in_array(strtolower($key), $excludedFields) && (is_numeric($value) || is_float($value))) {
-                            $numericFields[$key] = $value;
+                        // Пропускаем исключенные поля и массивы
+                        if (in_array(strtolower($key), $excludedFields) || is_array($value)) {
+                            continue;
+                        }
+                        
+                        // Обрабатываем как строковые, так и числовые значения
+                        if (is_string($value) || is_numeric($value) || is_float($value)) {
+                            $emotionalFields[$key] = $value;
                         }
                     }
                 @endphp
-                @if(!empty($numericFields))
+                @if(!empty($emotionalFields))
                     <div class="mb-4">
                         <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Эмоциональный профиль</h3>
                         <div class="flex flex-wrap gap-2">
-                            @foreach($numericFields as $key => $value)
+                            @foreach($emotionalFields as $key => $value)
                                 @php
-                                    $translatedKey = $getEmotionalTranslation($key);
-                                    $displayValue = is_float($value) ? number_format($value, 1) : $value;
-                                    // Определяем цвет на основе значения (0-1)
-                                    $normalizedValue = floatval($value);
-                                    if ($normalizedValue >= 0.7) {
-                                        $colorClass = 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-300';
-                                    } elseif ($normalizedValue >= 0.4) {
-                                        $colorClass = 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-300';
+                                    // Получаем перевод названия поля
+                                    $fieldName = $fieldNameTranslations[strtolower($key)] ?? $translateField($key);
+                                    
+                                    // Если значение - строка (эмоция), переводим её
+                                    if (is_string($value) && !is_numeric($value)) {
+                                        $translatedValue = $getEmotionalTranslation($value);
+                                        // Если перевод не изменился (не нашли в словаре), обрабатываем как есть
+                                        if ($translatedValue === $value) {
+                                            // Заменяем подчеркивания на пробелы и делаем заглавную букву
+                                            $translatedValue = mb_ucfirst(str_replace('_', ' ', $value));
+                                        }
+                                        $displayValue = $translatedValue;
+                                        // Для строковых значений используем нейтральный цвет
+                                        $colorClass = 'bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-300';
                                     } else {
-                                        $colorClass = 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-300';
+                                        // Числовое значение
+                                        $displayValue = is_float($value) ? number_format($value, 1) : $value;
+                                        // Определяем цвет на основе значения (0-1)
+                                        $normalizedValue = floatval($value);
+                                        if ($normalizedValue >= 0.7) {
+                                            $colorClass = 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-300';
+                                        } elseif ($normalizedValue >= 0.4) {
+                                            $colorClass = 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-300';
+                                        } else {
+                                            $colorClass = 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-300';
+                                        }
                                     }
                                 @endphp
                                 <span class="px-3 py-1 rounded-full text-sm font-medium {{ $colorClass }}">
-                                    {{ $translatedKey }}: {{ $displayValue }}
+                                    {{ $fieldName }}: {{ $displayValue }}
                                 </span>
                             @endforeach
                         </div>
@@ -571,6 +697,9 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         @foreach($archetypalPatterns as $pattern)
                             @php
+                                // Проверяем, является ли это комплексным анализом
+                                $isComplexAnalysis = in_array(strtolower($tradition ?? ''), ['complex_analysis', 'комплексный анализ', 'complex']);
+                                
                                 // Обрабатываем разные форматы данных
                                 if (is_string($pattern)) {
                                     $patternName = $pattern;
@@ -578,6 +707,14 @@
                                     $strength = null;
                                     $function = null;
                                     $manifestation = null;
+                                    
+                                    // Для комплексного анализа: парсим строку вида "Название (описание)"
+                                    if ($isComplexAnalysis && preg_match('/^(.+?)\s*\((.+?)\)\s*$/', $patternName, $matches)) {
+                                        $patternNameMain = trim($matches[1]); // Текст до скобок
+                                        $patternNameBrackets = trim($matches[2]); // Текст в скобках
+                                        $patternName = $patternNameMain; // Используем только текст до скобок для заголовка
+                                        $description = $patternNameBrackets; // Текст в скобках как описание
+                                    }
                                 } elseif (is_array($pattern)) {
                                     // Новый формат: pattern_name, description, strength
                                     $patternName = $pattern['pattern_name'] ?? $pattern['patternName'] ?? $pattern['название_паттерна'] ?? 
@@ -610,14 +747,22 @@
                             @if(!empty($patternName))
                                 <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
                                     <div class="flex items-start justify-between mb-2">
-                                        <h4 class="font-semibold text-gray-800 dark:text-gray-200">{{ $patternName }}</h4>
+                                        <div class="flex-1">
+                                            <h4 class="font-semibold text-gray-800 dark:text-gray-200">{{ $patternName }}</h4>
+                                            @if(!empty($description) && $isComplexAnalysis)
+                                                @php $descriptionText = $safeDisplay($description, 'pattern_description'); @endphp
+                                                @if(!empty($descriptionText))
+                                                    <p class="text-sm text-gray-700 dark:text-gray-300 mt-1 leading-relaxed">{{ $descriptionText }}</p>
+                                                @endif
+                                            @endif
+                                        </div>
                                         @if(!empty($strength) && is_numeric($strength))
                                             <span class="text-xs bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-300 px-2 py-1 rounded-full whitespace-nowrap ml-2">
                                                 Сила: {{ number_format($strength * 100, 0) }}%
                                             </span>
                                         @endif
                                     </div>
-                                    @if(!empty($description))
+                                    @if(!empty($description) && !$isComplexAnalysis)
                                         @php $descriptionText = $safeDisplay($description, 'pattern_description'); @endphp
                                         @if(!empty($descriptionText))
                                             <p class="text-sm text-gray-700 dark:text-gray-300 mb-2 leading-relaxed">{{ $descriptionText }}</p>
@@ -660,8 +805,9 @@
                 $contextSummary = $dreamMetadata['context_summary'] ?? $analysisData['context_summary'] ?? $coreAnalysis['context_summary'] ?? null;
                 $lifeContextIntegration = $analysisData['life_context_integration'] ?? $coreAnalysis['life_context_integration'] ?? null;
                 $lifeContextConnections = $coreAnalysis['life_context_connections'] ?? null;
+                $lifeContextConnection = $analysisData['life_context_connection'] ?? $coreAnalysis['life_context_connection'] ?? null;
             @endphp
-            @if(!empty($contextSummary) || !empty($lifeContextIntegration) || !empty($lifeContextConnections))
+            @if(!empty($contextSummary) || !empty($lifeContextIntegration) || !empty($lifeContextConnections) || !empty($lifeContextConnection))
                 <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                     <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Контекст</h3>
                     @php
@@ -735,6 +881,23 @@
                             }
                         }
                         
+                        // Добавляем life_context_connection, если не пустое
+                        if (!empty($lifeContextConnection)) {
+                            if (is_array($lifeContextConnection)) {
+                                foreach($lifeContextConnection as $key => $value) {
+                                    $valueText = $safeDisplay($value, 'life_context_connection_field');
+                                    if (!empty($valueText)) {
+                                        $contextValues[] = $valueText;
+                                    }
+                                }
+                            } else {
+                                $lifeContextConnectionText = $safeDisplay($lifeContextConnection, 'life_context_connection');
+                                if (!empty($lifeContextConnectionText)) {
+                                    $contextValues[] = $lifeContextConnectionText;
+                                }
+                            }
+                        }
+                        
                         $contextSummaryText = implode(' ', $contextValues);
                     @endphp
                     @if(!empty($contextSummaryText))
@@ -792,46 +955,46 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                                 @foreach($elements as $element)
                                     @if(is_array($element))
-                                        <div class="relative px-3 py-2 bg-gray-50 dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700">
+                                        <div class="relative px-3 py-2 bg-gray-50 dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700" style="padding-bottom: {{ !empty($element['emotional_charge'] ?? '') ? '2.5rem' : (!empty($element['category'] ?? $element['категория'] ?? '') ? '2.5rem' : '0.5rem') }};">
                                             @php
                                                 $elementName = $safeDisplay($element['element'] ?? $element['name'] ?? '');
+                                                $elementName = !empty($elementName) ? mb_ucfirst($elementName) : '';
                                                 $emotionalCharge = $safeDisplay($element['emotional_charge'] ?? '');
                                                 $symbolicMeaning = $safeDisplay($element['symbolic_meaning_primary'] ?? $element['symbolic_meaning'] ?? '');
                                                 $symbolicMeaningSecondary = $safeDisplay($element['symbolic_meaning_secondary'] ?? '');
                                                 $category = $safeDisplay($element['category'] ?? $element['категория'] ?? '');
                                             @endphp
                                             
-                                            @if(!empty($elementName) || !empty($emotionalCharge))
-                                                <div class="flex items-start justify-between gap-2 mb-2">
-                                                    @if(!empty($elementName))
-                                                        <h4 class="text-sm font-bold text-gray-800 dark:text-gray-200 flex-1">
-                                                            {{ $elementName }}
-                                                        </h4>
-                                                    @endif
-                                                    
-                                                    @if(!empty($emotionalCharge))
-                                                        <span class="text-xs bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-300 px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0">
-                                                            {{ $emotionalCharge }}
-                                                        </span>
-                                                    @endif
-                                                </div>
+                                            @if(!empty($elementName))
+                                                <h4 class="text-sm font-bold text-gray-800 dark:text-gray-200 mb-2" style="word-wrap: break-word; overflow-wrap: break-word;">
+                                                    {{ $elementName }}
+                                                </h4>
                                             @endif
                                             
                                             @if(!empty($symbolicMeaning))
-                                                <p class="text-xs text-gray-700 dark:text-gray-300 mb-1 pb-6">{{ $symbolicMeaning }}</p>
+                                                <p class="text-xs text-gray-700 dark:text-gray-300 mb-1" style="word-wrap: break-word; overflow-wrap: break-word;">{{ $symbolicMeaning }}</p>
                                             @endif
                                             
                                             @if(!empty($symbolicMeaningSecondary))
-                                                <p class="text-xs text-gray-700 dark:text-gray-300 italic pb-6">{{ $symbolicMeaningSecondary }}</p>
+                                                <p class="text-xs text-gray-700 dark:text-gray-300 italic mb-1" style="word-wrap: break-word; overflow-wrap: break-word;">{{ $symbolicMeaningSecondary }}</p>
                                             @endif
                                             
-                                            {{-- Метка category в правом нижнем углу --}}
+                                            {{-- emotional_charge в правом нижнем углу --}}
+                                            @if(!empty($emotionalCharge))
+                                                <div class="absolute bottom-2 right-2 left-2" style="text-align: right;">
+                                                    <span class="text-xs bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-300 px-2 py-0.5 rounded-full inline-block" style="word-wrap: break-word; overflow-wrap: break-word; max-width: 100%;">
+                                                        {{ $emotionalCharge }}
+                                                    </span>
+                                                </div>
+                                            @endif
+                                            
+                                            {{-- Метка category в правом нижнем углу (если нет emotional_charge) или выше --}}
                                             @if(!empty($category))
                                                 @php
                                                     // Заменяем подчеркивания на пробелы
                                                     $categoryDisplay = str_replace('_', ' ', $category);
                                                 @endphp
-                                                <div class="absolute bottom-2 right-2">
+                                                <div class="absolute {{ !empty($emotionalCharge) ? 'bottom-10' : 'bottom-2' }} right-2">
                                                     <span class="text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-300 px-2 py-0.5 rounded-full whitespace-nowrap">
                                                         {{ $categoryDisplay }}
                                                     </span>
@@ -864,36 +1027,36 @@
                                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                                     @foreach($elements as $element)
                                         @if(is_array($element))
-                                            <div class="px-3 py-2 bg-gray-50 dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700">
+                                            <div class="relative px-3 py-2 bg-gray-50 dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700" style="padding-bottom: {{ !empty($element['emotional_charge'] ?? '') ? '2.5rem' : '0.5rem' }};">
                                                 @php
                                                     $elementName = $safeDisplay($element['element'] ?? $element['name'] ?? array_values($element)[0] ?? '');
+                                                    $elementName = !empty($elementName) ? mb_ucfirst($elementName) : '';
                                                     $emotionalCharge = $safeDisplay($element['emotional_charge'] ?? '');
                                                     $symbolicMeaning = $safeDisplay($element['symbolic_meaning_primary'] ?? $element['symbolic_meaning'] ?? '');
                                                     $symbolicMeaningSecondary = $safeDisplay($element['symbolic_meaning_secondary'] ?? '');
                                                 @endphp
                                                 
-                                                @if(!empty($elementName) || !empty($emotionalCharge))
-                                                    <div class="flex items-start justify-between gap-2 mb-2">
-                                                        @if(!empty($elementName))
-                                                            <h4 class="text-sm font-bold text-gray-800 dark:text-gray-200 flex-1">
-                                                                {{ $elementName }}
-                                                            </h4>
-                                                        @endif
-                                                        
-                                                        @if(!empty($emotionalCharge))
-                                                            <span class="text-xs bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-300 px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0">
-                                                                {{ $emotionalCharge }}
-                                                            </span>
-                                                        @endif
-                                                    </div>
+                                                @if(!empty($elementName))
+                                                    <h4 class="text-sm font-bold text-gray-800 dark:text-gray-200 mb-2" style="word-wrap: break-word; overflow-wrap: break-word;">
+                                                        {{ $elementName }}
+                                                    </h4>
                                                 @endif
                                                 
                                                 @if(!empty($symbolicMeaning))
-                                                    <p class="text-xs text-gray-700 dark:text-gray-300 mb-1">{{ $symbolicMeaning }}</p>
+                                                    <p class="text-xs text-gray-700 dark:text-gray-300 mb-1" style="word-wrap: break-word; overflow-wrap: break-word;">{{ $symbolicMeaning }}</p>
                                                 @endif
                                                 
                                                 @if(!empty($symbolicMeaningSecondary))
-                                                    <p class="text-xs text-gray-700 dark:text-gray-300 italic">{{ $symbolicMeaningSecondary }}</p>
+                                                    <p class="text-xs text-gray-700 dark:text-gray-300 italic mb-1" style="word-wrap: break-word; overflow-wrap: break-word;">{{ $symbolicMeaningSecondary }}</p>
+                                                @endif
+                                                
+                                                {{-- emotional_charge в правом нижнем углу --}}
+                                                @if(!empty($emotionalCharge))
+                                                    <div class="absolute bottom-2 right-2 left-2" style="text-align: right;">
+                                                        <span class="text-xs bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-300 px-2 py-0.5 rounded-full inline-block" style="word-wrap: break-word; overflow-wrap: break-word; max-width: 100%;">
+                                                            {{ $emotionalCharge }}
+                                                        </span>
+                                                    </div>
                                                 @endif
                                             </div>
                                         @else
@@ -1348,6 +1511,115 @@
                                     @php $valueText = $safeDisplay($analysisValue, $analysisKey); @endphp
                                     @if(!empty($valueText))
                                         <p class="text-sm text-gray-700 dark:text-gray-300">{{ $valueText }}</p>
+                                    @endif
+                                @endif
+                            </div>
+                        @endif
+                    @endforeach
+                </div>
+            @endif
+            
+            {{-- Универсальная обработка всех остальных полей из tradition_specific_analysis --}}
+            @php
+                $knownKeys = ['lucidity_index', 'analysis'];
+                $additionalKeys = array_filter(array_keys($traditionSpecific), function($key) use ($knownKeys, $traditionSpecific) {
+                    return !in_array($key, $knownKeys) && !empty($traditionSpecific[$key]);
+                });
+            @endphp
+            @if(count($additionalKeys) > 0)
+                <div class="space-y-4 mt-4">
+                    @foreach($additionalKeys as $key)
+                        @php
+                            $value = $traditionSpecific[$key];
+                            $fieldTitle = $translateField($key);
+                        @endphp
+                        @if(!empty($value))
+                            <div class="border-b border-gray-200 dark:border-gray-700 pb-3 last:border-0 last:pb-0">
+                                <h3 class="text-base font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                                    {{ $fieldTitle }}
+                                </h3>
+                                
+                                @if(is_array($value))
+                                    @if(isset($value[0]) && is_numeric(array_keys($value)[0]))
+                                        {{-- Numeric array --}}
+                                        @if(is_array($value[0]))
+                                            {{-- Array of objects --}}
+                                            <div class="space-y-2">
+                                                @foreach($value as $item)
+                                                    @if(is_array($item))
+                                                        <div class="px-3 py-2 bg-gray-50 dark:bg-gray-900 rounded text-sm">
+                                                            @foreach($item as $itemKey => $itemValue)
+                                                                @php $itemValueText = $safeDisplay($itemValue, $itemKey); @endphp
+                                                                @if(!empty($itemValueText))
+                                                                    <div class="mb-1 last:mb-0">
+                                                                        <span class="font-semibold text-gray-700 dark:text-gray-300">{{ $translateField($itemKey) }}:</span>
+                                                                        <span class="text-gray-600 dark:text-gray-400 ml-1">
+                                                                            {{ $itemValueText }}
+                                                                        </span>
+                                                                    </div>
+                                                                @endif
+                                                            @endforeach
+                                                        </div>
+                                                    @else
+                                                        @php $itemText = $safeDisplay($item, 'item'); @endphp
+                                                        @if(!empty($itemText))
+                                                            <div class="text-sm text-gray-700 dark:text-gray-300">{{ $itemText }}</div>
+                                                        @endif
+                                                    @endif
+                                                @endforeach
+                                            </div>
+                                        @else
+                                            {{-- Array of strings --}}
+                                            <ul class="list-disc list-inside space-y-1 ml-2">
+                                                @foreach($value as $item)
+                                                    @php $itemText = $safeDisplay($item, 'item'); @endphp
+                                                    @if(!empty($itemText))
+                                                        <li class="text-sm text-gray-700 dark:text-gray-300">{{ $itemText }}</li>
+                                                    @endif
+                                                @endforeach
+                                            </ul>
+                                        @endif
+                                    @else
+                                        {{-- Associative array --}}
+                                        <div class="space-y-2">
+                                            @foreach($value as $subKey => $subValue)
+                                                @if(!empty($subValue))
+                                                    <div>
+                                                        <span class="text-xs font-semibold text-gray-600 dark:text-gray-400">{{ $translateField($subKey) }}:</span>
+                                                        @if(is_array($subValue))
+                                                            @if(isset($subValue[0]) && is_numeric(array_keys($subValue)[0]))
+                                                                <ul class="list-disc list-inside space-y-1 ml-2 mt-1">
+                                                                    @foreach($subValue as $item)
+                                                                        @php $itemText = $safeDisplay($item, $subKey . '_item'); @endphp
+                                                                        @if(!empty($itemText))
+                                                                            <li class="text-sm text-gray-700 dark:text-gray-300">{{ $itemText }}</li>
+                                                                        @endif
+                                                                    @endforeach
+                                                                </ul>
+                                                            @else
+                                                                @php $subValueText = $safeDisplay($subValue, $subKey); @endphp
+                                                                @if(!empty($subValueText))
+                                                                    <div class="text-sm text-gray-700 dark:text-gray-300 mt-1 ml-2 whitespace-pre-wrap">
+                                                                        {{ $subValueText }}
+                                                                    </div>
+                                                                @endif
+                                                            @endif
+                                                        @else
+                                                            @php $subValueText = $safeDisplay($subValue, $subKey); @endphp
+                                                            @if(!empty($subValueText))
+                                                                <p class="text-sm text-gray-700 dark:text-gray-300 mt-1 ml-2">{{ $subValueText }}</p>
+                                                            @endif
+                                                        @endif
+                                                    </div>
+                                                @endif
+                                            @endforeach
+                                        </div>
+                                    @endif
+                                @else
+                                    {{-- String value --}}
+                                    @php $valueText = $safeDisplay($value, $key); @endphp
+                                    @if(!empty($valueText))
+                                        <p class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{{ $valueText }}</p>
                                     @endif
                                 @endif
                             </div>

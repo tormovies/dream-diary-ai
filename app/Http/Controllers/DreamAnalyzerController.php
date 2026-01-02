@@ -97,9 +97,6 @@ class DreamAnalyzerController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        // Увеличиваем время выполнения для длительных запросов к API
-        set_time_limit(360); // 6 минут (больше чем таймаут API 5 минут)
-
         $validated = $request->validate([
             'dream_description' => 'required|string|min:10|max:10000',
             'context' => 'nullable|string|max:2000',
@@ -204,7 +201,7 @@ class DreamAnalyzerController extends Controller
         // Генерируем уникальный хеш
         $hash = DreamInterpretation::generateHash();
 
-        // Создаем запись
+        // Создаем запись со статусом pending (анализ запустится асинхронно на странице результата)
         $interpretation = DreamInterpretation::create([
             'hash' => $hash,
             'user_id' => auth()->id(),
@@ -213,73 +210,11 @@ class DreamAnalyzerController extends Controller
             'context' => $validated['context'] ?? null,
             'traditions' => $traditions,
             'analysis_type' => $analysisMode,
+            'processing_status' => 'pending',
         ]);
 
-        try {
-            // Используем новую унифицированную систему
-            $unifiedService = new UnifiedDreamAnalysisService();
-            
-            if ($analysisMode === 'single') {
-                // Single tradition
-                $result = $unifiedService->analyzeSingle([
-                    'tradition' => $tradition,
-                    'dream_text' => $dreamDescription,
-                    'context' => $validated['context'] ?? null,
-                    'user_id' => auth()->id(),
-                    'user_profile' => $this->buildUserProfile(auth()->user()),
-                ]);
-            } else {
-                // Multitradition (comparative/parallel/integrated)
-                $primaryTradition = $traditions[0];
-                $secondaryTraditions = array_slice($traditions, 1);
-                
-                $result = $unifiedService->analyzeMultiTradition([
-                    'primary_tradition' => $primaryTradition,
-                    'secondary_traditions' => $secondaryTraditions,
-                    'mode' => $analysisMode,
-                    'dream_text' => $dreamDescription,
-                    'context' => $validated['context'] ?? null,
-                    'user_id' => auth()->id(),
-                    'user_profile' => $this->buildUserProfile(auth()->user()),
-                ]);
-            }
-
-            // Обновляем запись с raw запросом и ответом
-            $interpretation->update([
-                'raw_api_request' => $result['raw_request'],
-                'raw_api_response' => $result['raw_response'],
-            ]);
-
-            // Парсим и сохраняем результаты в новую таблицу
-            $unifiedService->parseAndSaveResults(
-                $interpretation,
-                $result['api_response'],
-                $result['analysis_mode']
-            );
-
-            return redirect()->route('dream-analyzer.show', $hash);
-
-        } catch (\Exception $e) {
-            // Логируем ошибку
-            \Log::error('DreamAnalyzerController: Ошибка анализа', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-
-            // Обновляем запись с ошибкой (ограничиваем длину сообщения)
-            $errorMessage = $e->getMessage();
-            if (strlen($errorMessage) > 500) {
-                $errorMessage = substr($errorMessage, 0, 497) . '...';
-            }
-            $interpretation->update([
-                'api_error' => $errorMessage,
-            ]);
-
-            return redirect()
-                ->route('dream-analyzer.create')
-                ->with('error', 'Ошибка при анализе: ' . $e->getMessage())
-                ->withInput();
-        }
+        // Сразу редиректим на страницу результата (анализ запустится там асинхронно)
+        return redirect()->route('dream-analyzer.show', $hash);
     }
 
     /**
@@ -290,9 +225,9 @@ class DreamAnalyzerController extends Controller
         // Сначала проверяем, нужны ли нам JSON-поля (они большие и редко используются)
         $needsJson = false;
         
-        // 1. Проверяем наличие ошибки API (минимальный запрос)
+        // 1. Проверяем наличие ошибки API и статус обработки (минимальный запрос)
         $preview = DreamInterpretation::where('hash', $hash)
-            ->select(['id', 'api_error'])
+            ->select(['id', 'api_error', 'processing_status', 'processing_started_at'])
             ->first();
         
         if (!$preview) {
@@ -354,13 +289,26 @@ class DreamAnalyzerController extends Controller
                 'dream_description', 
                 'context', 
                 'traditions', 
-                'api_error', 
+                'api_error',
+                'processing_status',
+                'processing_started_at',
                 'created_at', 
                 'updated_at'
             ]);
         }
         
         $interpretation = $query->firstOrFail();
+        
+        // Если обработка застряла (более 5 минут в processing) - сбрасываем на pending
+        if ($interpretation->processing_status === 'processing' && 
+            $interpretation->processing_started_at && 
+            $interpretation->processing_started_at->diffInMinutes(now()) > 5) {
+            \Log::warning('Analysis processing timeout', [
+                'interpretation_id' => $interpretation->id,
+                'started_at' => $interpretation->processing_started_at
+            ]);
+            $interpretation->update(['processing_status' => 'pending', 'processing_started_at' => null]);
+        }
         
         // Для совместимости со старым view, создаем виртуальное свойство result
         // из первого результата новой системы
@@ -529,6 +477,150 @@ class DreamAnalyzerController extends Controller
                 'interpretation_id' => $interpretation->id,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
+            ]);
+        }
+    }
+
+    /**
+     * Запуск обработки анализа через AJAX (аналог ReportController::processAnalysis)
+     */
+    public function processAnalysis(Request $request, string $hash)
+    {
+        $interpretation = DreamInterpretation::where('hash', $hash)->firstOrFail();
+        
+        // Проверяем права доступа (только владелец или админ)
+        if (!auth()->check()) {
+            return response()->json([
+                'status' => 'error',
+                'error' => 'Требуется авторизация'
+            ], 401);
+        }
+        
+        if ($interpretation->user_id !== auth()->id() && !auth()->user()->isAdmin()) {
+            return response()->json([
+                'status' => 'error',
+                'error' => 'У вас нет прав для обработки этого анализа'
+            ], 403);
+        }
+        
+        try {
+            $this->processAnalysisAsync($interpretation);
+            
+            return response()->json([
+                'status' => 'started',
+                'message' => 'Analysis processing started'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('AJAX analysis processing failed', [
+                'interpretation_id' => $interpretation->id,
+                'error' => $e->getMessage()
+            ]);
+            
+            return response()->json([
+                'status' => 'failed',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Асинхронная обработка анализа (аналог ReportController::processAnalysisAsync)
+     */
+    private function processAnalysisAsync(DreamInterpretation $interpretation): void
+    {
+        try {
+            // Проверяем, не обрабатывается ли уже
+            if ($interpretation->processing_status === 'processing') {
+                return;
+            }
+            
+            // Устанавливаем статус processing
+            $interpretation->update([
+                'processing_status' => 'processing',
+                'processing_started_at' => now()
+            ]);
+            
+            \Log::info('Starting async analysis', [
+                'interpretation_id' => $interpretation->id,
+                'hash' => $interpretation->hash
+            ]);
+            
+            // Загружаем пользователя
+            $interpretation->load('user');
+            
+            // Получаем данные для анализа
+            $dreamDescription = $interpretation->dream_description;
+            $context = $interpretation->context;
+            $traditions = $interpretation->traditions ?? [];
+            $analysisMode = $interpretation->analysis_type;
+            
+            // Используем новую унифицированную систему
+            set_time_limit(180); // 3 минуты
+            $unifiedService = new UnifiedDreamAnalysisService();
+            
+            $traditionsCount = count($traditions);
+            
+            if ($analysisMode === 'single' || $traditionsCount <= 1) {
+                // Single tradition
+                $tradition = !empty($traditions) ? $traditions[0] : 'complex_analysis';
+                $result = $unifiedService->analyzeSingle([
+                    'tradition' => $tradition,
+                    'dream_text' => $dreamDescription,
+                    'context' => $context,
+                    'user_id' => $interpretation->user_id,
+                    'user_profile' => $this->buildUserProfile($interpretation->user),
+                ]);
+            } else {
+                // Multitradition (comparative/parallel/integrated)
+                $primaryTradition = $traditions[0];
+                $secondaryTraditions = array_slice($traditions, 1);
+                
+                $result = $unifiedService->analyzeMultiTradition([
+                    'primary_tradition' => $primaryTradition,
+                    'secondary_traditions' => $secondaryTraditions,
+                    'mode' => $analysisMode,
+                    'dream_text' => $dreamDescription,
+                    'context' => $context,
+                    'user_id' => $interpretation->user_id,
+                    'user_profile' => $this->buildUserProfile($interpretation->user),
+                ]);
+            }
+            
+            // Обновляем запись с raw запросом и ответом
+            $interpretation->update([
+                'raw_api_request' => $result['raw_request'],
+                'raw_api_response' => $result['raw_response'],
+                'processing_status' => 'completed',
+            ]);
+            
+            // Парсим и сохраняем результаты в новую таблицу
+            $unifiedService->parseAndSaveResults(
+                $interpretation,
+                $result['api_response'],
+                $result['analysis_mode']
+            );
+            
+            \Log::info('Async analysis completed', [
+                'interpretation_id' => $interpretation->id,
+                'analysis_mode' => $result['analysis_mode']
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Async analysis failed', [
+                'interpretation_id' => $interpretation->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            // Ограничиваем длину сообщения об ошибке
+            $errorMessage = $e->getMessage();
+            if (strlen($errorMessage) > 500) {
+                $errorMessage = substr($errorMessage, 0, 497) . '...';
+            }
+            
+            $interpretation->update([
+                'processing_status' => 'failed',
+                'api_error' => $errorMessage
             ]);
         }
     }
