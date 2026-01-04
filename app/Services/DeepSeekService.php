@@ -64,6 +64,12 @@ class DeepSeekService
             'max_tokens' => 8000,
         ];
 
+        // Получаем таймауты из настроек (с дефолтными значениями)
+        $phpTimeout = (int) \App\Models\Setting::getValue('deepseek_php_execution_timeout', 660);
+        $httpTimeout = (int) \App\Models\Setting::getValue('deepseek_http_timeout', 600);
+        
+        set_time_limit($phpTimeout); // Таймаут выполнения PHP скрипта
+
         // Логируем запрос (без API ключа)
         Log::info('DeepSeek API Request Data', [
             'url' => "{$this->baseUrl}/chat/completions",
