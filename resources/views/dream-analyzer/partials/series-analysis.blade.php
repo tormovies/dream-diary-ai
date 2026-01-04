@@ -45,11 +45,21 @@
         {{ $seriesAnalysis['series_title'] ?? 'Анализ серии снов' }}
     </h2>
     
-    @if(isset($seriesAnalysis['traditions']) && is_array($seriesAnalysis['traditions']))
+    @php
+        // Берём traditions из DreamInterpretation, а не из analysis_data
+        $traditionsToDisplay = null;
+        if (isset($interpretation) && $interpretation->traditions) {
+            $traditionsToDisplay = $interpretation->traditions;
+        } elseif (isset($seriesAnalysis['traditions']) && is_array($seriesAnalysis['traditions'])) {
+            $traditionsToDisplay = $seriesAnalysis['traditions'];
+        }
+    @endphp
+    
+    @if($traditionsToDisplay && is_array($traditionsToDisplay) && count($traditionsToDisplay) > 0)
         <div class="mb-4">
             <div class="flex items-center flex-wrap gap-2">
                 <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Традиции анализа:</span>
-                @foreach($seriesAnalysis['traditions'] as $tradition)
+                @foreach($traditionsToDisplay as $tradition)
                     @php
                         $traditionKey = strtolower($tradition);
                         $traditionName = config("traditions.{$traditionKey}.name_short", ucfirst($tradition));
