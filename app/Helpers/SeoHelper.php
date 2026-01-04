@@ -278,19 +278,19 @@ class SeoHelper
         
         if ($isSeries) {
             // Серия снов
-            $dreamTitle = $result ? ($result->series_title ?? 'Анализ серии снов') : 'Анализ серии снов';
-            $coreMessage = $result ? ($result->overall_theme ?? '') : '';
+            $dreamTitle = \App\Helpers\HtmlHelper::sanitizeTitle($result ? ($result->series_title ?? 'Анализ серии снов') : 'Анализ серии снов');
+            $coreMessage = \App\Helpers\HtmlHelper::sanitizeTitle($result ? ($result->overall_theme ?? '') : '');
             $traditions = $result ? ($result->traditions ?? []) : ($interpretation->traditions ?? []);
         } else {
             // Одиночный сон
-            $dreamTitle = $result ? ($result->dream_title ?? 'Анализ сна') : 'Анализ сна';
-            $coreMessage = $result ? ($result->summary_insight ?? '') : '';
+            $dreamTitle = \App\Helpers\HtmlHelper::sanitizeTitle($result ? ($result->dream_title ?? 'Анализ сна') : 'Анализ сна');
+            $coreMessage = \App\Helpers\HtmlHelper::sanitizeTitle($result ? ($result->summary_insight ?? '') : '');
             $traditions = $result ? ($result->traditions ?? []) : ($interpretation->traditions ?? []);
         }
         
         // Если нет core message, берем из dream_description
         if (empty($coreMessage)) {
-            $coreMessage = mb_substr($interpretation->dream_description ?? '', 0, 160);
+            $coreMessage = mb_substr(\App\Helpers\HtmlHelper::sanitizeTitle($interpretation->dream_description ?? ''), 0, 160);
         }
         
         // Традиции
@@ -352,12 +352,12 @@ class SeoHelper
             // Обработка серии снов
             if ($result) {
                 // Из нормализованных данных
-                $dreamTitle = $result->series_title ?? 'Анализ серии снов';
-                $coreMessage = $result->overall_theme ?? '';
+                $dreamTitle = \App\Helpers\HtmlHelper::sanitizeTitle($result->series_title ?? 'Анализ серии снов');
+                $coreMessage = \App\Helpers\HtmlHelper::sanitizeTitle($result->overall_theme ?? '');
                 
                 // Если нет overall_theme, берем из первого сна в серии
                 if (empty($coreMessage) && $result->seriesDreams->isNotEmpty()) {
-                    $coreMessage = $result->seriesDreams->first()->summary_insight ?? '';
+                    $coreMessage = \App\Helpers\HtmlHelper::sanitizeTitle($result->seriesDreams->first()->summary_insight ?? '');
                 }
                 
                 // Традиции
@@ -368,11 +368,11 @@ class SeoHelper
                 $seriesAnalysis = $analysis['series_analysis'] ?? [];
                 $dreams = $analysis['dreams'] ?? [];
                 
-                $dreamTitle = $seriesAnalysis['series_title'] ?? 'Анализ серии снов';
-                $coreMessage = $seriesAnalysis['overall_theme'] ?? '';
+                $dreamTitle = \App\Helpers\HtmlHelper::sanitizeTitle($seriesAnalysis['series_title'] ?? 'Анализ серии снов');
+                $coreMessage = \App\Helpers\HtmlHelper::sanitizeTitle($seriesAnalysis['overall_theme'] ?? '');
                 
                 if (empty($coreMessage) && !empty($dreams) && isset($dreams[0]['summary_insight'])) {
-                    $coreMessage = $dreams[0]['summary_insight'];
+                    $coreMessage = \App\Helpers\HtmlHelper::sanitizeTitle($dreams[0]['summary_insight']);
                 }
                 
                 $traditions = $seriesAnalysis['traditions'] ?? [];
@@ -409,8 +409,8 @@ class SeoHelper
             // Обработка одиночного сна
             if ($result) {
                 // Из нормализованных данных
-                $dreamTitle = $result->dream_title ?? 'Анализ сна';
-                $coreMessage = $result->summary_insight ?? '';
+                $dreamTitle = \App\Helpers\HtmlHelper::sanitizeTitle($result->dream_title ?? 'Анализ сна');
+                $coreMessage = \App\Helpers\HtmlHelper::sanitizeTitle($result->summary_insight ?? '');
                 
                 // Традиции
                 $traditions = $result->traditions ?? [];
@@ -419,11 +419,11 @@ class SeoHelper
                 // Новый формат (из analysis_data)
                 $dreamAnalysis = $analysis['dream_analysis'] ?? [];
                 
-                $dreamTitle = $dreamAnalysis['core_theme'] ?? 'Анализ сна';
-                $coreMessage = $dreamAnalysis['central_message'] ?? '';
+                $dreamTitle = \App\Helpers\HtmlHelper::sanitizeTitle($dreamAnalysis['core_theme'] ?? 'Анализ сна');
+                $coreMessage = \App\Helpers\HtmlHelper::sanitizeTitle($dreamAnalysis['central_message'] ?? '');
                 
                 if (empty($coreMessage)) {
-                    $coreMessage = $dreamAnalysis['core_theme'] ?? '';
+                    $coreMessage = \App\Helpers\HtmlHelper::sanitizeTitle($dreamAnalysis['core_theme'] ?? '');
                 }
                 
                 $traditions = [];
@@ -433,11 +433,11 @@ class SeoHelper
                 $metadata = $analysis['metadata'] ?? [];
                 $analysisData = $analysis['analysis'] ?? [];
                 
-                $dreamTitle = $metadata['title'] ?? 'Анализ сна';
-                $coreMessage = $analysisData['core_message'] ?? '';
+                $dreamTitle = \App\Helpers\HtmlHelper::sanitizeTitle($metadata['title'] ?? 'Анализ сна');
+                $coreMessage = \App\Helpers\HtmlHelper::sanitizeTitle($analysisData['core_message'] ?? '');
                 
                 if (empty($coreMessage) && isset($analysisData['interpretation'])) {
-                    $coreMessage = Str::limit(strip_tags($analysisData['interpretation']), 160, '...');
+                    $coreMessage = Str::limit(\App\Helpers\HtmlHelper::sanitizeTitle($analysisData['interpretation']), 160, '...');
                 }
                 
                 $traditions = $analysisData['traditions'] ?? [];

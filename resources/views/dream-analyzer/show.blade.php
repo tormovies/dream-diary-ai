@@ -153,11 +153,17 @@
                         </div>
                     </div>
 
-                @if($interpretation->api_error)
+                @php
+                    // Проверяем статус обработки
+                    $processingStatus = $interpretation->processing_status ?? 'completed'; // По умолчанию completed для старых записей
+                    $hasResults = ($interpretation->relationLoaded('results') && $interpretation->results->count() > 0) || $interpretation->result;
+                @endphp
+
+                @if($processingStatus === 'failed' || $interpretation->api_error)
                     <!-- Ошибка API -->
                     <div class="bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-300 px-6 py-4 rounded-lg">
                         <h2 class="font-bold text-lg mb-2">Ошибка при анализе</h2>
-                        <p>{{ $interpretation->api_error }}</p>
+                        <p>{{ $interpretation->api_error ?? 'Анализ завершился с ошибкой' }}</p>
                         @if(isset($interpretation->raw_api_response) && $interpretation->raw_api_response)
                             <details class="mt-4">
                                 <summary class="cursor-pointer font-semibold">Ответ API</summary>
@@ -165,18 +171,91 @@
                             </details>
                         @endif
                     </div>
+                @elseif($processingStatus === 'pending' || $processingStatus === 'processing' || !$hasResults)
+                    <!-- Прогресс (если анализ еще выполняется) -->
+                    <div class="bg-blue-100 dark:bg-blue-900 border border-blue-400 dark:border-blue-700 rounded-2xl p-6">
+                        <div class="flex items-center gap-4">
+                            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+                            <div>
+                                <h3 class="text-lg font-semibold text-blue-800 dark:text-blue-200 mb-1">
+                                    Анализ выполняется...
+                                </h3>
+                                <p class="text-blue-700 dark:text-blue-300 text-sm">
+                                    Это может занять до 3 минут. Страница обновится автоматически.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <script>
+                        // Запускаем обработку через AJAX если статус pending
+                        @if($processingStatus === 'pending')
+                            // Запускаем обработку в фоне через 2 секунды (чтобы страница успела отрендериться)
+                            setTimeout(function() {
+                                fetch('{{ route('dream-analyzer.process', $interpretation->hash) }}', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                        'Accept': 'application/json'
+                                    }
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+                                    console.log('Analysis process response:', data);
+                                    // Если обработка завершена сразу - перезагружаем сразу
+                                    if (data.status === 'completed') {
+                                        location.reload();
+                                    } else {
+                                        // Если запущена - перезагружаем через 3 секунды
+                                        setTimeout(function() {
+                                            location.reload();
+                                        }, 3000);
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error('Error starting analysis:', error);
+                                    // При ошибке перезагружаем через 3 секунды
+                                    setTimeout(function() {
+                                        location.reload();
+                                    }, 3000);
+                                });
+                            }, 2000);
+                        @else
+                            // Если уже в processing - просто ждем и перезагружаем
+                            setTimeout(function() {
+                                location.reload();
+                            }, 5000);
+                        @endif
+                    </script>
                 @else
                     @php
                         // Приоритет: сначала нормализованные данные, потом старые
                         $result = $interpretation->result;
                         
                         // Проверяем, есть ли реальные данные в result
-                        $hasResultData = $result && (
-                            (is_array($result->general_interpretation) && count($result->general_interpretation) > 0) ||
-                            (is_array($result->key_symbols) && count($result->key_symbols) > 0) ||
-                            (is_array($result->emotional_state) && count($result->emotional_state) > 0) ||
-                            (is_array($result->practical_recommendations) && count($result->practical_recommendations) > 0)
-                        );
+                        // Новая система: проверяем analysis_data
+                        // Старая система: проверяем отдельные поля
+                        $hasResultData = false;
+                        $isNewSystem = false;
+                        
+                        if ($result) {
+                            // Проверяем новую систему (analysis_data)
+                            if (!empty($result->analysis_data) && is_array($result->analysis_data)) {
+                                $hasResultData = true;
+                                $isNewSystem = true;
+                            }
+                            // Проверяем старую систему (отдельные поля)
+                            elseif (
+                                (is_array($result->general_interpretation ?? null) && count($result->general_interpretation) > 0) ||
+                                (is_array($result->key_symbols ?? null) && count($result->key_symbols) > 0) ||
+                                (is_array($result->emotional_state ?? null) && count($result->emotional_state) > 0) ||
+                                (is_array($result->practical_recommendations ?? null) && count($result->practical_recommendations) > 0)
+                            ) {
+                                $hasResultData = true;
+                                $isNewSystem = false;
+                            }
+                        }
                         
                         $useNormalized = $hasResultData;
                         
@@ -194,7 +273,10 @@
                     @endphp
 
                     @if($useNormalized)
-                        @if($isSeries)
+                        @if($isNewSystem)
+                            <!-- Новая система: данные из analysis_data -->
+                            @include('dream-analyzer.partials.new-system-analysis', ['result' => $result, 'interpretation' => $interpretation, 'results' => $interpretation->results ?? collect()])
+                        @elseif($isSeries)
                             <!-- Анализ серии снов (нормализованные данные) -->
                             @include('dream-analyzer.partials.series-analysis-normalized', ['result' => $result, 'interpretation' => $interpretation])
                         @else
@@ -560,7 +642,30 @@
                                 
                                 @php
                                     $hasJsonData = isset($interpretation->raw_api_request) || isset($interpretation->raw_api_response) || isset($interpretation->analysis_data);
+                                    
+                                    // Отладочная информация для админа
+                                    $debugInfo = [
+                                        'has_raw_request' => !empty($interpretation->raw_api_request),
+                                        'has_raw_response' => !empty($interpretation->raw_api_response),
+                                        'has_analysis_data' => !empty($interpretation->analysis_data),
+                                        'raw_request_type' => gettype($interpretation->raw_api_request ?? null),
+                                        'raw_response_type' => gettype($interpretation->raw_api_response ?? null),
+                                        'raw_request_length' => !empty($interpretation->raw_api_request) ? strlen($interpretation->raw_api_request) : 0,
+                                        'raw_response_length' => !empty($interpretation->raw_api_response) ? strlen($interpretation->raw_api_response) : 0,
+                                        'raw_request_is_null' => is_null($interpretation->raw_api_request ?? null),
+                                        'raw_response_is_null' => is_null($interpretation->raw_api_response ?? null),
+                                        'processing_status' => $interpretation->processing_status ?? 'unknown',
+                                        'interpretation_id' => $interpretation->id,
+                                    ];
                                 @endphp
+                                
+                                @if(isset($request) && $request->has('debug'))
+                                    <!-- Дополнительная отладочная информация -->
+                                    <div class="bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg p-4 mb-4">
+                                        <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-2">Отладочная информация о данных:</h4>
+                                        <pre class="text-xs bg-white dark:bg-gray-900 p-3 rounded overflow-auto">{{ json_encode($debugInfo, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</pre>
+                                    </div>
+                                @endif
                                 
                                 @if(!$hasJsonData && !$interpretation->api_error)
                                     <!-- Подсказка для админа о том, как загрузить JSON-данные -->
@@ -588,33 +693,70 @@
                                         </div>
                                     </div>
                                     
-                                    @if(isset($interpretation->raw_api_request) && $interpretation->raw_api_request)
+                                    @php
+                                        // Функция для форматирования JSON
+                                        $formatJson = function($data) {
+                                            if (is_string($data)) {
+                                                $decoded = json_decode($data, true);
+                                                if (json_last_error() === JSON_ERROR_NONE) {
+                                                    return json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                                                }
+                                                return $data;
+                                            } elseif (is_array($data) || is_object($data)) {
+                                                return json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                                            }
+                                            return $data;
+                                        };
+                                    @endphp
+                                    
+                                    @if(!empty($interpretation->raw_api_request))
                                         <div>
                                             <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-2">JSON запрос к API:</h4>
-                                            <details class="cursor-pointer">
+                                            <details class="cursor-pointer" open>
                                                 <summary class="text-purple-600 dark:text-purple-400 hover:underline mb-2">Показать/скрыть JSON</summary>
-                                                <pre class="bg-gray-800 dark:bg-gray-950 text-blue-400 p-4 rounded-lg overflow-auto text-xs max-h-96">{{ $interpretation->raw_api_request }}</pre>
+                                                <pre class="bg-gray-800 dark:bg-gray-950 text-blue-400 p-4 rounded-lg overflow-auto text-xs" style="max-height: 500px;">{{ $formatJson($interpretation->raw_api_request) }}</pre>
                                             </details>
+                                        </div>
+                                    @else
+                                        <div class="bg-yellow-100 dark:bg-yellow-900 border border-yellow-400 dark:border-yellow-700 text-yellow-700 dark:text-yellow-300 px-4 py-3 rounded-lg">
+                                            <p class="text-sm">
+                                                <i class="fas fa-exclamation-triangle mr-2"></i>
+                                                <strong>JSON запрос не сохранен</strong> (поле raw_api_request пусто)
+                                            </p>
                                         </div>
                                     @endif
                                     
-                                    @if(isset($interpretation->raw_api_response) && $interpretation->raw_api_response)
+                                    @if(!empty($interpretation->raw_api_response))
                                         <div>
-                                            <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-2">Raw JSON ответ от API:</h4>
-                                            <details class="cursor-pointer">
+                                            <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-2">Полный JSON ответ от API:</h4>
+                                            <details class="cursor-pointer" open>
                                                 <summary class="text-purple-600 dark:text-purple-400 hover:underline mb-2">Показать/скрыть JSON</summary>
-                                                <pre class="bg-gray-800 dark:bg-gray-950 text-green-400 p-4 rounded-lg overflow-auto text-xs max-h-96">{{ $interpretation->raw_api_response }}</pre>
+                                                <pre class="bg-gray-800 dark:bg-gray-950 text-green-400 p-4 rounded-lg overflow-auto text-xs" style="max-height: 500px;">{{ $formatJson($interpretation->raw_api_response) }}</pre>
                                             </details>
+                                        </div>
+                                    @else
+                                        <div class="bg-yellow-100 dark:bg-yellow-900 border border-yellow-400 dark:border-yellow-700 text-yellow-700 dark:text-yellow-300 px-4 py-3 rounded-lg">
+                                            <p class="text-sm">
+                                                <i class="fas fa-exclamation-triangle mr-2"></i>
+                                                <strong>JSON ответ не сохранен</strong> (поле raw_api_response пусто)
+                                            </p>
                                         </div>
                                     @endif
                                     
-                                    @if(isset($interpretation->analysis_data) && $interpretation->analysis_data)
+                                    @if(!empty($interpretation->analysis_data))
                                         <div>
                                             <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-2">Распарсенный JSON (analysis_data):</h4>
                                             <details class="cursor-pointer">
                                                 <summary class="text-purple-600 dark:text-purple-400 hover:underline mb-2">Показать/скрыть JSON</summary>
-                                                <pre class="bg-gray-800 dark:bg-gray-950 text-green-400 p-4 rounded-lg overflow-auto text-xs max-h-96">{{ json_encode($interpretation->analysis_data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</pre>
+                                                <pre class="bg-gray-800 dark:bg-gray-950 text-green-400 p-4 rounded-lg overflow-auto text-xs" style="max-height: 500px;">{{ $formatJson($interpretation->analysis_data) }}</pre>
                                             </details>
+                                        </div>
+                                    @else
+                                        <div class="bg-yellow-100 dark:bg-yellow-900 border border-yellow-400 dark:border-yellow-700 text-yellow-700 dark:text-yellow-300 px-4 py-3 rounded-lg">
+                                            <p class="text-sm">
+                                                <i class="fas fa-exclamation-triangle mr-2"></i>
+                                                <strong>Распарсенные данные не сохранены</strong> (поле analysis_data пусто)
+                                            </p>
                                         </div>
                                     @endif
                                 </div>

@@ -93,7 +93,7 @@
     @foreach($dreams as $dream)
         <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700 mb-6">
             <h3 class="text-xl font-bold text-purple-600 dark:text-purple-400 mb-2">
-                Сон {{ $dream['dream_number'] ?? ($loop->index + 1) }}: {{ $dream['dream_title'] ?? 'Без названия' }}
+                Сон {{ $dream['dream_number'] ?? ($loop->index + 1) }}: {{ \App\Helpers\HtmlHelper::sanitizeTitle($dream['dream_title'] ?? 'Без названия') }}
             </h3>
             @if(isset($dream['dream_type']))
                 <div class="mb-4 flex items-center gap-2">
@@ -105,27 +105,10 @@
             @endif
 
             @if(isset($dream['dream_detailed']) && !empty($dream['dream_detailed']))
-                @php
-                    // Убираем все лишние пробелы и отступы
-                    $detailedText = $dream['dream_detailed'];
-                    // Убираем все пробелы и табы в начале строк
-                    $lines = explode("\n", $detailedText);
-                    $processedLines = [];
-                    foreach ($lines as $line) {
-                        // Убираем все пробелы и табы в начале и конце строки
-                        $cleanedLine = trim($line);
-                        // Если строка не пустая, добавляем её
-                        if (!empty($cleanedLine)) {
-                            $processedLines[] = $cleanedLine;
-                        }
-                    }
-                    $detailedText = implode("\n", $processedLines);
-                    $detailedText = trim($detailedText);
-                @endphp
                 <div class="mb-6 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border-l-4 border-purple-500">
                     <h4 class="font-semibold text-purple-800 dark:text-purple-200 mb-3">Детальный анализ</h4>
-                    <div class="text-gray-700 dark:text-gray-300 leading-relaxed" style="text-align: left; padding: 0; margin: 0;">
-                        {!! nl2br(e($detailedText)) !!}
+                    <div class="text-gray-700 dark:text-gray-300 leading-relaxed prose prose-purple dark:prose-invert max-w-none">
+                        {!! \App\Helpers\HtmlHelper::sanitize($dream['dream_detailed']) !!}
                     </div>
                 </div>
             @endif
@@ -133,7 +116,7 @@
             @if(isset($dream['summary_insight']))
                 <div class="mb-4 p-4 bg-blue-50 dark:bg-blue-900/30 rounded-lg border-l-4 border-blue-500">
                     <h4 class="font-semibold text-blue-800 dark:text-blue-200 mb-2">Ключевая мысль</h4>
-                    <p class="text-gray-700 dark:text-gray-300">{{ $dream['summary_insight'] }}</p>
+                    <div class="text-gray-700 dark:text-gray-300">{!! \App\Helpers\HtmlHelper::sanitize($dream['summary_insight']) !!}</div>
                 </div>
             @endif
 
@@ -151,8 +134,8 @@
                         @foreach($dream['key_symbols'] as $symbol)
                             @if(is_array($symbol) && isset($symbol['symbol']))
                                 <div class="border-l-4 border-indigo-500 pl-4">
-                                    <strong class="text-indigo-800 dark:text-indigo-200">{{ $symbol['symbol'] }}</strong>
-                                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">{{ $symbol['meaning'] ?? '' }}</p>
+                                    <strong class="text-indigo-800 dark:text-indigo-200">{!! \App\Helpers\HtmlHelper::sanitize($symbol['symbol']) !!}</strong>
+                                    <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">{!! \App\Helpers\HtmlHelper::sanitize($symbol['meaning'] ?? '') !!}</div>
                                 </div>
                             @elseif(is_string($symbol))
                                 <span class="inline-block bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-3 py-1 rounded-full text-sm mr-2 mb-2">
@@ -193,7 +176,7 @@
             @if(isset($dream['connection_to_previous']))
                 <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                     <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-2">Связь с предыдущими снами</h4>
-                    <p class="text-gray-700 dark:text-gray-300 text-sm">{{ $dream['connection_to_previous'] }}</p>
+                    <div class="text-gray-700 dark:text-gray-300 text-sm prose prose-sm prose-purple dark:prose-invert max-w-none">{!! \App\Helpers\HtmlHelper::sanitize($dream['connection_to_previous']) !!}</div>
                 </div>
             @endif
         </div>
@@ -202,13 +185,19 @@
 
 <!-- Общие рекомендации -->
 @if(!empty($recommendations) && is_array($recommendations))
+    @php
+        // Объединяем рекомендации в один HTML
+        $recommendationsHtml = \App\Helpers\HtmlHelper::sanitize(implode('', array_map(function($rec) { return '<p>' . $rec . '</p>'; }, $recommendations)));
+        // Удаляем заголовок "Практические рекомендации" из любого места (включая внутри <p>)
+        $recommendationsHtml = preg_replace('/<p>\s*<h3[^>]*>Практические рекомендации<\/h3>\s*<\/p>/is', '', $recommendationsHtml);
+        $recommendationsHtml = preg_replace('/<h3[^>]*>Практические рекомендации<\/h3>\s*/is', '', $recommendationsHtml);
+        $recommendationsHtml = trim($recommendationsHtml);
+    @endphp
     <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700 mb-6">
         <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Практические рекомендации</h3>
-        <ul class="list-disc list-inside space-y-2 text-gray-700 dark:text-gray-300">
-            @foreach($recommendations as $recommendation)
-                <li>{{ $recommendation }}</li>
-            @endforeach
-        </ul>
+        <div class="text-gray-700 dark:text-gray-300 leading-relaxed prose prose-purple dark:prose-invert max-w-none">
+            {!! $recommendationsHtml !!}
+        </div>
     </div>
 @endif
 

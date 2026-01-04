@@ -132,7 +132,7 @@
 @if(!empty($dreamAnalysis))
     <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700 mb-6">
         <h2 class="text-2xl font-bold text-purple-600 dark:text-purple-400 mb-4">
-            {{ $dreamAnalysis['dream_title'] ?? 'Анализ сна' }}
+            {{ \App\Helpers\HtmlHelper::sanitizeTitle($dreamAnalysis['dream_title'] ?? 'Анализ сна') }}
         </h2>
         @if(isset($dreamAnalysis['dream_type']))
             <div class="mb-4 flex items-center gap-2">
@@ -201,7 +201,7 @@
         @if(isset($dreamAnalysis['summary_insight']))
             <div class="mb-6 p-4 bg-purple-50 dark:bg-purple-900/30 rounded-lg border-l-4 border-purple-500">
                 <h3 class="font-semibold text-purple-800 dark:text-purple-200 mb-2">Ключевая мысль</h3>
-                <p class="text-gray-700 dark:text-gray-300">{{ $dreamAnalysis['summary_insight'] }}</p>
+                <div class="text-gray-700 dark:text-gray-300">{!! \App\Helpers\HtmlHelper::sanitize($dreamAnalysis['summary_insight']) !!}</div>
             </div>
         @endif
         
@@ -222,79 +222,8 @@
         <!-- Dream Detailed (детальный анализ из JSON) -->
         @if(isset($dreamAnalysis['dream_detailed']) && !empty($dreamAnalysis['dream_detailed']))
             <div>
-                <div class="text-gray-700 dark:text-gray-300 leading-relaxed" style="text-align: left;">
-                    @php
-                        $detailedText = $dreamAnalysis['dream_detailed'];
-                        // Обрабатываем форматирование (заголовки ###, жирный текст **, списки)
-                        $parts = preg_split('/(\n\n+)/', $detailedText, -1, PREG_SPLIT_DELIM_CAPTURE);
-                        $formattedParts = [];
-                        $firstHeadingSkipped = false;
-                        
-                        foreach ($parts as $part) {
-                            $part = trim($part);
-                            if (empty($part)) {
-                                continue;
-                            }
-                            
-                            // Проверяем, является ли это заголовком (начинается с ###)
-                            if (preg_match('/^###\s+(.+)$/m', $part, $matches)) {
-                                $title = trim($matches[1]);
-                                // Пропускаем первый заголовок "Детальный анализ" (в любом регистре), так как уже есть h2
-                                if (!$firstHeadingSkipped && mb_stripos($title, 'Детальный анализ') !== false) {
-                                    $firstHeadingSkipped = true;
-                                    continue;
-                                }
-                                $formattedParts[] = ['type' => 'heading', 'content' => $title];
-                            } 
-                            // Проверяем, является ли это нумерованным списком
-                            elseif (preg_match('/^\d+\.\s{1,2}/m', $part)) {
-                                preg_match_all('/(\d+\.\s{1,2})(.+?)(?=\d+\.\s{1,2}|$)/s', $part, $matches, PREG_SET_ORDER);
-                                
-                                $listItems = [];
-                                
-                                if (!empty($matches)) {
-                                    foreach ($matches as $match) {
-                                        $item = trim($match[2]);
-                                        if (empty($item)) {
-                                            continue;
-                                        }
-                                        
-                                        $item = preg_replace('/\s+/', ' ', $item);
-                                        $item = trim($item);
-                                        $item = preg_replace('/\*\*(.+?)\*\*/', '<strong>$1</strong>', $item);
-                                        
-                                        if (!empty($item)) {
-                                            $listItems[] = $item;
-                                        }
-                                    }
-                                }
-                                
-                                if (!empty($listItems) && count($listItems) > 0) {
-                                    $formattedParts[] = ['type' => 'list', 'content' => $listItems];
-                                } else {
-                                    $formattedText = preg_replace('/\*\*(.+?)\*\*/', '<strong>$1</strong>', $part);
-                                    $formattedParts[] = ['type' => 'paragraph', 'content' => $formattedText];
-                                }
-                            } else {
-                                $formattedText = preg_replace('/\*\*(.+?)\*\*/', '<strong>$1</strong>', $part);
-                                $formattedParts[] = ['type' => 'paragraph', 'content' => $formattedText];
-                            }
-                        }
-                    @endphp
-                    
-                    @foreach($formattedParts as $part)
-                        @if($part['type'] === 'heading')
-                            <h3 class="text-xl font-bold text-purple-600 dark:text-purple-400 mt-6 mb-3 first:mt-0">{{ $part['content'] }}</h3>
-                        @elseif($part['type'] === 'list')
-                            <ol class="list-decimal list-inside mb-4 space-y-2 ml-4">
-                                @foreach($part['content'] as $item)
-                                    <li class="text-gray-700 dark:text-gray-300">{!! $item !!}</li>
-                                @endforeach
-                            </ol>
-                        @else
-                            <p class="mb-4 last:mb-0">{!! $part['content'] !!}</p>
-                        @endif
-                    @endforeach
+                <div class="text-gray-700 dark:text-gray-300 leading-relaxed prose prose-purple dark:prose-invert max-w-none [&_h2]:text-xl [&_h2]:font-bold [&_h2]:text-purple-600 [&_h2]:dark:text-purple-400 [&_h2]:mt-6 [&_h2]:mb-4 [&_h2]:first:mt-0 [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:text-gray-900 [&_h3]:dark:text-white [&_h3]:mt-5 [&_h3]:mb-3 [&_p]:mb-4 [&_p]:leading-relaxed [&_ul]:list-disc [&_ul]:ml-6 [&_ul]:mb-4 [&_ul]:space-y-2 [&_ol]:list-decimal [&_ol]:ml-6 [&_ol]:mb-4 [&_ol]:space-y-2 [&_li]:mb-1 [&_strong]:font-semibold [&_strong]:text-gray-900 [&_strong]:dark:text-gray-100 [&_em]:italic">
+                    {!! \App\Helpers\HtmlHelper::sanitize($dreamAnalysis['dream_detailed']) !!}
                 </div>
             </div>
         @endif
@@ -303,15 +232,15 @@
         @if(!empty($keySymbols) && is_array($keySymbols))
             <div class="border-t border-gray-200 dark:border-gray-700 pt-6">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">КЛЮЧЕВЫЕ СИМВОЛЫ И ИХ ЗНАЧЕНИЕ</h3>
-                <div class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     @foreach($keySymbols as $symbol)
-                        <div class="border-l-4 border-indigo-500 pl-4">
-                            <h4 class="font-semibold text-indigo-800 dark:text-indigo-200 mb-2">{{ $symbol['symbol'] ?? 'Символ' }}</h4>
+                        <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow">
+                            <h4 class="font-semibold text-indigo-800 dark:text-indigo-200 mb-2">{!! \App\Helpers\HtmlHelper::sanitize($symbol['symbol'] ?? 'Символ') !!}</h4>
                             
                             @if(isset($symbol['meaning']))
-                                <p class="text-sm text-gray-700 dark:text-gray-300">
-                                    {{ $symbol['meaning'] }}
-                                </p>
+                                <div class="text-sm text-gray-700 dark:text-gray-300">
+                                    {!! \App\Helpers\HtmlHelper::sanitize($symbol['meaning']) !!}
+                                </div>
                             @endif
                         </div>
                     @endforeach
@@ -349,15 +278,46 @@
     </div>
 </div>
 
+<!-- Анализ в традиции (dream_tradition) -->
+@php
+    $dreamTradition = null;
+    // Проверяем в dreamAnalysis (из analysis_data)
+    if (isset($dreamAnalysis['dream_tradition'])) {
+        $dreamTradition = $dreamAnalysis['dream_tradition'];
+    }
+    // Проверяем в interpretation->analysis_data (если dreamAnalysis не содержит)
+    elseif (isset($interpretation) && isset($interpretation->analysis_data['dream_analysis']['dream_tradition'])) {
+        $dreamTradition = $interpretation->analysis_data['dream_analysis']['dream_tradition'];
+    } elseif (isset($interpretation) && isset($interpretation->analysis_data['dream_tradition'])) {
+        $dreamTradition = $interpretation->analysis_data['dream_tradition'];
+    }
+@endphp
+
+@if($dreamTradition)
+    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700 mb-6">
+        <h2 class="text-2xl font-bold text-purple-600 dark:text-purple-400 mb-4">Анализ в традиции</h2>
+        
+        <div class="text-gray-700 dark:text-gray-300 leading-relaxed prose prose-purple dark:prose-invert max-w-none [&_h2]:text-xl [&_h2]:font-bold [&_h2]:text-purple-600 [&_h2]:dark:text-purple-400 [&_h2]:mt-6 [&_h2]:mb-4 [&_h2]:first:mt-0 [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:text-gray-900 [&_h3]:dark:text-white [&_h3]:mt-5 [&_h3]:mb-3 [&_p]:mb-4 [&_p]:leading-relaxed [&_ul]:list-disc [&_ul]:ml-6 [&_ul]:mb-4 [&_ul]:space-y-2 [&_ol]:list-decimal [&_ol]:ml-6 [&_ol]:mb-4 [&_ol]:space-y-2 [&_li]:mb-1 [&_strong]:font-semibold [&_strong]:text-gray-900 [&_strong]:dark:text-gray-100 [&_em]:italic">
+            {!! \App\Helpers\HtmlHelper::sanitize($dreamTradition) !!}
+        </div>
+    </div>
+@endif
+
 <!-- Практические рекомендации -->
 @if(!empty($recommendations) && is_array($recommendations))
+    @php
+        // Объединяем рекомендации в один HTML
+        $recommendationsHtml = \App\Helpers\HtmlHelper::sanitize(implode('', array_map(function($rec) { return '<p>' . $rec . '</p>'; }, $recommendations)));
+        // Удаляем заголовок "Практические рекомендации" из любого места (включая внутри <p>)
+        $recommendationsHtml = preg_replace('/<p>\s*<h3[^>]*>Практические рекомендации<\/h3>\s*<\/p>/is', '', $recommendationsHtml);
+        $recommendationsHtml = preg_replace('/<h3[^>]*>Практические рекомендации<\/h3>\s*/is', '', $recommendationsHtml);
+        $recommendationsHtml = trim($recommendationsHtml);
+    @endphp
     <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700 mb-6">
         <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Практические рекомендации</h3>
-        <ul class="list-disc list-inside space-y-2 text-gray-700 dark:text-gray-300">
-            @foreach($recommendations as $recommendation)
-                <li>{{ $recommendation }}</li>
-            @endforeach
-        </ul>
+        <div class="text-gray-700 dark:text-gray-300 leading-relaxed prose prose-purple dark:prose-invert max-w-none [&_h2]:text-xl [&_h2]:font-bold [&_h2]:text-purple-600 [&_h2]:dark:text-purple-400 [&_h2]:mt-6 [&_h2]:mb-4 [&_h2]:first:mt-0 [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:text-gray-900 [&_h3]:dark:text-white [&_h3]:mt-5 [&_h3]:mb-3 [&_p]:mb-4 [&_p]:leading-relaxed [&_ul]:list-disc [&_ul]:ml-6 [&_ul]:mb-4 [&_ul]:space-y-2 [&_ol]:list-decimal [&_ol]:ml-6 [&_ol]:mb-4 [&_ol]:space-y-2 [&_li]:mb-1 [&_strong]:font-semibold [&_strong]:text-gray-900 [&_strong]:dark:text-gray-100 [&_em]:italic">
+            {!! $recommendationsHtml !!}
+        </div>
     </div>
 @endif
 

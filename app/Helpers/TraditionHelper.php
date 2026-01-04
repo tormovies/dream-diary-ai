@@ -88,7 +88,24 @@ class TraditionHelper
         }
         return $descriptions;
     }
+
+    /**
+     * Получить специфический промпт для single анализа традиции
+     * 
+     * @param string $key Ключ традиции
+     * @return string|null Текст промпта или null, если не задан
+     */
+    public static function singleTraditionPrompt(string $key): ?string
+    {
+        $prompt = config("traditions.{$key}.single_tradition_prompt");
+        return $prompt ?: null;
+    }
 }
+
+
+
+
+
 
 
 

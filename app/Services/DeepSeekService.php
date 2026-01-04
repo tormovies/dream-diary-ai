@@ -219,7 +219,13 @@ class DeepSeekService
             $key = strtolower($tradition);
             $traditionsText[] = $traditionNames[$key] ?? $tradition;
         }
-        $traditionsList = implode(', ', $traditionsText);
+        
+        // Объединяем описания: если больше одной традиции, используем ", а также "
+        if (count($traditionsText) === 1) {
+            $traditionsList = $traditionsText[0];
+        } else {
+            $traditionsList = implode(', а также ', $traditionsText);
+        }
         
         // Формируем JSON массив традиций для подстановки в шаблон
         $traditionsJson = json_encode($traditions, JSON_UNESCAPED_UNICODE);
@@ -235,11 +241,31 @@ class DeepSeekService
         $prompt .= "2. Затем сделай ДЕТАЛЬНЫЙ АНАЛИЗ, связывая каждый символ сна с контекстом. Объясняй, как сон продолжает предыдущий контекст.\n";
         $prompt .= "3. Заверши КРАТКИМИ ПРАКТИЧЕСКИМИ РЕКОМЕНДАЦИЯМИ на основе инсайтов.\n";
         $prompt .= "4. Тон: поддерживающий, уверенный, видящий прогресс. Анализ должен быть глубоким, но не академичным.\n";
+        
+        // Собираем специфические промпты для всех выбранных традиций
+        $traditionSpecificPrompts = [];
+        $defaultPrompt = "определение основного сюжета и эмоционального тона сна.\n выявление ключевых символов и их возможных значений.\n анализ связи сна с текущей жизненной ситуацией.\n оценка ясности воспоминания и детализации.\n практические рекомендации для осмысления сна.\n простые техники для работы с повторяющимися темами.\n базовые советы для ведения дневника сновидений.\n определение возможных тем для дальнейшего исследования.\n";
+        
+        foreach ($traditions as $tradition) {
+            $traditionKey = strtolower($tradition);
+            $traditionPrompt = TraditionHelper::singleTraditionPrompt($traditionKey);
+            if ($traditionPrompt !== null) {
+                $traditionSpecificPrompts[] = $traditionPrompt;
+            }
+        }
+        
+        // Если есть специфические промпты - объединяем их через "\n\n", иначе используем дефолтный
+        if (!empty($traditionSpecificPrompts)) {
+            $instructionText = implode("\n\n", $traditionSpecificPrompts);
+        } else {
+            $instructionText = $defaultPrompt;
+        }
+        $prompt .= "5. {$instructionText} \n";
         $prompt .= "ЯЗЫК ОТВЕТА: RU\n";
         $prompt .= "ТИП АНАЛИЗА: {$analysisType}\n";
         $prompt .= "СОН ДЛЯ АНАЛИЗА: {$dreamDescription}\n\n";
         
-        $prompt .= "ВАЖНО: После всего анализа предоставь ответ в формате JSON со следующей структурой, только json без лишнего текста:\n";
+        $prompt .= "ВАЖНО: После всего анализа предоставь ответ в формате JSON где все текстовые поля содержат HTML-разметку (только теги: h2, h3, p, ul, li, strong, em). Пример:\n{\n  \"dream_analysis\": {\n    \"dream_title\": \"<h2>Название сна</h2>\",\n    \"dream_detailed\": \"<p>Первый абзац...</p><p>Второй абзац...</p>\",\n    \"key_symbols\": [\n      {\"symbol\": \"<strong>Символ</strong>\", \"meaning\": \"<p>Значение...</p>\"}\n    ]\n  }\n}, только json без лишнего текста, название переменной на английском языке, значение переменной на русском языке, без аббревиатур, сокращений\n";
         $prompt .= "{\n";
         $prompt .= "  \"dream_analysis\": {\n";
         $prompt .= "    \"traditions\": {$traditionsJson},\n";
@@ -262,6 +288,9 @@ class DeepSeekService
         $prompt .= "    ],\n";
         $prompt .= "    \"summary_insight\": \"ОБЩИЙ ПОСЫЛ сна — одну-две фразы о ключевой теме\",\n";
         $prompt .= "    \"emotional_tone\": \"Эмоциональный тон сна (нейтральный, тревожный, радостный, исследовательский и т.д.)\"\n";
+        
+        // Используем тот же текст для dream_tradition, что и в инструкциях
+        $prompt .= "    \"dream_tradition\": \"{$instructionText}\"\n";
         $prompt .= "  },\n";
         $prompt .= "  \"recommendations\": [\n";
         $prompt .= "    \"Рекомендация 1 на основе анализа\",\n";
@@ -323,7 +352,13 @@ class DeepSeekService
             $key = strtolower($tradition);
             $traditionsText[] = $traditionNames[$key] ?? $tradition;
         }
-        $traditionsList = implode(', ', $traditionsText);
+        
+        // Объединяем описания: если больше одной традиции, используем ", а также "
+        if (count($traditionsText) === 1) {
+            $traditionsList = $traditionsText[0];
+        } else {
+            $traditionsList = implode(', а также ', $traditionsText);
+        }
         
         // Формируем JSON для традиций
         $traditionsJson = json_encode($traditions, JSON_UNESCAPED_UNICODE);

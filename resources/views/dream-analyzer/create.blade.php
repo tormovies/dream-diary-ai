@@ -151,7 +151,7 @@
                                     <p class="mt-1 mb-3 text-sm text-gray-500 dark:text-gray-400">
                                         Выберите одну или несколько традиций интерпретации. Если ничего не выбрано, будет использован комплексный анализ.
                                     </p>
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                                         @php
                                             $oldTraditions = old('traditions', []);
                                         @endphp
