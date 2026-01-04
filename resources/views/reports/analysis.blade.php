@@ -211,8 +211,62 @@
                         </div>
                     @endif
 
-                    <!-- Прогресс (если анализ еще выполняется) -->
-                    @if(!$interpretation->result)
+                    @php
+                        $processingStatus = $interpretation->processing_status ?? 'completed';
+                    @endphp
+
+                    @if($processingStatus === 'failed' || $interpretation->api_error)
+                        <!-- Ошибка API -->
+                        <div class="bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-300 rounded-2xl p-6">
+                            <div class="flex items-start gap-4">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-exclamation-triangle text-4xl text-red-600 dark:text-red-400"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <h2 class="font-bold text-xl mb-2">Ошибка при анализе</h2>
+                                    <p class="mb-4">{{ $interpretation->api_error ?? 'Анализ завершился с ошибкой' }}</p>
+                                    
+                                    <div class="space-y-3 mt-4">
+                                        <h4 class="font-semibold text-red-800 dark:text-red-200">
+                                            <i class="fas fa-lightbulb text-yellow-600 dark:text-yellow-400 mr-2"></i>Что делать:
+                                        </h4>
+                                        <ul class="list-disc list-inside space-y-2 text-red-700 dark:text-red-300">
+                                            <li>
+                                                <strong>Попробуйте создать анализ заново</strong> — в большинстве случаев повторный запрос работает успешно
+                                            </li>
+                                            <li>
+                                                Если проблема повторяется, попробуйте:
+                                                <ul class="list-circle list-inside ml-6 mt-1 text-sm">
+                                                    <li>Сократить описание сна/снов</li>
+                                                    <li>Разделить серию снов на несколько анализов</li>
+                                                    <li>Убрать лишние детали из контекста</li>
+                                                </ul>
+                                            </li>
+                                            <li>
+                                                Возможно, API временно перегружен — попробуйте позже
+                                            </li>
+                                        </ul>
+                                    </div>
+                                    
+                                    <div class="flex flex-wrap gap-3 mt-6">
+                                        <a href="{{ route('reports.show', $report) }}" 
+                                           class="inline-flex items-center px-6 py-3 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-semibold rounded-lg transition-colors">
+                                            <i class="fas fa-arrow-left mr-2"></i>
+                                            Вернуться к отчёту
+                                        </a>
+                                    </div>
+                                    
+                                    @if(isset($interpretation->raw_api_response) && $interpretation->raw_api_response)
+                                        <details class="mt-4">
+                                            <summary class="cursor-pointer font-semibold">Техническая информация (ответ API)</summary>
+                                            <pre class="mt-2 text-xs overflow-auto bg-red-50 dark:bg-red-950 p-4 rounded">{{ $interpretation->raw_api_response }}</pre>
+                                        </details>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    @elseif(!$interpretation->result)
+                        <!-- Прогресс (если анализ еще выполняется) -->
                         <div class="bg-blue-100 dark:bg-blue-900 border border-blue-400 dark:border-blue-700 rounded-2xl p-6">
                             <div class="flex items-center gap-4">
                                 <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
@@ -267,12 +321,178 @@
                         <!-- Результаты анализа -->
                         @if($interpretation->analysis_type === 'single')
                             <!-- Одиночный анализ -->
-                            @include('dream-analyzer.partials.single-analysis-normalized', ['result' => $interpretation->result])
+                            @include('dream-analyzer.partials.single-analysis-normalized', ['result' => $interpretation->result, 'interpretation' => $interpretation])
                         @else
                             <!-- Серия снов -->
-                            @include('dream-analyzer.partials.series-analysis-normalized', ['result' => $interpretation->result])
+                            @include('dream-analyzer.partials.series-analysis-normalized', ['result' => $interpretation->result, 'interpretation' => $interpretation])
                         @endif
                     @endif
+
+                    @auth
+                        @if(auth()->user()->isAdmin())
+                            <!-- Отладочная информация (только для администраторов) -->
+                            <div class="bg-gray-50 dark:bg-gray-900 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 mt-6">
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">Отладочная информация (только для администраторов)</h3>
+                                
+                                @php
+                                    $hasJsonData = isset($interpretation->raw_api_request) || isset($interpretation->raw_api_response) || isset($interpretation->analysis_data);
+                                @endphp
+                                
+                                @if(!$hasJsonData && !$interpretation->api_error)
+                                    <!-- Подсказка для админа о том, как загрузить JSON-данные -->
+                                    <div class="bg-blue-100 dark:bg-blue-900 border border-blue-400 dark:border-blue-700 text-blue-700 dark:text-blue-300 px-4 py-3 rounded-lg mb-4">
+                                        <p class="text-sm">
+                                            <i class="fas fa-info-circle mr-2"></i>
+                                            <strong>JSON-данные не загружены</strong> (оптимизация производительности). 
+                                            Чтобы просмотреть отладочную информацию, добавьте <code class="bg-blue-200 dark:bg-blue-950 px-2 py-1 rounded">?debug=1</code> к URL:
+                                        </p>
+                                        <a href="?debug=1" class="inline-block mt-2 text-sm bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded transition-colors">
+                                            <i class="fas fa-bug mr-1"></i> Загрузить JSON-данные
+                                        </a>
+                                    </div>
+                                @endif
+                                
+                                <div class="space-y-4">
+                                    @php
+                                        // Функция для форматирования JSON
+                                        $formatJson = function($data) {
+                                            if (is_string($data)) {
+                                                $decoded = json_decode($data, true);
+                                                if (json_last_error() === JSON_ERROR_NONE) {
+                                                    return json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                                                }
+                                                return $data;
+                                            } elseif (is_array($data) || is_object($data)) {
+                                                return json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                                            }
+                                            return $data;
+                                        };
+                                        
+                                        // Вычисляем время обработки
+                                        $processingDuration = null;
+                                        if ($interpretation->processing_started_at && $interpretation->updated_at) {
+                                            $start = \Carbon\Carbon::parse($interpretation->processing_started_at);
+                                            $end = \Carbon\Carbon::parse($interpretation->updated_at);
+                                            $durationSeconds = $start->diffInSeconds($end);
+                                            $processingDuration = [
+                                                'seconds' => $durationSeconds,
+                                                'minutes' => round($durationSeconds / 60, 2),
+                                                'formatted' => $start->diffForHumans($end, true)
+                                            ];
+                                        }
+                                        
+                                        // Извлекаем информацию о токенах
+                                        $tokensInfo = null;
+                                        if (!empty($interpretation->raw_api_response)) {
+                                            $response = json_decode($interpretation->raw_api_response, true);
+                                            if ($response && isset($response['usage'])) {
+                                                $tokensInfo = [
+                                                    'prompt_tokens' => $response['usage']['prompt_tokens'] ?? null,
+                                                    'completion_tokens' => $response['usage']['completion_tokens'] ?? null,
+                                                    'total_tokens' => $response['usage']['total_tokens'] ?? null,
+                                                ];
+                                            }
+                                        }
+                                    @endphp
+                                    
+                                    <!-- Информация о времени обработки и токенах -->
+                                    <div class="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg p-4">
+                                        <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-3">
+                                            <i class="fas fa-info-circle text-blue-600 dark:text-blue-400 mr-2"></i>Статистика обработки
+                                        </h4>
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            @if($processingDuration)
+                                                <div>
+                                                    <div class="text-sm text-gray-600 dark:text-gray-400 mb-1">Время обработки:</div>
+                                                    <div class="text-lg font-bold text-blue-600 dark:text-blue-400">
+                                                        {{ $processingDuration['seconds'] }} сек
+                                                        <span class="text-sm font-normal text-gray-600 dark:text-gray-400">
+                                                            ({{ $processingDuration['minutes'] }} мин)
+                                                        </span>
+                                                    </div>
+                                                    @if($interpretation->processing_started_at && $interpretation->updated_at)
+                                                        <div class="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                                                            {{ $interpretation->processing_started_at->format('H:i:s') }} → {{ $interpretation->updated_at->format('H:i:s') }}
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                            @else
+                                                <div>
+                                                    <div class="text-sm text-gray-600 dark:text-gray-400 mb-1">Время обработки:</div>
+                                                    <div class="text-sm text-gray-500 dark:text-gray-500">Недоступно</div>
+                                                </div>
+                                            @endif
+                                            
+                                            @if($tokensInfo)
+                                                <div>
+                                                    <div class="text-sm text-gray-600 dark:text-gray-400 mb-1">Токены:</div>
+                                                    <div class="space-y-1">
+                                                        <div class="flex justify-between items-center">
+                                                            <span class="text-sm text-gray-600 dark:text-gray-400">Отправлено (prompt):</span>
+                                                            <span class="font-semibold text-blue-600 dark:text-blue-400">
+                                                                {{ number_format($tokensInfo['prompt_tokens'], 0, ',', ' ') }}
+                                                            </span>
+                                                        </div>
+                                                        <div class="flex justify-between items-center">
+                                                            <span class="text-sm text-gray-600 dark:text-gray-400">Получено (completion):</span>
+                                                            <span class="font-semibold text-green-600 dark:text-green-400">
+                                                                {{ number_format($tokensInfo['completion_tokens'], 0, ',', ' ') }}
+                                                            </span>
+                                                        </div>
+                                                        <div class="flex justify-between items-center pt-1 border-t border-blue-200 dark:border-blue-700">
+                                                            <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Всего:</span>
+                                                            <span class="font-bold text-purple-600 dark:text-purple-400">
+                                                                {{ number_format($tokensInfo['total_tokens'], 0, ',', ' ') }}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            @else
+                                                <div>
+                                                    <div class="text-sm text-gray-600 dark:text-gray-400 mb-1">Токены:</div>
+                                                    <div class="text-sm text-gray-500 dark:text-gray-500">Недоступно</div>
+                                                </div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                    
+                                    @if(!empty($interpretation->raw_api_request))
+                                        <div>
+                                            <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-2">JSON запрос к API:</h4>
+                                            <details class="cursor-pointer" open>
+                                                <summary class="text-purple-600 dark:text-purple-400 hover:underline mb-2">Показать/скрыть JSON</summary>
+                                                <pre class="bg-gray-800 dark:bg-gray-950 text-blue-400 p-4 rounded-lg overflow-auto text-xs" style="max-height: 500px;">{{ $formatJson($interpretation->raw_api_request) }}</pre>
+                                            </details>
+                                        </div>
+                                    @else
+                                        <div class="bg-yellow-100 dark:bg-yellow-900 border border-yellow-400 dark:border-yellow-700 text-yellow-700 dark:text-yellow-300 px-4 py-3 rounded-lg">
+                                            <p class="text-sm">
+                                                <i class="fas fa-exclamation-triangle mr-2"></i>
+                                                <strong>JSON запрос не сохранен</strong> (поле raw_api_request пусто)
+                                            </p>
+                                        </div>
+                                    @endif
+                                    
+                                    @if(!empty($interpretation->raw_api_response))
+                                        <div>
+                                            <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-2">Полный JSON ответ от API:</h4>
+                                            <details class="cursor-pointer" open>
+                                                <summary class="text-purple-600 dark:text-purple-400 hover:underline mb-2">Показать/скрыть JSON</summary>
+                                                <pre class="bg-gray-800 dark:bg-gray-950 text-green-400 p-4 rounded-lg overflow-auto text-xs" style="max-height: 500px;">{{ $formatJson($interpretation->raw_api_response) }}</pre>
+                                            </details>
+                                        </div>
+                                    @else
+                                        <div class="bg-yellow-100 dark:bg-yellow-900 border border-yellow-400 dark:border-yellow-700 text-yellow-700 dark:text-yellow-300 px-4 py-3 rounded-lg">
+                                            <p class="text-sm">
+                                                <i class="fas fa-exclamation-triangle mr-2"></i>
+                                                <strong>JSON ответ не сохранен</strong> (поле raw_api_response пусто)
+                                            </p>
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+                        @endif
+                    @endauth
                 </main>
 
                 <!-- Правая панель -->

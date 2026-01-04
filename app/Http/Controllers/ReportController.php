@@ -1184,7 +1184,7 @@ class ReportController extends Controller
             $dreamDescriptionFull = implode("\n---\n", $dreamDescriptions);
             
             // Выполняем анализ через DeepSeek API
-            set_time_limit(180); // 3 минуты
+            set_time_limit(660); // 11 минут (10 минут на запрос + 1 минута на обработку)
             $deepSeekService = new \App\Services\DeepSeekService();
             
             $result = $deepSeekService->analyzeDream(

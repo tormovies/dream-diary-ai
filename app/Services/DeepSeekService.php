@@ -73,7 +73,7 @@ class DeepSeekService
         ]);
 
         try {
-            $response = Http::timeout(150)
+            $response = Http::timeout(600)
                 ->connectTimeout(30)
                 ->withHeaders([
                     'Authorization' => 'Bearer ' . $this->apiKey,
@@ -174,6 +174,7 @@ class DeepSeekService
             return [
                 'success' => false,
                 'error' => 'Ошибка подключения к API: ' . $e->getMessage(),
+                'raw_request' => json_encode($requestData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
                 'raw_response' => null,
             ];
         } catch (\Exception $e) {
@@ -265,7 +266,7 @@ class DeepSeekService
         $prompt .= "ТИП АНАЛИЗА: {$analysisType}\n";
         $prompt .= "СОН ДЛЯ АНАЛИЗА: {$dreamDescription}\n\n";
         
-        $prompt .= "ВАЖНО: После всего анализа предоставь ответ в формате JSON где все текстовые поля содержат HTML-разметку (только теги: h2, h3, p, ul, li, strong, em). Пример:\n{\n  \"dream_analysis\": {\n    \"dream_title\": \"<h2>Название сна</h2>\",\n    \"dream_detailed\": \"<p>Первый абзац...</p><p>Второй абзац...</p>\",\n    \"key_symbols\": [\n      {\"symbol\": \"<strong>Символ</strong>\", \"meaning\": \"<p>Значение...</p>\"}\n    ]\n  }\n}, только json без лишнего текста, название переменной на английском языке, значение переменной на русском языке, без аббревиатур, сокращений\n";
+        $prompt .= "ВАЖНО: После всего анализа предоставь ответ в формате JSON где все текстовые поля содержат HTML-разметку (только теги: h2, h3, p, ul, li, strong, em). Пример:\n{\n  \"dream_analysis\": {\n    \"dream_title\": \"<h2>Название сна</h2>\",\n    \"dream_detailed\": \"<p>Первый абзац...</p><p>Второй абзац...</p>\",\n    \"key_symbols\": [\n      {\"symbol\": \"<strong>Символ</strong>\", \"meaning\": \"<p>Значение...</p>\"}\n    ]\n  }\n}, только json без лишнего текста, название переменной на английском языке, значение переменной на русском языке, без аббревиатур, сокращений, замена англоязычных терминов русскими аналогами (например, 'reality check' -> 'проверка реальности', 'ПР' -> 'проверка реальности', 'lucidity' -> 'осознанность') \n";
         $prompt .= "{\n";
         $prompt .= "  \"dream_analysis\": {\n";
         $prompt .= "    \"traditions\": {$traditionsJson},\n";
@@ -377,15 +378,36 @@ class DeepSeekService
         $prompt .= "   - Детальный анализ сна\n";
         $prompt .= "   - Связь с предыдущими темами из контекста\n";
         $prompt .= "3. Заверши ОБЩИМИ ПРАКТИЧЕСКИМИ РЕКОМЕНДАЦИЯМИ на основе инсайтов из всей серии.\n";
-        $prompt .= "4. Тон: поддерживающий, уверенный, видящий прогресс.\n\n";
+        $prompt .= "4. Тон: поддерживающий, уверенный, видящий прогресс.\n";
         
-        $prompt .= "ВАЖНО: После всего анализа предоставь ответ в формате JSON со следующей структурой, только json без лишнего текста:\n";
+        // Собираем специфические промпты для всех выбранных традиций
+        $traditionSpecificPrompts = [];
+        $defaultPrompt = "определение основного сюжета и эмоционального тона сна.\n выявление ключевых символов и их возможных значений.\n анализ связи сна с текущей жизненной ситуацией.\n оценка ясности воспоминания и детализации.\n практические рекомендации для осмысления сна.\n простые техники для работы с повторяющимися темами.\n базовые советы для ведения дневника сновидений.\n определение возможных тем для дальнейшего исследования.\n";
+        
+        foreach ($traditions as $tradition) {
+            $traditionKey = strtolower($tradition);
+            $traditionPrompt = TraditionHelper::singleTraditionPrompt($traditionKey);
+            if ($traditionPrompt !== null) {
+                $traditionSpecificPrompts[] = $traditionPrompt;
+            }
+        }
+        
+        // Если есть специфические промпты - объединяем их через "\n\n", иначе используем дефолтный
+        if (!empty($traditionSpecificPrompts)) {
+            $instructionText = implode("\n\n", $traditionSpecificPrompts);
+        } else {
+            $instructionText = $defaultPrompt;
+        }
+        $prompt .= "5. {$instructionText} \n\n";
+        
+        $prompt .= "ВАЖНО: После всего анализа предоставь ответ в формате JSON где все текстовые поля содержат HTML-разметку (только теги: h2, h3, p, ul, li, strong, em). Пример:\n{\n  \"dream_analysis\": {\n    \"dream_title\": \"<h2>Название сна</h2>\",\n    \"dream_detailed\": \"<p>Первый абзац...</p><p>Второй абзац...</p>\",\n    \"key_symbols\": [\n      {\"symbol\": \"<strong>Символ</strong>\", \"meaning\": \"<p>Значение...</p>\"}\n    ]\n  }\n}, только json без лишнего текста, название переменной на английском языке, значение переменной на русском языке, без аббревиатур, сокращений, замена англоязычных терминов русскими аналогами (например, 'reality check' -> 'проверка реальности', 'ПР' -> 'проверка реальности', 'lucidity' -> 'осознанность') \n";
         $prompt .= "{\n";
         $prompt .= "  \"series_analysis\": {\n";
         $prompt .= "    \"series_title\": \"Общее название для серии снов\",\n";
         $prompt .= "    \"traditions\": {$traditionsJson},\n";
         $prompt .= "    \"analysis_type\": \"{$analysisType}\",\n";
         $prompt .= "    \"overall_theme\": \"ОБЩИЙ ПОСЫЛ ВСЕЙ СЕРИИ СНОВ — как они связаны между собой и какую общую тему развивают.\",\n";
+        $prompt .= "    \"dream_tradition\": \"{$instructionText}\"\n";
         $prompt .= "  },\n";
         $prompt .= "  \"dreams\": [\n";
         $prompt .= "    {\n";

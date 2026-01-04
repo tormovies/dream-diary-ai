@@ -51,6 +51,32 @@
     @endif
 </div>
 
+<!-- Анализ в традиции (dream_tradition) -->
+@php
+    $dreamTradition = null;
+    // Проверяем в переданной переменной $interpretation (приоритет)
+    if (isset($interpretation) && isset($interpretation->analysis_data['series_analysis']['dream_tradition'])) {
+        $dreamTradition = $interpretation->analysis_data['series_analysis']['dream_tradition'];
+    } elseif (isset($interpretation) && isset($interpretation->analysis_data['dream_tradition'])) {
+        $dreamTradition = $interpretation->analysis_data['dream_tradition'];
+    }
+    // Проверяем через связь result->interpretation (fallback)
+    elseif ($result && $result->relationLoaded('interpretation') && $result->interpretation && isset($result->interpretation->analysis_data['series_analysis']['dream_tradition'])) {
+        $dreamTradition = $result->interpretation->analysis_data['series_analysis']['dream_tradition'];
+    } elseif ($result && $result->relationLoaded('interpretation') && $result->interpretation && isset($result->interpretation->analysis_data['dream_tradition'])) {
+        $dreamTradition = $result->interpretation->analysis_data['dream_tradition'];
+    }
+@endphp
+
+@if($dreamTradition)
+    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700 mb-6">
+        <h2 class="text-2xl font-bold text-purple-600 dark:text-purple-400 mb-4">Анализ в традиции</h2>
+        <div class="text-gray-700 dark:text-gray-300 leading-relaxed prose prose-purple dark:prose-invert max-w-none [&_h2]:text-xl [&_h2]:font-bold [&_h2]:text-purple-600 [&_h2]:dark:text-purple-400 [&_h2]:mt-6 [&_h2]:mb-4 [&_h2]:first:mt-0 [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:text-gray-900 [&_h3]:dark:text-white [&_h3]:mt-5 [&_h3]:mb-3 [&_p]:mb-4 [&_p]:leading-relaxed [&_ul]:list-disc [&_ul]:ml-6 [&_ul]:mb-4 [&_ul]:space-y-2 [&_ol]:list-decimal [&_ol]:ml-6 [&_ol]:mb-4 [&_ol]:space-y-2 [&_li]:mb-1 [&_strong]:font-semibold [&_strong]:text-gray-900 [&_strong]:dark:text-gray-100 [&_em]:italic">
+            {!! \App\Helpers\HtmlHelper::sanitize($dreamTradition) !!}
+        </div>
+    </div>
+@endif
+
 <!-- Анализ каждого сна -->
 @if($seriesDreams && $seriesDreams->count() > 0)
     @foreach($seriesDreams as $dream)
@@ -93,13 +119,19 @@
 
             @if($dream->key_symbols && count($dream->key_symbols) > 0)
                 <div class="mb-4">
-                    <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-2">Ключевые символы</h4>
-                    <div class="space-y-2">
+                    <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-3">Ключевые символы</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         @foreach($dream->key_symbols as $symbol)
-                            <div class="border-l-4 border-indigo-500 pl-4">
-                                <h5 class="font-semibold text-indigo-800 dark:text-indigo-200">{!! \App\Helpers\HtmlHelper::sanitize($symbol['symbol'] ?? 'Символ') !!}</h5>
-                                @if(isset($symbol['meaning']))
-                                    <div class="text-sm text-gray-700 dark:text-gray-300">{!! \App\Helpers\HtmlHelper::sanitize($symbol['meaning']) !!}</div>
+                            <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow">
+                                <h5 class="font-semibold text-indigo-800 dark:text-indigo-200 mb-2">{!! \App\Helpers\HtmlHelper::sanitize($symbol['symbol'] ?? 'Символ') !!}</h5>
+                                @php
+                                    // Проверяем оба варианта ключа (на случай, если в данных ключ с угловыми скобками)
+                                    $meaning = $symbol['meaning'] ?? $symbol['<meaning>'] ?? null;
+                                @endphp
+                                @if($meaning)
+                                    <div class="text-sm text-gray-700 dark:text-gray-300">
+                                        {!! \App\Helpers\HtmlHelper::sanitize($meaning) !!}
+                                    </div>
                                 @endif
                             </div>
                         @endforeach

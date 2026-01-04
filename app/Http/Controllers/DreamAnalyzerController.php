@@ -544,7 +544,7 @@ class DreamAnalyzerController extends Controller
         // В реальном приложении лучше использовать очереди, но для простоты делаем синхронно
         try {
             // Увеличиваем лимит времени выполнения
-            set_time_limit(300); // 5 минут
+            set_time_limit(660); // 11 минут (10 минут на запрос + 1 минута на обработку)
             
             $this->processAnalysisAsync($interpretation);
             
@@ -598,7 +598,7 @@ class DreamAnalyzerController extends Controller
             $analysisMode = $interpretation->analysis_type;
             
             // Используем старую систему DeepSeekService
-            set_time_limit(180); // 3 минуты
+            set_time_limit(660); // 11 минут (10 минут на запрос + 1 минута на обработку)
             $deepSeekService = new DeepSeekService();
             
             $result = $deepSeekService->analyzeDream(
