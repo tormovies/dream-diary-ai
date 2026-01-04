@@ -73,7 +73,7 @@ class DeepSeekService
         ]);
 
         try {
-            $response = Http::timeout(600)
+            $response = Http::timeout($httpTimeout)
                 ->connectTimeout(30)
                 ->withHeaders([
                     'Authorization' => 'Bearer ' . $this->apiKey,

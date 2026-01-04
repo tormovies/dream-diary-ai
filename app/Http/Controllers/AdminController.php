@@ -235,6 +235,8 @@ class AdminController extends Controller
             'edit_dreams_after_days' => Setting::getValue('edit_dreams_after_days', null),
             'diary_spoiler_min_length' => Setting::getValue('diary_spoiler_min_length', 1000),
             'deepseek_api_key' => Setting::getValue('deepseek_api_key', ''),
+            'deepseek_http_timeout' => Setting::getValue('deepseek_http_timeout', 600),
+            'deepseek_php_execution_timeout' => Setting::getValue('deepseek_php_execution_timeout', 660),
         ];
 
         return view('admin.settings', compact('settings'));
@@ -250,6 +252,8 @@ class AdminController extends Controller
             'edit_dreams_after_days' => ['nullable', 'integer', 'min:0'],
             'diary_spoiler_min_length' => ['nullable', 'integer', 'min:0'],
             'deepseek_api_key' => ['nullable', 'string', 'max:255'],
+            'deepseek_http_timeout' => ['nullable', 'integer', 'min:60', 'max:1800'],
+            'deepseek_php_execution_timeout' => ['nullable', 'integer', 'min:60', 'max:1800'],
         ]);
 
         Setting::setValue('allow_report_deletion', $request->boolean('allow_report_deletion', true));
@@ -268,6 +272,19 @@ class AdminController extends Controller
 
         if ($request->filled('deepseek_api_key')) {
             Setting::setValue('deepseek_api_key', $request->deepseek_api_key);
+        }
+
+        // Сохранение таймаутов для DeepSeek API
+        if ($request->filled('deepseek_http_timeout')) {
+            Setting::setValue('deepseek_http_timeout', $request->deepseek_http_timeout);
+        } else {
+            Setting::setValue('deepseek_http_timeout', 600); // Значение по умолчанию
+        }
+
+        if ($request->filled('deepseek_php_execution_timeout')) {
+            Setting::setValue('deepseek_php_execution_timeout', $request->deepseek_php_execution_timeout);
+        } else {
+            Setting::setValue('deepseek_php_execution_timeout', 660); // Значение по умолчанию
         }
 
         return back()->with('success', 'Настройки сохранены');

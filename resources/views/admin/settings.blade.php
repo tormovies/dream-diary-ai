@@ -62,15 +62,46 @@
 
                         <div class="mb-6 border-t pt-6">
                             <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Настройки анализатора снов</h3>
-                            <x-input-label for="deepseek_api_key" :value="__('DeepSeek API ключ')" />
-                            <x-text-input id="deepseek_api_key" 
-                                         name="deepseek_api_key" 
-                                         type="password"
-                                         class="mt-1 block w-full" 
-                                         :value="old('deepseek_api_key', $settings['deepseek_api_key'])" 
-                                         placeholder="sk-..." />
-                            <p class="mt-1 text-xs text-gray-500">API ключ для работы анализатора сновидений через DeepSeek API.</p>
-                            <x-input-error class="mt-2" :messages="$errors->get('deepseek_api_key')" />
+                            
+                            <div class="mb-4">
+                                <x-input-label for="deepseek_api_key" :value="__('DeepSeek API ключ')" />
+                                <x-text-input id="deepseek_api_key" 
+                                             name="deepseek_api_key" 
+                                             type="password"
+                                             class="mt-1 block w-full" 
+                                             :value="old('deepseek_api_key', $settings['deepseek_api_key'])" 
+                                             placeholder="sk-..." />
+                                <p class="mt-1 text-xs text-gray-500">API ключ для работы анализатора сновидений через DeepSeek API.</p>
+                                <x-input-error class="mt-2" :messages="$errors->get('deepseek_api_key')" />
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <x-input-label for="deepseek_http_timeout" :value="__('HTTP таймаут запроса (секунды)')" />
+                                    <x-text-input id="deepseek_http_timeout" 
+                                                 name="deepseek_http_timeout" 
+                                                 type="number" 
+                                                 min="60"
+                                                 max="1800"
+                                                 class="mt-1 block w-full" 
+                                                 :value="old('deepseek_http_timeout', $settings['deepseek_http_timeout'])" />
+                                    <p class="mt-1 text-xs text-gray-500">Максимальное время ожидания ответа от DeepSeek API. По умолчанию: 600 сек (10 мин).</p>
+                                    <x-input-error class="mt-2" :messages="$errors->get('deepseek_http_timeout')" />
+                                </div>
+
+                                <div>
+                                    <x-input-label for="deepseek_php_execution_timeout" :value="__('PHP таймаут выполнения (секунды)')" />
+                                    <x-text-input id="deepseek_php_execution_timeout" 
+                                                 name="deepseek_php_execution_timeout" 
+                                                 type="number" 
+                                                 min="60"
+                                                 max="1800"
+                                                 class="mt-1 block w-full" 
+                                                 :value="old('deepseek_php_execution_timeout', $settings['deepseek_php_execution_timeout'])" />
+                                    <p class="mt-1 text-xs text-gray-500">Максимальное время выполнения PHP скрипта. Должно быть больше HTTP таймаута. По умолчанию: 660 сек (11 мин).</p>
+                                    <x-input-error class="mt-2" :messages="$errors->get('deepseek_php_execution_timeout')" />
+                                </div>
+                            </div>
                         </div>
 
                         <div class="flex items-center justify-end">
