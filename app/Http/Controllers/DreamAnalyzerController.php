@@ -238,8 +238,8 @@ class DreamAnalyzerController extends Controller
             $needsJson = true;
         }
         
-        // 2. Админ явно запросил отладочную информацию через ?debug=1
-        if (auth()->check() && auth()->user()->isAdmin() && $request->has('debug')) {
+        // 2. Админ - всегда загружаем отладочную информацию (без необходимости добавлять ?debug=1)
+        if (auth()->check() && auth()->user()->isAdmin()) {
             $needsJson = true;
         }
         
@@ -300,8 +300,8 @@ class DreamAnalyzerController extends Controller
                 $fields[] = 'analysis_data';
             }
             
-            // Если админ запросил debug, добавляем raw_api_request и raw_api_response
-            if (auth()->check() && auth()->user()->isAdmin() && $request->has('debug')) {
+            // Админ - всегда добавляем raw_api_request и raw_api_response
+            if (auth()->check() && auth()->user()->isAdmin()) {
                 $fields[] = 'raw_api_request';
                 $fields[] = 'raw_api_response';
             }
@@ -636,6 +636,12 @@ class DreamAnalyzerController extends Controller
                 'interpretation_id' => $interpretation->id,
                 'has_raw_api_request' => !empty($updateData['raw_api_request']),
                 'has_raw_api_response' => !empty($updateData['raw_api_response']),
+                'raw_request_type' => gettype($updateData['raw_api_request']),
+                'raw_response_type' => gettype($updateData['raw_api_response']),
+                'raw_request_is_null' => is_null($updateData['raw_api_request']),
+                'raw_response_is_null' => is_null($updateData['raw_api_response']),
+                'raw_request_length' => $updateData['raw_api_request'] ? strlen($updateData['raw_api_request']) : 0,
+                'raw_response_length' => $updateData['raw_api_response'] ? strlen($updateData['raw_api_response']) : 0,
             ]);
             
             $interpretation->update($updateData);

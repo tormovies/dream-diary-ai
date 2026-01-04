@@ -709,7 +709,12 @@
                                         };
                                     @endphp
                                     
-                                    @if(!empty($interpretation->raw_api_request))
+                                    @php
+                                        $hasRawRequest = isset($interpretation->raw_api_request) && $interpretation->raw_api_request !== null && $interpretation->raw_api_request !== '';
+                                        $hasRawResponse = isset($interpretation->raw_api_response) && $interpretation->raw_api_response !== null && $interpretation->raw_api_response !== '';
+                                    @endphp
+                                    
+                                    @if($hasRawRequest)
                                         <div>
                                             <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-2">JSON запрос к API:</h4>
                                             <details class="cursor-pointer" open>
@@ -723,10 +728,17 @@
                                                 <i class="fas fa-exclamation-triangle mr-2"></i>
                                                 <strong>JSON запрос не сохранен</strong> (поле raw_api_request пусто)
                                             </p>
+                                            <p class="text-xs mt-2">
+                                                <strong>Отладочная информация:</strong><br>
+                                                Поле существует: {{ isset($interpretation->raw_api_request) ? 'Да' : 'Нет' }}<br>
+                                                Значение: {{ $interpretation->raw_api_request ?? 'NULL' }}<br>
+                                                Тип: {{ gettype($interpretation->raw_api_request ?? null) }}<br>
+                                                Длина: {{ isset($interpretation->raw_api_request) ? strlen($interpretation->raw_api_request) : 0 }}
+                                            </p>
                                         </div>
                                     @endif
                                     
-                                    @if(!empty($interpretation->raw_api_response))
+                                    @if($hasRawResponse)
                                         <div>
                                             <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-2">Полный JSON ответ от API:</h4>
                                             <details class="cursor-pointer" open>
@@ -739,6 +751,13 @@
                                             <p class="text-sm">
                                                 <i class="fas fa-exclamation-triangle mr-2"></i>
                                                 <strong>JSON ответ не сохранен</strong> (поле raw_api_response пусто)
+                                            </p>
+                                            <p class="text-xs mt-2">
+                                                <strong>Отладочная информация:</strong><br>
+                                                Поле существует: {{ isset($interpretation->raw_api_response) ? 'Да' : 'Нет' }}<br>
+                                                Значение: {{ $interpretation->raw_api_response ?? 'NULL' }}<br>
+                                                Тип: {{ gettype($interpretation->raw_api_response ?? null) }}<br>
+                                                Длина: {{ isset($interpretation->raw_api_response) ? strlen($interpretation->raw_api_response) : 0 }}
                                             </p>
                                         </div>
                                     @endif

@@ -19,11 +19,21 @@
         </div>
     @endif
     
-    @if($result->traditions && count($result->traditions) > 0)
+    @php
+        // Берём traditions из DreamInterpretation (правильные ключи), а не из Result (могут быть переведённые значения)
+        $traditionsToDisplay = null;
+        if (isset($interpretation) && $interpretation->traditions && is_array($interpretation->traditions)) {
+            $traditionsToDisplay = $interpretation->traditions;
+        } elseif ($result->traditions && is_array($result->traditions)) {
+            $traditionsToDisplay = $result->traditions;
+        }
+    @endphp
+    
+    @if($traditionsToDisplay && count($traditionsToDisplay) > 0)
         <div class="mb-4">
             <div class="flex items-center flex-wrap gap-2">
                 <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Традиции анализа:</span>
-                @foreach($result->traditions as $tradition)
+                @foreach($traditionsToDisplay as $tradition)
                     @php
                         $traditionKey = strtolower($tradition);
                         $traditionName = config("traditions.{$traditionKey}.name_short", ucfirst($tradition));
