@@ -31,7 +31,7 @@
 
 ---
 
-## 🔧 Команды для деплоя на сервере:
+## 🔧 Команды для деплоя на сервере (PHP 8.3):
 
 ### Вариант 1: Пошагово (рекомендуется)
 
@@ -42,35 +42,41 @@ ssh user@your-server.com
 # 2. Переход в директорию проекта
 cd ~/snovidec.ru/laravel
 
-# 3. Обновление кода из GitHub
+# 3. Проверка версии PHP (должна быть 8.3+)
+php -v
+
+# 4. Обновление кода из GitHub
 git pull origin main
 
-# 4. Установка зависимостей PHP
+# 5. Установка зависимостей PHP (без dev-пакетов, с оптимизацией)
 composer install --no-dev --optimize-autoloader
 
-# 5. Установка зависимостей Node.js и сборка
+# 6. Установка зависимостей Node.js и сборка фронтенда
 npm install
 npm run build
 
-# 6. Миграции (если есть новые)
+# 7. Миграции (если есть новые - в этом релизе их нет)
 php artisan migrate --force
 
-# 7. Очистка кешей
+# 8. Очистка всех кешей
 php artisan config:clear
 php artisan route:clear
 php artisan view:clear
 php artisan cache:clear
 
-# 8. Кеширование для продакшена
+# 9. Кеширование для продакшена (ускорение работы)
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 
-# 9. Права доступа (если нужно)
+# 10. Права доступа (если нужно)
 sudo chown -R www-data:www-data storage bootstrap/cache
 sudo chmod -R 775 storage bootstrap/cache
 
-# 10. Проверка логов
+# 11. Перезапуск PHP-FPM (опционально, но рекомендуется)
+sudo systemctl reload php8.3-fpm
+
+# 12. Проверка логов
 tail -f storage/logs/laravel.log
 ```
 
@@ -80,6 +86,7 @@ tail -f storage/logs/laravel.log
 
 ```bash
 cd ~/snovidec.ru/laravel && \
+php -v && \
 git pull origin main && \
 composer install --no-dev --optimize-autoloader && \
 npm install && npm run build && \
@@ -93,7 +100,8 @@ php artisan route:cache && \
 php artisan view:cache && \
 sudo chown -R www-data:www-data storage bootstrap/cache && \
 sudo chmod -R 775 storage bootstrap/cache && \
-echo "✅ Деплой завершён!"
+sudo systemctl reload php8.3-fpm && \
+echo "✅ Деплой завершён! Проверьте сайт."
 ```
 
 ---

@@ -61,11 +61,11 @@ sudo chmod -R 775 storage bootstrap/cache
 php artisan queue:restart
 ```
 
-## 🔟 Перезапуск PHP-FPM (опционально, если нужно)
+## 🔟 Перезапуск PHP-FPM (опционально, но рекомендуется)
 ```bash
-sudo systemctl reload php8.2-fpm
-# или
-sudo systemctl restart php8.2-fpm
+sudo systemctl reload php8.3-fpm
+# или для полного перезапуска
+sudo systemctl restart php8.3-fpm
 ```
 
 ---
