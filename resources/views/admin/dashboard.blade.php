@@ -39,23 +39,23 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
                 <div class="p-6">
                     <h3 class="text-lg font-semibold mb-4">Быстрые ссылки</h3>
-                    <div class="grid grid-cols-2 md:grid-cols-6 gap-4">
-                        <a href="{{ route('admin.users') }}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-center">
+                    <div class="flex flex-wrap gap-4">
+                        <a href="{{ route('admin.users') }}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-center flex-1 min-w-[120px]">
                             Пользователи
                         </a>
-                        <a href="{{ route('admin.reports') }}" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded text-center">
+                        <a href="{{ route('admin.reports') }}" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded text-center flex-1 min-w-[120px]">
                             Отчеты
                         </a>
-                        <a href="{{ route('admin.comments') }}" class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded text-center">
+                        <a href="{{ route('admin.comments') }}" class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded text-center flex-1 min-w-[120px]">
                             Комментарии
                         </a>
-                        <a href="{{ route('admin.interpretations') }}" style="background-color: #f97316;" class="hover:bg-orange-700 text-white font-bold py-2 px-4 rounded text-center">
+                        <a href="{{ route('admin.interpretations') }}" style="background-color: #f97316;" class="hover:bg-orange-700 text-white font-bold py-2 px-4 rounded text-center flex-1 min-w-[120px]">
                             Толкования
                         </a>
-                        <a href="{{ route('admin.seo.index') }}" class="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded text-center">
+                        <a href="{{ route('admin.seo.index') }}" class="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded text-center flex-1 min-w-[120px]">
                             SEO
                         </a>
-                        <a href="{{ route('admin.settings') }}" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded text-center">
+                        <a href="{{ route('admin.settings') }}" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded text-center flex-1 min-w-[120px]">
                             Настройки
                         </a>
                     </div>
