@@ -407,4 +407,27 @@ class AdminController extends Controller
             'traditionsConfig'
         ));
     }
+
+    /**
+     * Удаление толкования снов
+     */
+    public function deleteInterpretation(Request $request, DreamInterpretation $interpretation): RedirectResponse
+    {
+        // Удаляем связанный результат (если есть) - каскадное удаление должно сработать автоматически,
+        // но на всякий случай удаляем вручную для надежности
+        if ($interpretation->result) {
+            // Удаляем связанные сны серии (если есть)
+            $interpretation->result->seriesDreams()->delete();
+            $interpretation->result->delete();
+        }
+
+        // Удаляем само толкование
+        $interpretation->delete();
+
+        // Возвращаемся на ту же страницу с теми же параметрами
+        $queryParams = $request->only(['start_date', 'end_date', 'date', 'status', 'tradition', 'page']);
+
+        return redirect()->route('admin.interpretations', $queryParams)
+            ->with('success', 'Толкование успешно удалено');
+    }
 }

@@ -108,6 +108,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/comments', [\App\Http\Controllers\AdminController::class, 'comments'])->name('comments');
         Route::delete('/comments/{comment}', [\App\Http\Controllers\AdminController::class, 'deleteComment'])->name('comments.destroy');
         Route::get('/interpretations', [\App\Http\Controllers\AdminController::class, 'interpretations'])->name('interpretations');
+        Route::delete('/interpretations/{interpretation}', [\App\Http\Controllers\AdminController::class, 'deleteInterpretation'])->name('interpretations.delete');
         Route::get('/settings', [\App\Http\Controllers\AdminController::class, 'settings'])->name('settings');
         Route::patch('/settings', [\App\Http\Controllers\AdminController::class, 'updateSettings'])->name('settings.update');
         

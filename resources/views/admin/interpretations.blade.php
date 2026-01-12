@@ -199,9 +199,30 @@
                                                     {{ $interpretation->ip_address ?? '-' }}
                                                 </td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                    <a href="{{ route('dream-analyzer.show', $interpretation->hash) }}" 
-                                                       target="_blank"
-                                                       class="text-blue-600 hover:text-blue-900">Открыть</a>
+                                                    <div class="flex items-center gap-3">
+                                                        <a href="{{ route('dream-analyzer.show', $interpretation->hash) }}" 
+                                                           target="_blank"
+                                                           class="text-blue-600 hover:text-blue-900">Открыть</a>
+                                                        <span class="text-gray-300">|</span>
+                                                        <form action="{{ route('admin.interpretations.delete', $interpretation) }}" 
+                                                              method="POST" 
+                                                              class="inline-block"
+                                                              onsubmit="return confirm('Вы уверены, что хотите удалить это толкование? Это действие нельзя отменить.');">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <input type="hidden" name="start_date" value="{{ request('start_date') }}">
+                                                            <input type="hidden" name="end_date" value="{{ request('end_date') }}">
+                                                            <input type="hidden" name="date" value="{{ request('date') }}">
+                                                            <input type="hidden" name="status" value="{{ request('status') }}">
+                                                            <input type="hidden" name="tradition" value="{{ request('tradition') }}">
+                                                            <input type="hidden" name="page" value="{{ request('page') }}">
+                                                            <button type="submit" 
+                                                                    class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-3 rounded text-sm"
+                                                                    title="Удалить толкование">
+                                                                <i class="fas fa-trash mr-1"></i>Удалить
+                                                            </button>
+                                                        </form>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         @endforeach
