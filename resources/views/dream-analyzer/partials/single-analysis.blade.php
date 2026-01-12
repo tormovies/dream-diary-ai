@@ -138,7 +138,7 @@
             <div class="mb-4 flex items-center gap-2">
                 <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Тип сна:</span>
                 <span class="bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-3 py-1 rounded-full text-sm">
-                    {{ $dreamAnalysis['dream_type'] }}
+                    {!! \App\Helpers\HtmlHelper::sanitize($dreamAnalysis['dream_type']) !!}
                 </span>
             </div>
         @endif
@@ -208,7 +208,7 @@
         @if(isset($dreamAnalysis['emotional_tone']))
             <div class="mb-6">
                 <h3 class="font-semibold text-gray-800 dark:text-gray-200 mb-2">Эмоциональный тон</h3>
-                <p class="text-gray-700 dark:text-gray-300">{{ $dreamAnalysis['emotional_tone'] }}</p>
+                <div class="text-gray-700 dark:text-gray-300">{!! \App\Helpers\HtmlHelper::sanitize($dreamAnalysis['emotional_tone']) !!}</div>
             </div>
         @endif
     </div>

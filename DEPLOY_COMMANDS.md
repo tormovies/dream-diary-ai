@@ -1,150 +1,82 @@
 # Команды для деплоя на продакшен
 
-## 1️⃣ Подключение к серверу
+## Подключение к серверу
+
 ```bash
-ssh user@your-server.com
-# или
-ssh user@IP_ADDRESS -p PORT
+ssh adminfeg@adminfeg.beget.tech
+# Пароль: fRAxngtck8um
 ```
 
-## 2️⃣ Переход в директорию проекта
+## Стандартный процесс деплоя
+
+```bash
+# 1. Перейти в директорию проекта
+cd ~/snovidec.ru/laravel
+
+# 2. Получить последние изменения из GitHub
+git pull origin main
+
+# 3. Установить/обновить зависимости Composer
+# ВАЖНО: Composer должен использовать php8.3, а не старую версию PHP
+# Вариант 1: Указать php8.3 явно
+php8.3 /home/a/adminfeg/.local/bin/composer install --no-dev --optimize-autoloader
+# Вариант 2: Если composer в PATH
+php8.3 $(which composer) install --no-dev --optimize-autoloader
+
+# 4. Очистить все кэши
+php8.3 artisan cache:clear
+php8.3 artisan config:clear
+php8.3 artisan route:clear
+php8.3 artisan view:clear
+
+# 5. Пересоздать кэши (для оптимизации)
+php8.3 artisan config:cache
+php8.3 artisan route:cache
+php8.3 artisan view:cache
+
+# 6. Оптимизировать приложение
+php8.3 artisan optimize
+```
+
+## Быстрая команда (одной строкой)
+
+```bash
+cd ~/snovidec.ru/laravel && git pull origin main && php8.3 /home/a/adminfeg/.local/bin/composer install --no-dev --optimize-autoloader && php8.3 artisan cache:clear && php8.3 artisan config:clear && php8.3 artisan route:clear && php8.3 artisan view:clear && php8.3 artisan config:cache && php8.3 artisan route:cache && php8.3 artisan view:cache && php8.3 artisan optimize
+```
+
+## Дополнительные команды (если нужно)
+
+### Проверка версии после деплоя
 ```bash
 cd ~/snovidec.ru/laravel
+git log --oneline -1
 ```
 
-## 3️⃣ Обновление кода из GitHub
+### Проверка статуса Git
 ```bash
-git pull origin main
+cd ~/snovidec.ru/laravel
+git status
 ```
 
-## 4️⃣ Установка/обновление зависимостей PHP
+### Откат изменений (если что-то пошло не так)
 ```bash
-composer install --no-dev --optimize-autoloader
+cd ~/snovidec.ru/laravel
+git log --oneline -5  # посмотреть последние коммиты
+git reset --hard <commit-hash>  # откатиться к нужному коммиту
+# Затем повторить команды деплоя
 ```
 
-## 5️⃣ Установка/обновление зависимостей Node.js и сборка фронтенда
-```bash
-npm install
-npm run build
-```
+## Важные замечания
 
-## 6️⃣ Выполнение миграций БД
-```bash
-php artisan migrate --force
-```
+- **PHP версия:** Используется `php8.3` (не просто `php`)
+- **Composer:** Использовать полный путь `/home/a/adminfeg/.local/bin/composer` (или просто `composer` если он в PATH)
+- **npm:** Не требуется на продакшене (фронтенд собирается локально)
+- **Миграции:** Если есть новые миграции, выполнить: `php8.3 artisan migrate --force`
 
-## 7️⃣ Очистка и оптимизация кеша
-```bash
-# Очистка всех кешей
-php artisan config:clear
-php artisan route:clear
-php artisan view:clear
-php artisan cache:clear
+## Информация о сервере
 
-# Кеширование для продакшена (ускорение)
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
-```
-
-## 8️⃣ Права доступа (если нужно)
-```bash
-# Владелец файлов - веб-сервер (nginx/apache)
-sudo chown -R www-data:www-data storage bootstrap/cache
-
-# Права на запись
-sudo chmod -R 775 storage bootstrap/cache
-```
-
-## 9️⃣ Перезапуск очередей (если используются)
-```bash
-php artisan queue:restart
-```
-
-## 🔟 Перезапуск PHP-FPM (опционально, но рекомендуется)
-```bash
-sudo systemctl reload php8.3-fpm
-# или для полного перезапуска
-sudo systemctl restart php8.3-fpm
-```
-
----
-
-## 🚀 Быстрый деплой (все команды одной строкой)
-```bash
-cd ~/snovidec.ru/laravel && \
-git pull origin main && \
-composer install --no-dev --optimize-autoloader && \
-npm install && npm run build && \
-php artisan migrate --force && \
-php artisan config:clear && \
-php artisan route:clear && \
-php artisan view:clear && \
-php artisan cache:clear && \
-php artisan config:cache && \
-php artisan route:cache && \
-php artisan view:cache && \
-sudo chown -R www-data:www-data storage bootstrap/cache && \
-sudo chmod -R 775 storage bootstrap/cache
-```
-
----
-
-## ⚠️ Важные моменты
-
-### Перед деплоем проверьте:
-- ✅ `.env` на сервере правильно настроен
-- ✅ `APP_ENV=production`
-- ✅ `APP_DEBUG=false`
-- ✅ База данных доступна
-- ✅ DeepSeek API ключ установлен
-
-### Что делает новая миграция:
-```bash
-2025_12_31_152737_add_is_banned_to_users_table.php
-```
-Добавляет поля: `is_banned`, `banned_at`, `ban_reason`
-
-### После деплоя:
-- Проверьте админ-панель: `/admin/users`
-- Проверьте, что блокировка работает
-- Проверьте логи: `storage/logs/laravel.log`
-
----
-
-## 🐛 Если что-то пошло не так
-
-### Откатить миграцию:
-```bash
-php artisan migrate:rollback --step=1
-```
-
-### Откатить код:
-```bash
-git reset --hard HEAD~1
-git pull origin main
-```
-
-### Посмотреть логи:
-```bash
-tail -f storage/logs/laravel.log
-```
-
-### Проверить права:
-```bash
-ls -la storage/
-ls -la bootstrap/cache/
-```
-
----
-
-## 📋 Checklist после деплоя
-
-- [ ] Сайт открывается
-- [ ] Авторизация работает
-- [ ] Админ-панель доступна
-- [ ] `/admin/users` показывает пользователей
-- [ ] Кнопки "Заблокировать" и "Удалить" видны
-- [ ] Анализатор снов работает
-- [ ] Нет ошибок в логах
-
+- **Хост:** adminfeg@adminfeg.beget.tech
+- **Пароль:** fRAxngtck8um
+- **Путь к проекту:** ~/snovidec.ru/laravel
+- **PHP версия:** 8.3
+- **Последний успешный деплой:** 2026-01-04 (коммит 7227a76 - добавлен счетчик Top.Mail.Ru на все страницы)

@@ -39,7 +39,7 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
                 <div class="p-6">
                     <h3 class="text-lg font-semibold mb-4">Быстрые ссылки</h3>
-                    <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                    <div class="grid grid-cols-2 md:grid-cols-6 gap-4">
                         <a href="{{ route('admin.users') }}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-center">
                             Пользователи
                         </a>
@@ -48,6 +48,9 @@
                         </a>
                         <a href="{{ route('admin.comments') }}" class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded text-center">
                             Комментарии
+                        </a>
+                        <a href="{{ route('admin.interpretations') }}" class="bg-orange-500 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded text-center">
+                            Толкования
                         </a>
                         <a href="{{ route('admin.seo.index') }}" class="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded text-center">
                             SEO

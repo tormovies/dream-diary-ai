@@ -133,7 +133,7 @@
             @if(isset($dream['emotional_tone']))
                 <div class="mb-4">
                     <span class="text-sm text-gray-600 dark:text-gray-400">Эмоциональный тон: </span>
-                    <span class="font-medium text-gray-800 dark:text-gray-200">{{ $dream['emotional_tone'] }}</span>
+                    <span class="font-medium text-gray-800 dark:text-gray-200">{!! \App\Helpers\HtmlHelper::sanitize($dream['emotional_tone']) !!}</span>
                 </div>
             @endif
 

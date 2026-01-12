@@ -114,7 +114,7 @@
                             <p class="text-gray-600 dark:text-gray-400 text-sm">
                                 Создано: {{ $interpretation->created_at->format('d.m.Y H:i') }}
                             </p>
-                            <a href="{{ route('dream-analyzer.create') }}" class="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 whitespace-nowrap">
+                            <a href="{{ route('dream-analyzer.create') }}" target="_blank" class="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 whitespace-nowrap">
                                 <i class="fas fa-plus mr-2"></i>Новое толкование
                             </a>
                         </div>
@@ -579,7 +579,7 @@
                                     <div>
                                         <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-2">Тип сна</h4>
                                         <span class="bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-3 py-1 rounded-full text-sm">
-                                            {{ $analysis['metadata']['dream_type'] }}
+                                            {!! \App\Helpers\HtmlHelper::sanitize($analysis['metadata']['dream_type']) !!}
                                         </span>
                                     </div>
                                 @endif

@@ -123,7 +123,7 @@
             @if($dream->emotional_tone)
                 <div class="mb-4">
                     <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-2">Эмоциональный тон</h4>
-                    <p class="text-gray-700 dark:text-gray-300">{{ $dream->emotional_tone }}</p>
+                    <div class="text-gray-700 dark:text-gray-300">{!! \App\Helpers\HtmlHelper::sanitize($dream->emotional_tone) !!}</div>
                 </div>
             @endif
 

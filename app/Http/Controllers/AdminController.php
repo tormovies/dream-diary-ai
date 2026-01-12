@@ -3,12 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\Comment;
+use App\Models\DreamInterpretation;
 use App\Models\Report;
 use App\Models\Setting;
 use App\Models\User;
 use App\Rules\NoSpam;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class AdminController extends Controller
@@ -288,5 +290,121 @@ class AdminController extends Controller
         }
 
         return back()->with('success', 'Настройки сохранены');
+    }
+
+    /**
+     * Статистика по толкованиям снов
+     */
+    public function interpretations(Request $request): View
+    {
+        // Период по умолчанию - 30 дней
+        $startDate = $request->filled('start_date') 
+            ? $request->start_date 
+            : now()->subDays(30)->format('Y-m-d');
+        $endDate = $request->filled('end_date') 
+            ? $request->end_date 
+            : now()->format('Y-m-d');
+
+        // Общая статистика
+        $totalCreated = DreamInterpretation::count();
+        $totalCompleted = DreamInterpretation::where('processing_status', 'completed')->count();
+        $totalPending = DreamInterpretation::where('processing_status', 'pending')->count();
+        $totalFailed = DreamInterpretation::where('processing_status', 'failed')->count();
+        
+        // Статистика за период
+        $periodCreated = DreamInterpretation::whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])->count();
+        $periodCompleted = DreamInterpretation::whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+            ->where('processing_status', 'completed')->count();
+        $periodPending = DreamInterpretation::whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+            ->where('processing_status', 'pending')->count();
+        $periodFailed = DreamInterpretation::whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+            ->where('processing_status', 'failed')->count();
+
+        // Статистика по традициям за период
+        $traditionsStats = DreamInterpretation::whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+            ->whereNotNull('traditions')
+            ->get()
+            ->flatMap(function ($interpretation) {
+                $traditions = $interpretation->traditions ?? [];
+                if (empty($traditions)) {
+                    return [['tradition' => 'eclectic', 'count' => 1]];
+                }
+                return array_map(function ($tradition) {
+                    return ['tradition' => $tradition, 'count' => 1];
+                }, $traditions);
+            })
+            ->groupBy('tradition')
+            ->map(function ($group) {
+                return $group->sum('count');
+            })
+            ->sortDesc();
+
+        // Статистика по дням за период
+        $dailyStats = DreamInterpretation::whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+            ->select(
+                DB::raw('DATE(created_at) as date'),
+                DB::raw('COUNT(*) as total'),
+                DB::raw('SUM(CASE WHEN processing_status = "completed" THEN 1 ELSE 0 END) as completed'),
+                DB::raw('SUM(CASE WHEN processing_status = "pending" THEN 1 ELSE 0 END) as pending'),
+                DB::raw('SUM(CASE WHEN processing_status = "failed" THEN 1 ELSE 0 END) as failed')
+            )
+            ->groupBy('date')
+            ->orderBy('date', 'desc')
+            ->get();
+
+        // Детализация по выбранной дате
+        $selectedDate = $request->filled('date') ? $request->date : null;
+        $dayInterpretations = null;
+        
+        if ($selectedDate) {
+            $dayInterpretations = DreamInterpretation::whereDate('created_at', $selectedDate)
+                ->orderBy('created_at', 'desc')
+                ->paginate(50);
+        }
+
+        // Фильтры
+        $statusFilter = $request->filled('status') ? $request->status : null;
+        $traditionFilter = $request->filled('tradition') ? $request->tradition : null;
+
+        // Список всех толкований с фильтрами (если не выбрана дата)
+        if (!$selectedDate) {
+            $query = DreamInterpretation::whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
+
+            if ($statusFilter) {
+                $query->where('processing_status', $statusFilter);
+            }
+
+            if ($traditionFilter) {
+                $query->whereJsonContains('traditions', $traditionFilter);
+            }
+
+            $interpretations = $query->orderBy('created_at', 'desc')->paginate(50);
+        } else {
+            $interpretations = null;
+        }
+
+        // Получаем названия традиций из конфига
+        $traditionsConfig = config('traditions', []);
+
+        return view('admin.interpretations', compact(
+            'totalCreated',
+            'totalCompleted',
+            'totalPending',
+            'totalFailed',
+            'periodCreated',
+            'periodCompleted',
+            'periodPending',
+            'periodFailed',
+            'traditionsStats',
+            'dailyStats',
+            'selectedDate',
+            'dayInterpretations',
+            'interpretations',
+            'startDate',
+            'endDate',
+            'statusFilter',
+            'traditionFilter',
+            'traditionsConfig'
+        ));
     }
 }
