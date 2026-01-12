@@ -49,7 +49,7 @@
                         <a href="{{ route('admin.comments') }}" class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded text-center">
                             Комментарии
                         </a>
-                        <a href="{{ route('admin.interpretations') }}" class="bg-orange-500 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded text-center">
+                        <a href="{{ route('admin.interpretations') }}" style="background-color: #f97316;" class="hover:bg-orange-700 text-white font-bold py-2 px-4 rounded text-center">
                             Толкования
                         </a>
                         <a href="{{ route('admin.seo.index') }}" class="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded text-center">
