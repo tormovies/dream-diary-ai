@@ -15,6 +15,14 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
+        
+        <!-- Resource Hints для оптимизации загрузки -->
+        <link rel="preconnect" href="https://top-fwz1.mail.ru" crossorigin>
+        <link rel="dns-prefetch" href="https://top-fwz1.mail.ru">
+        
+        <!-- Preload критических ресурсов -->
+        <x-preload-assets />
+        
         @if(isset($seo))
             <x-seo-head :seo="$seo" />
         @else

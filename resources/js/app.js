@@ -4,6 +4,17 @@ import Alpine from 'alpinejs';
 
 window.Alpine = Alpine;
 
+// Применяем тему ДО инициализации Alpine для предотвращения мерцания
+// Это выполняется синхронно, до DOMContentLoaded
+(function() {
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    if (savedTheme === 'dark') {
+        document.documentElement.classList.add('dark');
+    } else {
+        document.documentElement.classList.remove('dark');
+    }
+})();
+
 Alpine.start();
 
 // Переключение темы
@@ -31,16 +42,6 @@ window.toggleTheme = function() {
                 'Accept': 'application/json'
             },
             body: JSON.stringify({ theme: newTheme })
-        }).catch(err => console.error('Error saving theme:', err));
+        }).catch(() => {}); // Удаляем console.error для продакшена
     }
 };
-
-// Применяем тему при загрузке страницы
-document.addEventListener('DOMContentLoaded', function() {
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    if (savedTheme === 'dark') {
-        document.documentElement.classList.add('dark');
-    } else {
-        document.documentElement.classList.remove('dark');
-    }
-});

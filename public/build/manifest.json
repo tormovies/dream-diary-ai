@@ -1,4 +1,12 @@
 {
+  "_alpine-BLrUkf4X.js": {
+    "file": "assets/alpine-BLrUkf4X.js",
+    "name": "alpine"
+  },
+  "_axios-Dos3PyFQ.js": {
+    "file": "assets/axios-Dos3PyFQ.js",
+    "name": "axios"
+  },
   "node_modules/@fortawesome/fontawesome-free/webfonts/fa-brands-400.ttf": {
     "file": "assets/fa-brands-400-D1LuMI3I.ttf",
     "src": "node_modules/@fortawesome/fontawesome-free/webfonts/fa-brands-400.ttf"
@@ -23,16 +31,8 @@
     "file": "assets/fa-solid-900-CTAAxXor.woff2",
     "src": "node_modules/@fortawesome/fontawesome-free/webfonts/fa-solid-900.woff2"
   },
-  "node_modules/@fortawesome/fontawesome-free/webfonts/fa-v4compatibility.ttf": {
-    "file": "assets/fa-v4compatibility-CCth-dXg.ttf",
-    "src": "node_modules/@fortawesome/fontawesome-free/webfonts/fa-v4compatibility.ttf"
-  },
-  "node_modules/@fortawesome/fontawesome-free/webfonts/fa-v4compatibility.woff2": {
-    "file": "assets/fa-v4compatibility-C9RhG_FT.woff2",
-    "src": "node_modules/@fortawesome/fontawesome-free/webfonts/fa-v4compatibility.woff2"
-  },
   "resources/css/app.css": {
-    "file": "assets/app-rcW8bLHd.css",
+    "file": "assets/app-B-ZE8Ahj.css",
     "src": "resources/css/app.css",
     "isEntry": true,
     "name": "app",
@@ -41,9 +41,13 @@
     ]
   },
   "resources/js/app.js": {
-    "file": "assets/app-BSmAe8em.js",
+    "file": "assets/app-CrWqryZP.js",
     "name": "app",
     "src": "resources/js/app.js",
-    "isEntry": true
+    "isEntry": true,
+    "imports": [
+      "_axios-Dos3PyFQ.js",
+      "_alpine-BLrUkf4X.js"
+    ]
   }
 }

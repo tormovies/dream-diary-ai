@@ -1,4 +1,4 @@
-<link rel="stylesheet" href="{{ asset('fonts/fontawesome/all.min.css') }}">
+{{-- Font Awesome загружается через Vite в app.css --}}
 
 
 

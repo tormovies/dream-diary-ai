@@ -92,7 +92,7 @@
                                 <div class="mt-2">
                                     <p class="text-sm text-gray-600 dark:text-gray-400">Текущее изображение:</p>
                                     @if(strpos($seo->og_image, 'storage/') === 0)
-                                        <img src="{{ asset($seo->og_image) }}" alt="OG Image" class="mt-1 max-w-xs h-auto rounded">
+                                        <img src="{{ asset($seo->og_image) }}" alt="OG Image" class="mt-1 max-w-xs h-auto rounded" loading="lazy">
                                     @else
                                         <p class="text-sm text-gray-500 dark:text-gray-400">{{ $seo->og_image }}</p>
                                     @endif

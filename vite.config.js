@@ -17,14 +17,30 @@ export default defineConfig({
                 drop_debugger: true,
             },
         },
-        // Code splitting отключен - Alpine.js нужен сразу для работы меню
+        // CSS code splitting для оптимизации
+        cssCodeSplit: true,
+        // Code splitting для оптимизации загрузки
         rollupOptions: {
             output: {
-                manualChunks: undefined,
+                manualChunks(id) {
+                    // Разделить vendor на отдельные чанки для лучшего кеширования
+                    if (id.includes('node_modules')) {
+                        if (id.includes('alpinejs')) {
+                            return 'alpine';
+                        }
+                        if (id.includes('fontawesome')) {
+                            return 'fontawesome';
+                        }
+                        if (id.includes('axios')) {
+                            return 'axios';
+                        }
+                        return 'vendor';
+                    }
+                },
             },
         },
         // Оптимизация размера чанков
-        chunkSizeWarningLimit: 1000,
+        chunkSizeWarningLimit: 500,
         // Генерация sourcemaps только для dev
         sourcemap: false,
     },

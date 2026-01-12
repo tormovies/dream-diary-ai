@@ -192,7 +192,7 @@
                                                             <span class="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded mr-1 mb-1">{{ $traditionName }}</span>
                                                         @endforeach
                                                     @else
-                                                        <span class="text-gray-400">Комплексная</span>
+                                                        <span class="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded mr-1 mb-1">Комплексная</span>
                                                     @endif
                                                 </td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
