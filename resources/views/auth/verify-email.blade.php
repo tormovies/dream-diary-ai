@@ -22,11 +22,7 @@
             <title>Подтверждение email — {{ config('app.name', 'Дневник сновидений') }}</title>
         @endif
         
-        <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
         @vite(['resources/css/app.css', 'resources/js/app.js'])
-        <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
         <style>
             .card-shadow {
                 box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);

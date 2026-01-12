@@ -30,11 +30,7 @@
             @endphp
             <title>{{ $titleText }} - {{ config('app.name', 'Дневник сновидений') }}</title>
         @endif
-        <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
         @vite(['resources/css/app.css', 'resources/js/app.js'])
-        <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
         <!-- Top.Mail.Ru counter -->
         <script type="text/javascript">
@@ -50,43 +46,6 @@
         </script>
         <noscript><div><img src="https://top-fwz1.mail.ru/counter?id=3733093;js=na" style="position:absolute;left:-9999px;" alt="Top.Mail.Ru" /></div></noscript>
         <!-- /Top.Mail.Ru counter -->
-        <style>
-            .gradient-primary {
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            }
-            .card-shadow {
-                box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
-            }
-            .dark .card-shadow {
-                box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
-            }
-            .main-grid {
-                display: grid;
-                grid-template-columns: 1fr;
-                gap: 1.5rem;
-                width: 100%;
-            }
-            @media (min-width: 1024px) {
-                .main-grid {
-                    grid-template-columns: 1fr 320px;
-                    gap: 2rem;
-                }
-            }
-            @media (min-width: 1400px) {
-                .main-grid {
-                    grid-template-columns: 1fr 360px;
-                    gap: 2.5rem;
-                }
-            }
-            .sidebar-menu {
-                display: none;
-            }
-            @media (min-width: 1024px) {
-                .sidebar-menu {
-                    display: block;
-                }
-            }
-        </style>
         <x-header-styles />
     </head>
     <body class="font-sans antialiased bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
@@ -94,7 +53,7 @@
 
         <!-- Основной контент -->
         <div class="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <div class="main-grid w-full">
+            <div class="two-column-grid w-full">
                 <!-- Объединенная левая и центральная панель -->
                 <main class="space-y-6 min-w-0">
                     <!-- Заголовок -->
@@ -903,12 +862,6 @@
             </div>
         </div>
         
-        <style>
-            #toast.show {
-                transform: translateY(0) !important;
-                opacity: 1 !important;
-            }
-        </style>
         
         <script>
             // Получаем SEO данные для шаринга

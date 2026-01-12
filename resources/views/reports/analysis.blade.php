@@ -25,11 +25,7 @@
             @endphp
             <title>{{ $titleText }} - {{ config('app.name', 'Дневник сновидений') }}</title>
         @endif
-        <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
         @vite(['resources/css/app.css', 'resources/js/app.js'])
-        <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
         <!-- Top.Mail.Ru counter -->
         <script type="text/javascript">
@@ -45,94 +41,6 @@
         </script>
         <noscript><div><img src="https://top-fwz1.mail.ru/counter?id=3733093;js=na" style="position:absolute;left:-9999px;" alt="Top.Mail.Ru" /></div></noscript>
         <!-- /Top.Mail.Ru counter -->
-        <style>
-            .gradient-primary {
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            }
-            .card-shadow {
-                box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
-            }
-            .dark .card-shadow {
-                box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
-            }
-            .main-grid {
-                display: grid;
-                grid-template-columns: 1fr;
-                gap: 1.5rem;
-                width: 100%;
-            }
-            @media (min-width: 1024px) {
-                .main-grid {
-                    grid-template-columns: 1fr 320px;
-                    gap: 2rem;
-                }
-            }
-            @media (min-width: 1400px) {
-                .main-grid {
-                    grid-template-columns: 1fr 360px;
-                    gap: 2.5rem;
-                }
-            }
-            .sidebar-menu {
-                display: none;
-            }
-            @media (min-width: 1024px) {
-                .sidebar-menu {
-                    display: block;
-                }
-            }
-            .btn-form-secondary {
-                background-color: transparent;
-                color: #495057;
-                border: 2px solid #dee2e6;
-                padding: 8px 16px;
-                border-radius: 8px;
-                font-weight: 600;
-                cursor: pointer;
-                font-size: 0.875rem;
-                transition: all 0.2s;
-                text-decoration: none;
-                display: inline-flex;
-                align-items: center;
-                white-space: nowrap;
-            }
-            .dark .btn-form-secondary {
-                color: #adb5bd;
-                border-color: #343a40;
-            }
-            .btn-form-secondary:hover {
-                background-color: #f8f9fa;
-            }
-            .dark .btn-form-secondary:hover {
-                background-color: #2d2d44;
-            }
-            .btn-form-danger {
-                background-color: transparent;
-                color: #fa5252;
-                border: 2px solid #fa5252;
-                padding: 8px 16px;
-                border-radius: 8px;
-                font-weight: 600;
-                cursor: pointer;
-                font-size: 0.875rem;
-                transition: all 0.2s;
-                display: inline-flex;
-                align-items: center;
-                white-space: nowrap;
-            }
-            .dark .btn-form-danger {
-                color: #ff8787;
-                border-color: #ff8787;
-            }
-            .btn-form-danger:hover {
-                background-color: #fa5252;
-                color: white;
-                transform: translateY(-2px);
-            }
-            .dark .btn-form-danger:hover {
-                background-color: #ff8787;
-            }
-        </style>
         <x-header-styles />
     </head>
     <body class="font-sans antialiased bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
@@ -140,7 +48,7 @@
 
         <!-- Основной контент -->
         <div class="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <div class="main-grid w-full">
+            <div class="two-column-grid w-full">
                 <!-- Объединенная левая и центральная панель -->
                 <main class="space-y-6 min-w-0">
                     <!-- Заголовок -->
@@ -183,7 +91,7 @@
                                      x-transition:leave-start="transform opacity-100 scale-100"
                                      x-transition:leave-end="transform opacity-0 scale-95"
                                      class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-10"
-                                     style="display: none;">
+                                     x-cloak>
                                     <div class="py-1">
                                         <a href="#" onclick="shareToVK(event)" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                                             <i class="fab fa-vk mr-2"></i>ВКонтакте
@@ -476,7 +384,7 @@
                                             <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-2">JSON запрос к API:</h4>
                                             <details class="cursor-pointer" open>
                                                 <summary class="text-purple-600 dark:text-purple-400 hover:underline mb-2">Показать/скрыть JSON</summary>
-                                                <pre class="bg-gray-800 dark:bg-gray-950 text-blue-400 p-4 rounded-lg overflow-auto text-xs" style="max-height: 500px;">{{ $formatJson($interpretation->raw_api_request) }}</pre>
+                                                <pre class="bg-gray-800 dark:bg-gray-950 text-blue-400 p-4 rounded-lg overflow-auto text-xs pre-scrollable">{{ $formatJson($interpretation->raw_api_request) }}</pre>
                                             </details>
                                         </div>
                                     @else
@@ -493,7 +401,7 @@
                                             <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-2">Полный JSON ответ от API:</h4>
                                             <details class="cursor-pointer" open>
                                                 <summary class="text-purple-600 dark:text-purple-400 hover:underline mb-2">Показать/скрыть JSON</summary>
-                                                <pre class="bg-gray-800 dark:bg-gray-950 text-green-400 p-4 rounded-lg overflow-auto text-xs" style="max-height: 500px;">{{ $formatJson($interpretation->raw_api_response) }}</pre>
+                                                <pre class="bg-gray-800 dark:bg-gray-950 text-green-400 p-4 rounded-lg overflow-auto text-xs pre-scrollable">{{ $formatJson($interpretation->raw_api_response) }}</pre>
                                             </details>
                                         </div>
                                     @else
@@ -606,19 +514,13 @@
         </div>
         
         <!-- Toast уведомление -->
-        <div id="toast" class="fixed bottom-8 right-8 bg-green-600 text-white px-6 py-4 rounded-lg shadow-2xl transform transition-all duration-300 translate-y-20 opacity-0" style="z-index: 9999;">
+        <div id="toast" class="fixed bottom-8 right-8 bg-green-600 text-white px-6 py-4 rounded-lg shadow-2xl transform transition-all duration-300 translate-y-20 opacity-0">
             <div class="flex items-center gap-3">
                 <i class="fas fa-check-circle text-xl"></i>
                 <span id="toast-message" class="font-semibold text-base">Ссылка скопирована!</span>
             </div>
         </div>
         
-        <style>
-            #toast.show {
-                transform: translateY(0) !important;
-                opacity: 1 !important;
-            }
-        </style>
         
         <script>
             // Получаем SEO данные для шаринга

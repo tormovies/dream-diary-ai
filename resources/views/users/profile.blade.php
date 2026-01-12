@@ -21,48 +21,7 @@
         @else
             <title>Профиль: {{ $user->nickname }} - {{ config('app.name', 'Дневник сновидений') }}</title>
         @endif
-        <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
         @vite(['resources/css/app.css', 'resources/js/app.js'])
-        <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-        <style>
-            .gradient-primary {
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            }
-            .card-shadow {
-                box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
-            }
-            .dark .card-shadow {
-                box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
-            }
-            .profile-grid {
-                display: grid;
-                grid-template-columns: 1fr;
-                gap: 1.5rem;
-                width: 100%;
-            }
-            @media (min-width: 1024px) {
-                .profile-grid {
-                    grid-template-columns: 280px 1fr;
-                    gap: 2rem;
-                }
-            }
-            @media (min-width: 1400px) {
-                .profile-grid {
-                    grid-template-columns: 320px 1fr;
-                    gap: 2.5rem;
-                }
-            }
-            .sidebar-menu {
-                display: none;
-            }
-            @media (min-width: 1024px) {
-                .sidebar-menu {
-                    display: block;
-                }
-            }
-        </style>
         <x-header-styles />
     </head>
     <body class="font-sans antialiased bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">

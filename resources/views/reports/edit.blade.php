@@ -16,143 +16,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
         <title>Редактировать отчет - {{ config('app.name', 'Дневник сновидений') }}</title>
-        <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
         @vite(['resources/css/app.css', 'resources/js/app.js'])
-        <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-        <style>
-            .card-shadow {
-                box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
-            }
-            .dark .card-shadow {
-                box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
-            }
-            /* Стили форм из профиля */
-            .profile-form-section {
-                background-color: white;
-                border-radius: 15px;
-                padding: 30px;
-                box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
-                border: 1px solid #dee2e6;
-            }
-            .dark .profile-form-section {
-                background-color: #1a1a2e;
-                border-color: #343a40;
-                box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
-            }
-            .profile-form {
-                display: flex;
-                flex-direction: column;
-                gap: 20px;
-            }
-            .form-group {
-                display: flex;
-                flex-direction: column;
-                gap: 8px;
-            }
-            .form-label {
-                font-weight: 600;
-                color: #212529;
-                display: flex;
-                align-items: center;
-                gap: 8px;
-            }
-            .dark .form-label {
-                color: #f8f9fa;
-            }
-            .form-label.required:after {
-                content: '*';
-                color: #fa5252;
-                margin-left: 4px;
-            }
-            .form-input, .form-select, .form-textarea {
-                padding: 14px 18px;
-                border-radius: 10px;
-                border: 1px solid #dee2e6;
-                background-color: white;
-                color: #212529;
-                font-family: inherit;
-                font-size: 1rem;
-                transition: all 0.2s;
-                width: 100%;
-            }
-            .form-input:focus, .form-select:focus, .form-textarea:focus {
-                outline: none;
-                border-color: #4263eb;
-                box-shadow: 0 0 0 3px rgba(116, 143, 252, 0.2);
-            }
-            .dark .form-input, .dark .form-select, .dark .form-textarea {
-                background-color: #2d2d44;
-                border-color: #343a40;
-                color: #f8f9fa;
-            }
-            .dark .form-input:focus, .dark .form-select:focus, .dark .form-textarea:focus {
-                border-color: #748ffc;
-            }
-            .form-textarea {
-                min-height: 120px;
-                resize: vertical;
-            }
-            .form-hint {
-                font-size: 0.85rem;
-                color: #495057;
-                margin-top: 5px;
-            }
-            .dark .form-hint {
-                color: #adb5bd;
-            }
-            .form-actions {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                margin-top: 30px;
-                padding-top: 20px;
-                border-top: 1px solid #dee2e6;
-            }
-            .dark .form-actions {
-                border-top-color: #343a40;
-            }
-            .btn-form-primary {
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                color: white;
-                box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-                padding: 12px 24px;
-                border-radius: 8px;
-                border: none;
-                font-weight: 600;
-                cursor: pointer;
-                font-size: 1rem;
-                transition: all 0.2s;
-            }
-            .btn-form-primary:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 6px 18px rgba(102, 126, 234, 0.4);
-            }
-            .btn-form-secondary {
-                background-color: transparent;
-                color: #495057;
-                border: 2px solid #dee2e6;
-                padding: 12px 24px;
-                border-radius: 8px;
-                font-weight: 600;
-                cursor: pointer;
-                font-size: 1rem;
-                transition: all 0.2s;
-                text-decoration: none;
-                display: inline-block;
-            }
-            .dark .btn-form-secondary {
-                color: #adb5bd;
-                border-color: #343a40;
-            }
-            .btn-form-secondary:hover {
-                background-color: #f8f9fa;
-            }
-            .dark .btn-form-secondary:hover {
-                background-color: #2d2d44;
-            }
-        </style>
         <x-header-styles />
     </head>
     <body class="font-sans antialiased bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
@@ -343,7 +207,7 @@
                                   oninput="checkDreamSeries(this)"
                                   required>${description}</textarea>
                         <div class="form-hint">Если хотите написать несколько снов в одно окно - используйте разделитель три и более тире (-----)</div>
-                        <div id="dream-count-${dreamIndex}" class="mt-2 text-sm font-semibold" style="display: none;"></div>
+                        <div id="dream-count-${dreamIndex}" class="mt-2 text-sm font-semibold" x-cloak></div>
                     </div>
                     
                     <div class="form-group">
