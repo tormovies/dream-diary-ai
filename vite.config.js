@@ -48,4 +48,10 @@ export default defineConfig({
     esbuild: {
         drop: ['console', 'debugger'],
     },
+    // Настройка dev сервера
+    server: {
+        host: '127.0.0.1',
+        port: 5173,
+        strictPort: true,
+    },
 });
