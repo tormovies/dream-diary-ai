@@ -50,6 +50,8 @@
         <noscript><div><img src="https://top-fwz1.mail.ru/counter?id=3733093;js=na" style="position:absolute;left:-9999px;" alt="Top.Mail.Ru" /></div></noscript>
         <!-- /Top.Mail.Ru counter -->
         <x-header-styles />
+        
+        <x-yandex-metrika />
     </head>
     <body class="font-sans antialiased bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
         <x-header />

@@ -46,18 +46,21 @@
         <!-- /Top.Mail.Ru counter -->
         <x-header-styles />
         
-        <!-- Yandex.Metrika counter -->
-        <script type="text/javascript">
-            (function(m,e,t,r,i,k,a){
-                m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
-                m[i].l=1*new Date();
-                for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
-                k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
-            })(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=89409547', 'ym');
-            ym(89409547, 'init', {ssr:true, clickmap:true, accurateTrackBounce:true, trackLinks:true});
-        </script>
-        <noscript><div><img src="https://mc.yandex.ru/watch/89409547" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
-        <!-- /Yandex.Metrika counter -->
+        <style>
+            /* Мобильная версия для страницы толкования снов */
+            @media (max-width: 767px) {
+                #dream_description {
+                    min-height: calc(2.5rem * 10);
+                }
+            }
+            @media (min-width: 768px) {
+                #dream_description {
+                    min-height: calc(2.5rem * 12);
+                }
+            }
+        </style>
+        
+        <x-yandex-metrika />
     </head>
     <body class="font-sans antialiased bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
         <x-header />
@@ -106,32 +109,28 @@
                                              minlength="10"
                                              maxlength="10000"
                                              placeholder="Опишите ваш сон максимально подробно. Если снов несколько, разделите их двумя переносами строк или тремя и более тире (----). Постарайтесь описать всё, что помните - детали, эмоции, цвета, звуки, ощущения. Чем больше контекста вы предоставите, тем точнее будет анализ.">{{ old('dream_description') }}</textarea>
-                                    <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                                    <p class="mt-2 text-sm text-gray-500 dark:text-gray-400 hidden md:block">
                                         <i class="fas fa-info-circle mr-1"></i>
                                         Если снов несколько, разделите их двумя переносами строк или тремя и более тире (----). Постарайтесь описать максимально всё, что помните, а не одно слово, потому что ваш контекст важен для точного анализа.
                                     </p>
                                     <x-input-error :messages="$errors->get('dream_description')" class="mt-2" />
                                 </div>
 
-                                <!-- Контекст (опционально) -->
+                                <!-- Контекст (не обязательно) -->
                                 <div class="mb-6">
-                                    <x-input-label for="context" :value="__('Контекст (опционально)')" />
+                                    <x-input-label for="context" :value="__('Контекст (не обязательно)')" />
                                     <textarea id="context" 
                                              name="context" 
                                              rows="4"
                                              class="mt-1 block w-full rounded-lg border border-gray-300 dark:border-gray-600 shadow-sm focus:border-purple-500 focus:ring-purple-500 dark:bg-gray-700 dark:text-white p-3"
                                              maxlength="2000"
                                              placeholder="Опишите актуальную жизненную ситуацию, эмоциональное состояние, проблемы или переживания, которые могут быть связаны со сном. Это поможет сделать анализ более точным.">{{ old('context') }}</textarea>
-                                    <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                                        <i class="fas fa-lightbulb mr-1"></i>
-                                        Укажите, в связи с чем интересуетесь расшифровкой: ситуация на работе, переживания или что-то другое.
-                                    </p>
                                     <x-input-error :messages="$errors->get('context')" class="mt-2" />
                                 </div>
 
                                 <!-- Выбор традиций -->
                                 <div class="mb-6">
-                                    <x-input-label :value="__('Традиции анализа (можно выбрать несколько)')" />
+                                    <x-input-label :value="__('Традиции анализа')" />
                                     <p class="mt-1 mb-3 text-sm text-gray-500 dark:text-gray-400">
                                         Выберите одну или несколько традиций интерпретации. Если ничего не выбрано, будет использован комплексный анализ.
                                     </p>
@@ -184,7 +183,7 @@
                                     <x-input-error :messages="$errors->get('analysis_type')" class="mt-2" />
                                 </div>
 
-                                <div class="flex items-center justify-end space-x-4">
+                                <div class="flex items-center justify-center md:justify-end space-x-4">
                                     <button type="submit" 
                                             id="submitBtn"
                                             class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
