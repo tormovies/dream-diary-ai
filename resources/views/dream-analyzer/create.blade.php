@@ -46,19 +46,6 @@
         <!-- /Top.Mail.Ru counter -->
         <x-header-styles />
         
-        <style>
-            /* Мобильная версия для страницы толкования снов */
-            @media (max-width: 767px) {
-                #dream_description {
-                    min-height: calc(2.5rem * 10);
-                }
-            }
-            @media (min-width: 768px) {
-                #dream_description {
-                    min-height: calc(2.5rem * 12);
-                }
-            }
-        </style>
         
         <x-yandex-metrika />
     </head>
@@ -103,7 +90,7 @@
                                     <x-input-label for="dream_description" :value="__('Описание сна')" />
                                     <textarea id="dream_description" 
                                              name="dream_description" 
-                                             rows="12"
+                                             rows="10"
                                              class="mt-1 block w-full rounded-lg border border-gray-300 dark:border-gray-600 shadow-sm focus:border-purple-500 focus:ring-purple-500 dark:bg-gray-700 dark:text-white p-3"
                                              required
                                              minlength="10"
