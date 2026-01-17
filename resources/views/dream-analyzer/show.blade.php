@@ -57,6 +57,13 @@
         <x-header-styles />
         
         <x-yandex-metrika />
+        
+        <style>
+            #toast.show {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        </style>
     </head>
     <body class="font-sans antialiased bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
         <x-header />
@@ -160,13 +167,22 @@
                     <div class="bg-blue-100 dark:bg-blue-900 border border-blue-400 dark:border-blue-700 rounded-2xl p-6">
                         <div class="flex items-center gap-4">
                             <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
-                            <div>
+                            <div class="flex-1">
                                 <h3 class="text-lg font-semibold text-blue-800 dark:text-blue-200 mb-1">
                                     Анализ выполняется...
                                 </h3>
                                 <p class="text-blue-700 dark:text-blue-300 text-sm">
                                     Это может занять до 3 минут. Страница обновится автоматически.
                                 </p>
+                                <p class="text-blue-700 dark:text-blue-300 text-sm mt-2">
+                                    Если вам кажется что анализ затянулся, вы всегда можете вернуться на данную страницу, как только она будет обновлена - анализ будет продолжен, если видите ошибки - сообщите <a href="https://t.me/snovidec_ru" target="_blank" rel="noopener noreferrer" class="text-blue-900 dark:text-blue-100 underline font-semibold hover:text-blue-600 dark:hover:text-blue-300">Службе поддержки</a>.
+                                </p>
+                                <div class="mt-3">
+                                    <button onclick="copyAnalysisLink()" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-800 dark:hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+                                        <i class="fas fa-link"></i>
+                                        Скопировать ссылку на эту страницу
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -945,6 +961,43 @@
                 try {
                     document.execCommand('copy');
                     showToast('✅ Ссылка скопирована!');
+                } catch (err) {
+                    showToast('❌ Не удалось скопировать');
+                }
+                
+                document.body.removeChild(textarea);
+            }
+            
+            // Копировать ссылку на страницу анализа
+            function copyAnalysisLink() {
+                const currentUrl = window.location.href;
+                
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    // Современный способ
+                    navigator.clipboard.writeText(currentUrl).then(() => {
+                        showToast('✅ Ссылка на страницу скопирована!');
+                    }).catch(() => {
+                        // Fallback если не сработало
+                        fallbackCopyAnalysisLink(currentUrl);
+                    });
+                } else {
+                    // Fallback для старых браузеров
+                    fallbackCopyAnalysisLink(currentUrl);
+                }
+            }
+            
+            // Fallback метод копирования для ссылки анализа
+            function fallbackCopyAnalysisLink(url) {
+                const textarea = document.createElement('textarea');
+                textarea.value = url;
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
+                document.body.appendChild(textarea);
+                textarea.select();
+                
+                try {
+                    document.execCommand('copy');
+                    showToast('✅ Ссылка на страницу скопирована!');
                 } catch (err) {
                     showToast('❌ Не удалось скопировать');
                 }
