@@ -75,7 +75,7 @@
             <!-- Фильтры -->
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
                 <div class="p-6">
-                    <form method="GET" action="{{ route('admin.interpretations') }}" class="space-y-4">
+                    <form method="GET" action="{{ route('admin.interpretations') }}">
                         <div class="grid grid-cols-1 md:grid-cols-6 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Начало периода</label>
