@@ -76,16 +76,16 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
                 <div class="p-6">
                     <form method="GET" action="{{ route('admin.interpretations') }}">
-                        <div class="grid grid-cols-1 md:grid-cols-6 gap-4">
-                            <div>
+                        <div class="flex flex-col md:flex-row gap-4 flex-wrap">
+                            <div class="flex-1 min-w-[150px]">
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Начало периода</label>
                                 <input type="date" name="start_date" value="{{ $startDate }}" class="w-full rounded-md border-gray-300">
                             </div>
-                            <div>
+                            <div class="flex-1 min-w-[150px]">
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Конец периода</label>
                                 <input type="date" name="end_date" value="{{ $endDate }}" class="w-full rounded-md border-gray-300">
                             </div>
-                            <div>
+                            <div class="flex-1 min-w-[150px]">
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Статус</label>
                                 <select name="status" class="w-full rounded-md border-gray-300">
                                     <option value="">Все</option>
@@ -94,7 +94,7 @@
                                     <option value="failed" {{ $statusFilter === 'failed' ? 'selected' : '' }}>Ошибки</option>
                                 </select>
                             </div>
-                            <div>
+                            <div class="flex-1 min-w-[150px]">
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Традиция</label>
                                 <select name="tradition" class="w-full rounded-md border-gray-300">
                                     <option value="">Все</option>
@@ -107,11 +107,11 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div>
+                            <div class="flex-1 min-w-[150px]">
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Поиск по описанию</label>
                                 <input type="text" name="search" value="{{ request('search') }}" placeholder="Поиск..." class="w-full rounded-md border-gray-300">
                             </div>
-                            <div class="flex items-end">
+                            <div class="flex items-end min-w-[120px]">
                                 <button type="submit" class="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
                                     Применить
                                 </button>
