@@ -12,6 +12,7 @@ use App\Models\Tag;
 use App\Models\User;
 use App\Services\DeepSeekService;
 use App\Services\DreamAnalysisAdapters\DreamAnalysisAdapterFactory;
+use App\Services\TextSanitizer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -114,8 +115,17 @@ class DreamAnalyzerController extends Controller
             'force_series' => 'nullable|boolean', // Явно указать, что это серия снов
         ]);
 
-        // Проверяем, является ли описание серией снов
-        $dreamDescription = $validated['dream_description'];
+        // Санитизируем текст описания сна и контекста
+        $dreamDescription = TextSanitizer::clean($validated['dream_description']) ?? '';
+        $context = isset($validated['context']) ? TextSanitizer::clean($validated['context']) : null;
+        
+        // Проверяем минимальную длину после санитизации
+        if (strlen(trim($dreamDescription)) < 10) {
+            return redirect()
+                ->route('dream-analyzer.create')
+                ->with('error', 'Описание сна слишком короткое после очистки от недопустимых символов')
+                ->withInput();
+        }
         
         // Явное указание на серию имеет приоритет над автоопределением
         if (isset($validated['force_series'])) {
@@ -150,7 +160,7 @@ class DreamAnalyzerController extends Controller
                 'user_id' => auth()->id(),
                 'ip_address' => $request->ip(),
                 'dream_description' => $dreamDescription,
-                'context' => $validated['context'] ?? null,
+                'context' => $context,
                 'traditions' => $validated['traditions'] ?? [],
                 'analysis_type' => $analysisType,
             ]);
@@ -158,7 +168,7 @@ class DreamAnalyzerController extends Controller
             $deepSeekService = new DeepSeekService();
             $result = $deepSeekService->analyzeDream(
                 $dreamDescription,
-                $validated['context'] ?? null,
+                $context,
                 $validated['traditions'] ?? [],
                 $analysisType,
                 $dreams
@@ -206,7 +216,7 @@ class DreamAnalyzerController extends Controller
             'user_id' => auth()->id(),
             'ip_address' => $request->ip(),
             'dream_description' => $dreamDescription,
-            'context' => $validated['context'] ?? null,
+            'context' => $context,
             'traditions' => $traditions,
             'analysis_type' => $analysisMode,
             'processing_status' => 'pending',

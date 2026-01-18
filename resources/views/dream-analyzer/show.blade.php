@@ -96,8 +96,8 @@
                         </div>
                         
                         <!-- Спойлер с исходным описанием сна и кнопка "Поделиться" -->
-                        <div class="flex items-center justify-between gap-4 mt-4">
-                            <details class="flex-1">
+                        <div class="relative mt-4">
+                            <details class="pr-12">
                                 <summary class="cursor-pointer font-semibold text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors py-2 px-3 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
                                     <i class="fas fa-eye mr-2"></i>Исходное описание {{ $isSeries ? 'снов' : 'сна' }}
                                 </summary>
@@ -112,8 +112,8 @@
                                 </div>
                             </details>
                             
-                            <!-- Кнопка "Поделиться" (Вариант 1) -->
-                            <div class="relative flex-shrink-0" x-data="{ open: false }" @click.away="open = false">
+                            <!-- Кнопка "Поделиться" (Вариант 1) - абсолютное позиционирование -->
+                            <div class="absolute top-0 right-0" x-data="{ open: false }" @click.away="open = false">
                                 <button @click="open = !open" class="cursor-pointer font-semibold text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors py-2 px-3 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
                                     <i class="fas fa-share-alt"></i>
                                 </button>

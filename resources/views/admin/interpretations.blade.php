@@ -75,41 +75,47 @@
             <!-- Фильтры -->
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
                 <div class="p-6">
-                    <form method="GET" action="{{ route('admin.interpretations') }}" class="grid grid-cols-1 md:grid-cols-5 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Начало периода</label>
-                            <input type="date" name="start_date" value="{{ $startDate }}" class="w-full rounded-md border-gray-300">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Конец периода</label>
-                            <input type="date" name="end_date" value="{{ $endDate }}" class="w-full rounded-md border-gray-300">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Статус</label>
-                            <select name="status" class="w-full rounded-md border-gray-300">
-                                <option value="">Все</option>
-                                <option value="completed" {{ $statusFilter === 'completed' ? 'selected' : '' }}>Завершено</option>
-                                <option value="pending" {{ $statusFilter === 'pending' ? 'selected' : '' }}>В процессе</option>
-                                <option value="failed" {{ $statusFilter === 'failed' ? 'selected' : '' }}>Ошибки</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Традиция</label>
-                            <select name="tradition" class="w-full rounded-md border-gray-300">
-                                <option value="">Все</option>
-                                @foreach($traditionsConfig as $key => $tradition)
-                                    @if($tradition['enabled'] ?? true)
-                                        <option value="{{ $key }}" {{ $traditionFilter === $key ? 'selected' : '' }}>
-                                            {{ $tradition['name_short'] }}
-                                        </option>
-                                    @endif
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="flex items-end">
-                            <button type="submit" class="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                                Применить
-                            </button>
+                    <form method="GET" action="{{ route('admin.interpretations') }}" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-6 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Начало периода</label>
+                                <input type="date" name="start_date" value="{{ $startDate }}" class="w-full rounded-md border-gray-300">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Конец периода</label>
+                                <input type="date" name="end_date" value="{{ $endDate }}" class="w-full rounded-md border-gray-300">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Статус</label>
+                                <select name="status" class="w-full rounded-md border-gray-300">
+                                    <option value="">Все</option>
+                                    <option value="completed" {{ $statusFilter === 'completed' ? 'selected' : '' }}>Завершено</option>
+                                    <option value="pending" {{ $statusFilter === 'pending' ? 'selected' : '' }}>В процессе</option>
+                                    <option value="failed" {{ $statusFilter === 'failed' ? 'selected' : '' }}>Ошибки</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Традиция</label>
+                                <select name="tradition" class="w-full rounded-md border-gray-300">
+                                    <option value="">Все</option>
+                                    @foreach($traditionsConfig as $key => $tradition)
+                                        @if($tradition['enabled'] ?? true)
+                                            <option value="{{ $key }}" {{ $traditionFilter === $key ? 'selected' : '' }}>
+                                                {{ $tradition['name_short'] }}
+                                            </option>
+                                        @endif
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Поиск по описанию</label>
+                                <input type="text" name="search" value="{{ request('search') }}" placeholder="Поиск..." class="w-full rounded-md border-gray-300">
+                            </div>
+                            <div class="flex items-end">
+                                <button type="submit" class="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                                    Применить
+                                </button>
+                            </div>
                         </div>
                     </form>
                 </div>

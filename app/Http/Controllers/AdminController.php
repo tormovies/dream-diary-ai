@@ -339,8 +339,28 @@ class AdminController extends Controller
             })
             ->sortDesc();
 
-        // Статистика по дням за период
-        $dailyStats = DreamInterpretation::whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+        // Фильтры
+        $statusFilter = $request->filled('status') ? $request->status : null;
+        $traditionFilter = $request->filled('tradition') ? $request->tradition : null;
+        $searchFilter = $request->filled('search') ? $request->search : null;
+
+        // Статистика по дням за период с фильтрами
+        $dailyStatsQuery = DreamInterpretation::whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
+
+        // Применяем фильтры к запросу статистики по дням
+        if ($statusFilter) {
+            $dailyStatsQuery->where('processing_status', $statusFilter);
+        }
+
+        if ($traditionFilter) {
+            $dailyStatsQuery->whereJsonContains('traditions', $traditionFilter);
+        }
+
+        if ($searchFilter) {
+            $dailyStatsQuery->where('dream_description', 'like', '%' . $searchFilter . '%');
+        }
+
+        $dailyStats = $dailyStatsQuery
             ->select(
                 DB::raw('DATE(created_at) as date'),
                 DB::raw('COUNT(*) as total'),
@@ -357,14 +377,26 @@ class AdminController extends Controller
         $dayInterpretations = null;
         
         if ($selectedDate) {
-            $dayInterpretations = DreamInterpretation::whereDate('created_at', $selectedDate)
-                ->orderBy('created_at', 'desc')
-                ->paginate(50);
-        }
+            $dayQuery = DreamInterpretation::whereDate('created_at', $selectedDate);
 
-        // Фильтры
-        $statusFilter = $request->filled('status') ? $request->status : null;
-        $traditionFilter = $request->filled('tradition') ? $request->tradition : null;
+            // Применяем фильтры к детализации по дате
+            if ($statusFilter) {
+                $dayQuery->where('processing_status', $statusFilter);
+            }
+
+            if ($traditionFilter) {
+                $dayQuery->whereJsonContains('traditions', $traditionFilter);
+            }
+
+            if ($searchFilter) {
+                $dayQuery->where('dream_description', 'like', '%' . $searchFilter . '%');
+            }
+
+            $dayInterpretations = $dayQuery
+                ->orderBy('created_at', 'desc')
+                ->paginate(50)
+                ->withQueryString();
+        }
 
         // Список всех толкований с фильтрами (если не выбрана дата)
         if (!$selectedDate) {
@@ -378,7 +410,7 @@ class AdminController extends Controller
                 $query->whereJsonContains('traditions', $traditionFilter);
             }
 
-            $interpretations = $query->orderBy('created_at', 'desc')->paginate(50);
+            $interpretations = $query->orderBy('created_at', 'desc')->paginate(50)->withQueryString();
         } else {
             $interpretations = null;
         }

@@ -6,6 +6,7 @@ use App\Helpers\SeoHelper;
 use App\Helpers\TraditionHelper;
 use App\Http\Requests\StoreReportRequest;
 use App\Http\Requests\UpdateReportRequest;
+use App\Services\TextSanitizer;
 use App\Models\Report;
 use App\Models\Dream;
 use App\Models\Tag;
@@ -899,12 +900,20 @@ class ReportController extends Controller
 
         $isSeries = $dreamsCount > 1;
 
-        // Формируем данные для анализа
+        // Формируем данные для анализа с санитизацией
         $dreamDescriptions = [];
         foreach ($report->dreams as $dream) {
             if (!empty(trim($dream->description))) {
-                $dreamDescriptions[] = trim($dream->description);
+                $cleanedDescription = TextSanitizer::clean(trim($dream->description));
+                if (!empty($cleanedDescription)) {
+                    $dreamDescriptions[] = $cleanedDescription;
+                }
             }
+        }
+
+        // Проверяем, что остались валидные описания после санитизации
+        if (empty($dreamDescriptions)) {
+            return back()->with('error', 'После очистки текста от недопустимых символов все описания снов оказались пустыми');
         }
 
         // Для DeepSeek нужен один текст (для логирования и сохранения)
