@@ -1309,6 +1309,9 @@ class ReportController extends Controller
                 'result_id' => $result->id,
                 'type' => $normalized['type']
             ]);
+            
+            // Сохраняем SEO метаданные, если они есть в ответе
+            $this->saveSeoMetadata($interpretation, $rawAnalysisData);
         } catch (\Exception $e) {
             \Log::error('Failed to save normalized data', [
                 'interpretation_id' => $interpretation->id,
@@ -1316,6 +1319,77 @@ class ReportController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
             // Не бросаем исключение, чтобы не прерывать процесс создания анализа
+        }
+    }
+    
+    /**
+     * Сохраняет SEO метаданные из ответа DeepSeek
+     */
+    private function saveSeoMetadata(DreamInterpretation $interpretation, array $rawAnalysisData): void
+    {
+        try {
+            // Проверяем наличие seo_metadata в ответе
+            if (!isset($rawAnalysisData['seo_metadata']) || !is_array($rawAnalysisData['seo_metadata'])) {
+                return; // Нет SEO данных - ничего не делаем
+            }
+            
+            $seoData = $rawAnalysisData['seo_metadata'];
+            
+            // Очищаем все поля от HTML
+            $metaTitle = !empty($seoData['meta_title']) ? strip_tags($seoData['meta_title']) : null;
+            $metaDescription = !empty($seoData['meta_description']) ? strip_tags($seoData['meta_description']) : null;
+            $h1 = !empty($seoData['h1']) ? strip_tags($seoData['h1']) : null;
+            $introText = !empty($seoData['intro_text']) ? strip_tags($seoData['intro_text']) : null;
+            
+            // Если все поля пустые - не создаем запись
+            if (empty($metaTitle) && empty($metaDescription) && empty($h1) && empty($introText)) {
+                return;
+            }
+            
+            // Ищем существующую SEO запись для этого толкования
+            $seoMeta = \App\Models\SeoMeta::where('page_type', 'dream-analyzer-result')
+                ->where('page_id', $interpretation->id)
+                ->first();
+            
+            // Подготавливаем данные для сохранения (только непустые поля)
+            $seoDataToSave = [
+                'page_type' => 'dream-analyzer-result',
+                'page_id' => $interpretation->id,
+                'is_active' => true,
+                'priority' => 0,
+            ];
+            
+            if (!empty($metaTitle)) {
+                $seoDataToSave['title'] = $metaTitle;
+                $seoDataToSave['og_title'] = $metaTitle; // OG Title из meta_title
+            }
+            
+            if (!empty($metaDescription)) {
+                $seoDataToSave['description'] = $metaDescription;
+                $seoDataToSave['og_description'] = $metaDescription; // OG Description из meta_description
+            }
+            
+            if (!empty($h1)) {
+                $seoDataToSave['h1'] = $h1;
+            }
+            
+            if (!empty($introText)) {
+                $seoDataToSave['h1_description'] = $introText;
+            }
+            
+            // Создаем или обновляем запись
+            if ($seoMeta) {
+                $seoMeta->update($seoDataToSave);
+            } else {
+                \App\Models\SeoMeta::create($seoDataToSave);
+            }
+        } catch (\Exception $e) {
+            // Логируем ошибку, но не прерываем процесс
+            \Log::error('Ошибка при сохранении SEO метаданных', [
+                'interpretation_id' => $interpretation->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
         }
     }
 }

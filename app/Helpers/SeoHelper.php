@@ -481,7 +481,8 @@ class SeoHelper
         // Дата создания
         $date = $interpretation->created_at ? $interpretation->created_at->format('d.m.Y') : '';
         
-        $seoResult = self::get('dream-analyzer-result', $interpretation->hash, [
+        // Используем ID интерпретации вместо hash для поиска индивидуальных SEO-записей
+        $seoResult = self::get('dream-analyzer-result', $interpretation->id, [
             'dream_title' => $dreamTitle,
             'core_message' => $coreMessage,
             'date' => $date,

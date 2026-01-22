@@ -83,7 +83,10 @@
                                 $analysis = $interpretation->analysis_data ?? [];
                                 $isSeries = isset($analysis['series_analysis']) && isset($analysis['dreams']);
                             }
-                            $h1Text = $isSeries ? 'Расшифровка снов' : 'Расшифровка сна';
+                            // Используем кастомный H1 из SEO, если он указан, иначе дефолтный
+                            $h1Text = isset($seo['h1']) && !empty($seo['h1']) 
+                                ? $seo['h1'] 
+                                : ($isSeries ? 'Расшифровка снов' : 'Расшифровка сна');
                         @endphp
                         <h1 class="text-3xl font-bold text-purple-600 dark:text-purple-400 mb-2">{{ $h1Text }}</h1>
                         <div class="flex flex-row items-center justify-between mb-4">
@@ -94,6 +97,11 @@
                                 <i class="fas fa-plus mr-2"></i>Новое толкование
                             </a>
                         </div>
+                        @if(isset($seo['h1_description']) && !empty($seo['h1_description']))
+                            <div class="border-l-4 border-purple-500 dark:border-purple-400 pl-4 py-2 my-4 bg-purple-50 dark:bg-purple-900/20 rounded-r-lg">
+                                <p class="text-gray-700 dark:text-gray-300 text-base italic leading-relaxed">{{ $seo['h1_description'] }}</p>
+                            </div>
+                        @endif
                         
                         <!-- Спойлер с исходным описанием сна и кнопка "Поделиться" -->
                         <div class="relative mt-4">

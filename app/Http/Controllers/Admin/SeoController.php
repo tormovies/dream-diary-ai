@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\SeoMeta;
 use App\Models\Report;
 use App\Models\User;
+use App\Models\DreamInterpretation;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -46,6 +47,8 @@ class SeoController extends Controller
             'dashboard' => 'Мои отчёты',
             'statistics' => 'Статистика',
             'notifications' => 'Уведомления',
+            'dream-analyzer' => 'Толкование снов (форма)',
+            'dream-analyzer-result' => 'Толкование сна (результат)',
         ];
 
         return view('admin.seo.index', compact('seoMetas', 'pageTypes'));
@@ -67,13 +70,18 @@ class SeoController extends Controller
             'dashboard' => 'Мои отчёты',
             'statistics' => 'Статистика',
             'notifications' => 'Уведомления',
+            'dream-analyzer' => 'Толкование снов (форма)',
+            'dream-analyzer-result' => 'Толкование сна (результат)',
         ];
 
         // Для выбора конкретных страниц
         $reports = Report::latest()->limit(50)->get(['id', 'report_date']);
         $users = User::latest()->limit(50)->get(['id', 'nickname', 'name']);
+        $interpretations = DreamInterpretation::latest()
+            ->limit(50)
+            ->get(['id', 'hash', 'dream_description', 'created_at']);
 
-        return view('admin.seo.create', compact('pageTypes', 'reports', 'users'));
+        return view('admin.seo.create', compact('pageTypes', 'reports', 'users', 'interpretations'));
     }
 
     /**
@@ -136,13 +144,18 @@ class SeoController extends Controller
             'dashboard' => 'Мои отчёты',
             'statistics' => 'Статистика',
             'notifications' => 'Уведомления',
+            'dream-analyzer' => 'Толкование снов (форма)',
+            'dream-analyzer-result' => 'Толкование сна (результат)',
         ];
 
         // Для выбора конкретных страниц
         $reports = Report::latest()->limit(50)->get(['id', 'report_date']);
         $users = User::latest()->limit(50)->get(['id', 'nickname', 'name']);
+        $interpretations = DreamInterpretation::latest()
+            ->limit(50)
+            ->get(['id', 'hash', 'dream_description', 'created_at']);
 
-        return view('admin.seo.edit', compact('seo', 'pageTypes', 'reports', 'users'));
+        return view('admin.seo.edit', compact('seo', 'pageTypes', 'reports', 'users', 'interpretations'));
     }
 
     /**

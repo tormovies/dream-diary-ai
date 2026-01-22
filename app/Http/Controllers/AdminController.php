@@ -452,6 +452,11 @@ class AdminController extends Controller
             $interpretation->result->seriesDreams()->delete();
             $interpretation->result->delete();
         }
+        
+        // Удаляем связанную SEO запись (если есть)
+        \App\Models\SeoMeta::where('page_type', 'dream-analyzer-result')
+            ->where('page_id', $interpretation->id)
+            ->delete();
 
         // Удаляем само толкование
         $interpretation->delete();

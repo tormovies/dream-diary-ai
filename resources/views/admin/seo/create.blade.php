@@ -30,10 +30,53 @@
 
                         <div class="mb-6">
                             <x-input-label for="page_id" :value="__('ID конкретной страницы (опционально)')" />
+                            
+                            <!-- Список толкований (показывается только для dream-analyzer-result) -->
+                            <div id="interpretations_list" class="hidden mb-2">
+                                <select id="interpretation_select" class="mt-1 block w-full border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                    <option value="">Выберите толкование...</option>
+                                    @if(isset($interpretations))
+                                        @foreach($interpretations as $interpretation)
+                                            <option value="{{ $interpretation->id }}" data-hash="{{ $interpretation->hash }}">
+                                                ID: {{ $interpretation->id }} | Hash: {{ $interpretation->hash }} | {{ Str::limit(strip_tags($interpretation->dream_description), 50) }} | {{ $interpretation->created_at->format('d.m.Y') }}
+                                            </option>
+                                        @endforeach
+                                    @endif
+                                </select>
+                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Или введите ID вручную ниже</p>
+                            </div>
+                            
                             <x-text-input id="page_id" name="page_id" type="number" class="mt-1 block w-full" :value="old('page_id')" />
                             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Оставьте пустым для применения ко всем страницам этого типа</p>
                             <x-input-error class="mt-2" :messages="$errors->get('page_id')" />
                         </div>
+                        
+                        <script>
+                            document.addEventListener('DOMContentLoaded', function() {
+                                const pageTypeSelect = document.getElementById('page_type');
+                                const interpretationsList = document.getElementById('interpretations_list');
+                                const interpretationSelect = document.getElementById('interpretation_select');
+                                const pageIdInput = document.getElementById('page_id');
+                                
+                                function toggleInterpretationsList() {
+                                    if (pageTypeSelect.value === 'dream-analyzer-result') {
+                                        interpretationsList.classList.remove('hidden');
+                                    } else {
+                                        interpretationsList.classList.add('hidden');
+                                    }
+                                }
+                                
+                                pageTypeSelect.addEventListener('change', toggleInterpretationsList);
+                                toggleInterpretationsList(); // Проверяем при загрузке
+                                
+                                // При выборе толкования заполняем page_id
+                                interpretationSelect.addEventListener('change', function() {
+                                    if (this.value) {
+                                        pageIdInput.value = this.value;
+                                    }
+                                });
+                            });
+                        </script>
 
                         <div class="mb-6">
                             <x-input-label for="title" :value="__('Title (шаблон)')" />
