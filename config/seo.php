@@ -185,7 +185,7 @@ return [
             'title' => 'Толкование сна - {dream_title} | {site_name}',
             'description' => '{core_message}',
             'h1' => 'Расшифровка сна',
-            'h1_description' => '{dream_title}',
+            'h1_description' => null,
             'og_title' => '{dream_title} — расшифровка сна',
             'og_description' => '{core_message}',
         ],
