@@ -88,6 +88,16 @@
                         <x-input-error class="mt-2" :messages="$errors->get('content')" />
                     </div>
 
+                    <!-- Превью вопросов (для инструкций) -->
+                    <div class="form-group">
+                        <label for="questions_preview" class="form-label">
+                            <i class="fas fa-list"></i> Список вопросов (превью для главной страницы)
+                        </label>
+                        <textarea id="questions_preview" name="questions_preview" rows="6" class="form-textarea" placeholder="Каждый вопрос с новой строки. Например:&#10;Что такое Дневник сновидений?&#10;Зачем регистрироваться?&#10;Как зарегистрироваться?">{{ old('questions_preview') }}</textarea>
+                        <div class="form-hint">Укажите список вопросов, которые раскрыты в этой инструкции. Каждый вопрос с новой строки. Это будет отображаться на главной странице /guide как превью.</div>
+                        <x-input-error class="mt-2" :messages="$errors->get('questions_preview')" />
+                    </div>
+
                     <!-- SEO настройки -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="form-group">

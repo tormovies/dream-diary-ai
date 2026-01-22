@@ -155,11 +155,29 @@
                         <div class="p-6">
                             @forelse($articles as $article)
                                 <div class="mb-6 pb-6 border-b border-gray-200 dark:border-gray-700 last:border-0 last:pb-0 last:mb-0">
-                                    <h3 class="text-xl font-semibold text-purple-600 dark:text-purple-400 mb-2">
+                                    <h3 class="text-xl font-semibold text-purple-600 dark:text-purple-400 mb-3">
                                         <a href="{{ route('guide.show', $article->slug) }}" class="hover:text-purple-800 dark:hover:text-purple-300 transition-colors">
                                             {{ $article->title }}
                                         </a>
                                     </h3>
+                                    @if($article->questions_preview)
+                                        @php
+                                            // Разбиваем текст по строкам и фильтруем пустые
+                                            $questions = array_filter(
+                                                array_map('trim', explode("\n", $article->questions_preview)),
+                                                function($line) {
+                                                    return !empty($line);
+                                                }
+                                            );
+                                        @endphp
+                                        @if(count($questions) > 0)
+                                            <ul class="list-disc list-inside space-y-1 text-gray-600 dark:text-gray-400 text-sm mb-3 ml-4">
+                                                @foreach($questions as $question)
+                                                    <li>{{ $question }}</li>
+                                                @endforeach
+                                            </ul>
+                                        @endif
+                                    @endif
                                 </div>
                             @empty
                                 <p class="text-gray-500 dark:text-gray-400 text-center py-8">

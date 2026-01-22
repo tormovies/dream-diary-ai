@@ -15,6 +15,7 @@ class Article extends Model
         'title',
         'slug',
         'content',
+        'questions_preview',
         'type',
         'status',
         'order',
