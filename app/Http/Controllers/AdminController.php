@@ -239,6 +239,7 @@ class AdminController extends Controller
             'deepseek_api_key' => Setting::getValue('deepseek_api_key', ''),
             'deepseek_http_timeout' => Setting::getValue('deepseek_http_timeout', 600),
             'deepseek_php_execution_timeout' => Setting::getValue('deepseek_php_execution_timeout', 660),
+            'timezone' => Setting::getValue('timezone', 'UTC'),
         ];
 
         return view('admin.settings', compact('settings'));
@@ -256,6 +257,7 @@ class AdminController extends Controller
             'deepseek_api_key' => ['nullable', 'string', 'max:255'],
             'deepseek_http_timeout' => ['nullable', 'integer', 'min:60', 'max:1800'],
             'deepseek_php_execution_timeout' => ['nullable', 'integer', 'min:60', 'max:1800'],
+            'timezone' => ['nullable', 'string', 'timezone'],
         ]);
 
         Setting::setValue('allow_report_deletion', $request->boolean('allow_report_deletion', true));
@@ -289,6 +291,13 @@ class AdminController extends Controller
             Setting::setValue('deepseek_php_execution_timeout', 660); // Значение по умолчанию
         }
 
+        // Сохранение часового пояса
+        if ($request->filled('timezone')) {
+            Setting::setValue('timezone', $request->timezone);
+        } else {
+            Setting::setValue('timezone', 'UTC'); // Значение по умолчанию
+        }
+
         return back()->with('success', 'Настройки сохранены');
     }
 
@@ -297,13 +306,30 @@ class AdminController extends Controller
      */
     public function interpretations(Request $request): View
     {
-        // Период по умолчанию - 30 дней
+        // Получаем часовой пояс из настроек
+        $timezone = Setting::getValue('timezone', 'UTC');
+        
+        // Создаем Carbon экземпляры с учетом часового пояса
+        $now = \Carbon\Carbon::now($timezone);
+        
+        // Период по умолчанию - 30 дней (в локальном времени)
         $startDate = $request->filled('start_date') 
             ? $request->start_date 
-            : now()->subDays(30)->format('Y-m-d');
+            : $now->copy()->subDays(30)->format('Y-m-d');
         $endDate = $request->filled('end_date') 
             ? $request->end_date 
-            : now()->format('Y-m-d');
+            : $now->format('Y-m-d');
+        
+        // Конвертируем даты из локального времени в UTC для запросов к БД
+        // created_at в БД хранится в UTC, поэтому нужно конвертировать границы периода
+        $startDateUtc = \Carbon\Carbon::createFromFormat('Y-m-d', $startDate, $timezone)
+            ->startOfDay()
+            ->setTimezone('UTC')
+            ->format('Y-m-d H:i:s');
+        $endDateUtc = \Carbon\Carbon::createFromFormat('Y-m-d', $endDate, $timezone)
+            ->endOfDay()
+            ->setTimezone('UTC')
+            ->format('Y-m-d H:i:s');
 
         // Общая статистика
         $totalCreated = DreamInterpretation::count();
@@ -311,17 +337,17 @@ class AdminController extends Controller
         $totalPending = DreamInterpretation::where('processing_status', 'pending')->count();
         $totalFailed = DreamInterpretation::where('processing_status', 'failed')->count();
         
-        // Статистика за период
-        $periodCreated = DreamInterpretation::whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])->count();
-        $periodCompleted = DreamInterpretation::whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+        // Статистика за период (используем UTC даты для запросов к БД)
+        $periodCreated = DreamInterpretation::whereBetween('created_at', [$startDateUtc, $endDateUtc])->count();
+        $periodCompleted = DreamInterpretation::whereBetween('created_at', [$startDateUtc, $endDateUtc])
             ->where('processing_status', 'completed')->count();
-        $periodPending = DreamInterpretation::whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+        $periodPending = DreamInterpretation::whereBetween('created_at', [$startDateUtc, $endDateUtc])
             ->where('processing_status', 'pending')->count();
-        $periodFailed = DreamInterpretation::whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+        $periodFailed = DreamInterpretation::whereBetween('created_at', [$startDateUtc, $endDateUtc])
             ->where('processing_status', 'failed')->count();
 
         // Статистика по традициям за период
-        $traditionsStats = DreamInterpretation::whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+        $traditionsStats = DreamInterpretation::whereBetween('created_at', [$startDateUtc, $endDateUtc])
             ->whereNotNull('traditions')
             ->get()
             ->flatMap(function ($interpretation) {
@@ -344,8 +370,8 @@ class AdminController extends Controller
         $traditionFilter = $request->filled('tradition') ? $request->tradition : null;
         $searchFilter = $request->filled('search') ? $request->search : null;
 
-        // Статистика по дням за период с фильтрами
-        $dailyStatsQuery = DreamInterpretation::whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
+        // Статистика по дням за период с фильтрами (используем UTC даты)
+        $dailyStatsQuery = DreamInterpretation::whereBetween('created_at', [$startDateUtc, $endDateUtc]);
 
         // Применяем фильтры к запросу статистики по дням
         if ($statusFilter) {
@@ -360,24 +386,41 @@ class AdminController extends Controller
             $dailyStatsQuery->where('dream_description', 'like', '%' . $searchFilter . '%');
         }
 
-        $dailyStats = $dailyStatsQuery
-            ->select(
-                DB::raw('DATE(created_at) as date'),
-                DB::raw('COUNT(*) as total'),
-                DB::raw('SUM(CASE WHEN processing_status = "completed" THEN 1 ELSE 0 END) as completed'),
-                DB::raw('SUM(CASE WHEN processing_status = "pending" THEN 1 ELSE 0 END) as pending'),
-                DB::raw('SUM(CASE WHEN processing_status = "failed" THEN 1 ELSE 0 END) as failed')
-            )
-            ->groupBy('date')
-            ->orderBy('date', 'desc')
-            ->get();
+        // Получаем статистику по дням с конвертацией в локальный часовой пояс
+        // Получаем все записи и группируем в PHP с учетом часового пояса
+        // Это более надежно, так как CONVERT_TZ может не работать на всех серверах
+        $allInterpretations = $dailyStatsQuery->get();
+        $dailyStats = $allInterpretations->groupBy(function ($interpretation) use ($timezone) {
+            // Конвертируем created_at из UTC в локальный часовой пояс и берем дату
+            return \Carbon\Carbon::parse($interpretation->created_at)
+                ->setTimezone($timezone)
+                ->format('Y-m-d');
+        })->map(function ($group, $date) {
+            return (object)[
+                'date' => $date,
+                'total' => $group->count(),
+                'completed' => $group->where('processing_status', 'completed')->count(),
+                'pending' => $group->where('processing_status', 'pending')->count(),
+                'failed' => $group->where('processing_status', 'failed')->count(),
+            ];
+        })->sortKeysDesc()->values();
 
         // Детализация по выбранной дате
         $selectedDate = $request->filled('date') ? $request->date : null;
         $dayInterpretations = null;
         
         if ($selectedDate) {
-            $dayQuery = DreamInterpretation::whereDate('created_at', $selectedDate);
+            // Конвертируем выбранную дату (в локальном времени) в UTC для запроса к БД
+            $selectedDateStart = \Carbon\Carbon::createFromFormat('Y-m-d', $selectedDate, $timezone)
+                ->startOfDay()
+                ->setTimezone('UTC')
+                ->format('Y-m-d H:i:s');
+            $selectedDateEnd = \Carbon\Carbon::createFromFormat('Y-m-d', $selectedDate, $timezone)
+                ->endOfDay()
+                ->setTimezone('UTC')
+                ->format('Y-m-d H:i:s');
+            
+            $dayQuery = DreamInterpretation::whereBetween('created_at', [$selectedDateStart, $selectedDateEnd]);
 
             // Применяем фильтры к детализации по дате
             if ($statusFilter) {
@@ -400,7 +443,7 @@ class AdminController extends Controller
 
         // Список всех толкований с фильтрами (если не выбрана дата)
         if (!$selectedDate) {
-            $query = DreamInterpretation::whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
+            $query = DreamInterpretation::whereBetween('created_at', [$startDateUtc, $endDateUtc]);
 
             if ($statusFilter) {
                 $query->where('processing_status', $statusFilter);
@@ -436,7 +479,8 @@ class AdminController extends Controller
             'endDate',
             'statusFilter',
             'traditionFilter',
-            'traditionsConfig'
+            'traditionsConfig',
+            'timezone'
         ));
     }
 

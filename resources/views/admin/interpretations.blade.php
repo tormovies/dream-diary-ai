@@ -5,6 +5,7 @@
                 <a href="{{ route('admin.interpretations') }}" class="hover:text-gray-600">
                     {{ __('Статистика толкований снов') }}
                 </a>
+                <span class="text-sm font-normal text-gray-500 ml-2">(Часовой пояс: {{ $timezone ?? 'UTC' }})</span>
             </h2>
             <a href="{{ route('admin.dashboard') }}" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
                 Вернуться в админку
@@ -48,7 +49,10 @@
             <!-- Статистика за период -->
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
                 <div class="p-6">
-                    <h3 class="text-lg font-semibold mb-4">Статистика за период ({{ $startDate }} - {{ $endDate }})</h3>
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold">Статистика за период ({{ $startDate }} - {{ $endDate }})</h3>
+                        <span class="text-xs text-gray-500">Часовой пояс: {{ $timezone ?? 'UTC' }}</span>
+                    </div>
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <div>
                             <div class="text-xl font-bold text-gray-900">{{ $periodCreated }}</div>
@@ -173,7 +177,11 @@
                                         @foreach($dayInterpretations as $interpretation)
                                             <tr>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                    {{ $interpretation->created_at->format('H:i:s') }}
+                                                    @php
+                                                        $timezone = $timezone ?? 'UTC';
+                                                        $localTime = \Carbon\Carbon::parse($interpretation->created_at)->setTimezone($timezone);
+                                                    @endphp
+                                                    {{ $localTime->format('H:i:s') }}
                                                 </td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-600">
                                                     {{ substr($interpretation->hash, 0, 12) }}...
