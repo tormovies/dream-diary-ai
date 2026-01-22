@@ -68,6 +68,9 @@ class DeepSeekService
         $phpTimeout = (int) \App\Models\Setting::getValue('deepseek_php_execution_timeout', 660);
         $httpTimeout = (int) \App\Models\Setting::getValue('deepseek_http_timeout', 600);
         
+        // Таймаут для установки соединения (SSL handshake) используем тот же что и HTTP таймаут из настроек
+        $connectTimeout = $httpTimeout;
+        
         set_time_limit($phpTimeout); // Таймаут выполнения PHP скрипта
 
         // Логируем запрос (без API ключа)
@@ -76,11 +79,23 @@ class DeepSeekService
             'request_data' => $requestData,
             'prompt_length' => strlen($prompt),
             'prompt_preview' => substr($prompt, 0, 500),
+            'http_timeout' => $httpTimeout,
+            'connect_timeout' => $connectTimeout,
         ]);
 
         try {
             $response = Http::timeout($httpTimeout)
-                ->connectTimeout(30)
+                ->connectTimeout($connectTimeout)
+                ->retry(2, 1000) // Повторная попытка 2 раза с задержкой 1 секунда
+                ->withOptions([
+                    CURLOPT_SSL_VERIFYPEER => true,
+                    CURLOPT_SSL_VERIFYHOST => 2,
+                    CURLOPT_TIMEOUT => $httpTimeout,
+                    CURLOPT_CONNECTTIMEOUT => $connectTimeout,
+                    CURLOPT_SSLVERSION => CURL_SSLVERSION_TLSv1_2, // Используем TLS 1.2+
+                    CURLOPT_CAINFO => null, // Используем системные сертификаты
+                    CURLOPT_CAPATH => null,
+                ])
                 ->withHeaders([
                     'Authorization' => 'Bearer ' . $this->apiKey,
                     'Content-Type' => 'application/json',
