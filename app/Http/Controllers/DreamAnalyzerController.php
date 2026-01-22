@@ -654,6 +654,48 @@ class DreamAnalyzerController extends Controller
     }
 
     /**
+     * Повторный анализ при ошибке
+     */
+    public function retry(Request $request, string $hash): RedirectResponse
+    {
+        $interpretation = DreamInterpretation::where('hash', $hash)->firstOrFail();
+        
+        // Проверяем права доступа
+        if ($interpretation->user_id !== null) {
+            if (!auth()->check()) {
+                return redirect()->route('dream-analyzer.show', $hash)
+                    ->with('error', 'Требуется авторизация для повторного анализа');
+            }
+            
+            if ($interpretation->user_id !== auth()->id() && !auth()->user()->isAdmin()) {
+                return redirect()->route('dream-analyzer.show', $hash)
+                    ->with('error', 'У вас нет прав для повторного анализа');
+            }
+        }
+        
+        // Сбрасываем статус и ошибки для повторной попытки
+        $interpretation->update([
+            'processing_status' => 'pending',
+            'api_error' => null,
+            'processing_started_at' => null,
+        ]);
+        
+        // Удаляем старые результаты, если есть
+        if ($interpretation->result) {
+            $interpretation->result->delete();
+        }
+        
+        // Удаляем старые SEO записи для этого толкования
+        SeoMeta::where('page_type', 'dream-analyzer-result')
+            ->where('page_id', $interpretation->id)
+            ->delete();
+        
+        // Редиректим на страницу результата (анализ запустится автоматически)
+        return redirect()->route('dream-analyzer.show', $hash)
+            ->with('success', 'Анализ запущен повторно. Пожалуйста, подождите...');
+    }
+
+    /**
      * Асинхронная обработка анализа (аналог ReportController::processAnalysisAsync)
      */
     private function processAnalysisAsync(DreamInterpretation $interpretation): void

@@ -27,6 +27,7 @@ Route::get('/activity', [\App\Http\Controllers\ActivityController::class, 'index
 Route::get('/tolkovanie-snov', [\App\Http\Controllers\DreamAnalyzerController::class, 'create'])->name('dream-analyzer.create');
 Route::post('/tolkovanie-snov', [\App\Http\Controllers\DreamAnalyzerController::class, 'store'])->name('dream-analyzer.store');
 Route::post('/tolkovanie-snov/{hash}/process', [\App\Http\Controllers\DreamAnalyzerController::class, 'processAnalysis'])->name('dream-analyzer.process');
+Route::post('/tolkovanie-snov/{hash}/retry', [\App\Http\Controllers\DreamAnalyzerController::class, 'retry'])->name('dream-analyzer.retry');
 Route::get('/tolkovanie-snov/{hash}', [\App\Http\Controllers\DreamAnalyzerController::class, 'show'])->name('dream-analyzer.show');
 
 // Поиск отчетов (доступен всем)

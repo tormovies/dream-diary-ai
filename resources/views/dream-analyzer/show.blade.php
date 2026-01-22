@@ -157,15 +157,57 @@
                     $hasResults = ($interpretation->relationLoaded('results') && $interpretation->results->count() > 0) || $interpretation->result;
                 @endphp
 
+                @if(session('success'))
+                    <div class="bg-green-100 dark:bg-green-900 border border-green-400 dark:border-green-700 text-green-700 dark:text-green-300 px-6 py-4 rounded-lg mb-4">
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-check-circle"></i>
+                            <p>{{ session('success') }}</p>
+                        </div>
+                    </div>
+                @endif
+
                 @if($processingStatus === 'failed' || $interpretation->api_error)
                     <!-- Ошибка API -->
-                    <div class="bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-300 px-6 py-4 rounded-lg">
-                        <h2 class="font-bold text-lg mb-2">Ошибка при анализе</h2>
-                        <p>{{ $interpretation->api_error ?? 'Анализ завершился с ошибкой' }}</p>
+                    <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-400 dark:border-yellow-700 text-yellow-800 dark:text-yellow-200 px-6 py-6 rounded-lg">
+                        <div class="flex items-start gap-3 mb-4">
+                            <i class="fas fa-exclamation-triangle text-2xl text-yellow-600 dark:text-yellow-400 mt-1"></i>
+                            <div class="flex-1">
+                                <h2 class="font-bold text-lg mb-2">Временные трудности в толковании сновидений</h2>
+                                <p class="mb-4">
+                                    К сожалению, при обработке вашего запроса возникла техническая ошибка. 
+                                    Это может быть связано с временными проблемами на стороне сервиса анализа.
+                                </p>
+                                <div class="bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-300 dark:border-yellow-800 rounded p-3 mb-4">
+                                    <p class="text-sm font-semibold mb-1">Что вы можете сделать:</p>
+                                    <ul class="text-sm list-disc list-inside space-y-1">
+                                        <li>Попробуйте повторить анализ через несколько минут</li>
+                                        <li>Используйте кнопку "Повторить анализ" ниже</li>
+                                        <li>Если проблема сохраняется, обратитесь в службу поддержки</li>
+                                    </ul>
+                                </div>
+                                <div class="flex flex-col sm:flex-row gap-3 mt-4">
+                                    <form method="POST" action="{{ route('dream-analyzer.retry', $interpretation->hash) }}" class="inline">
+                                        @csrf
+                                        <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors">
+                                            <i class="fas fa-redo mr-2"></i>Повторить анализ
+                                        </button>
+                                    </form>
+                                    <a href="https://t.me/snovidec_ru" target="_blank" rel="noopener noreferrer" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors inline-flex items-center justify-center">
+                                        <i class="fab fa-telegram mr-2"></i>Служба поддержки
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
                         @if(isset($interpretation->raw_api_response) && $interpretation->raw_api_response)
                             <details class="mt-4">
-                                <summary class="cursor-pointer font-semibold">Ответ API</summary>
-                                <pre class="mt-2 text-xs overflow-auto bg-red-50 dark:bg-red-950 p-4 rounded">{{ $interpretation->raw_api_response }}</pre>
+                                <summary class="cursor-pointer font-semibold text-sm">Техническая информация (для отладки)</summary>
+                                <pre class="mt-2 text-xs overflow-auto bg-yellow-50 dark:bg-yellow-950 p-4 rounded border border-yellow-200 dark:border-yellow-800">{{ $interpretation->raw_api_response }}</pre>
+                            </details>
+                        @endif
+                        @if($interpretation->api_error)
+                            <details class="mt-2">
+                                <summary class="cursor-pointer font-semibold text-sm">Сообщение об ошибке</summary>
+                                <p class="mt-2 text-sm bg-yellow-50 dark:bg-yellow-950 p-3 rounded border border-yellow-200 dark:border-yellow-800">{{ $interpretation->api_error }}</p>
                             </details>
                         @endif
                     </div>
