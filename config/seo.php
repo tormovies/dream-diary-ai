@@ -189,6 +189,42 @@ return [
             'og_title' => '{dream_title} — расшифровка сна',
             'og_description' => '{core_message}',
         ],
+        
+        'guide-index' => [
+            'title' => 'Инструкции — {site_name}',
+            'description' => 'Полезные инструкции и руководства по использованию платформы для ведения дневника сновидений.',
+            'h1' => 'Инструкции',
+            'h1_description' => null,
+            'og_title' => 'Инструкции — {site_name}',
+            'og_description' => 'Полезные инструкции и руководства по использованию платформы.',
+        ],
+        
+        'articles-index' => [
+            'title' => 'Статьи — {site_name}',
+            'description' => 'Интересные статьи о сновидениях, психологии сна и анализе снов.',
+            'h1' => 'Статьи',
+            'h1_description' => null,
+            'og_title' => 'Статьи — {site_name}',
+            'og_description' => 'Интересные статьи о сновидениях и психологии сна.',
+        ],
+        
+        'guide' => [
+            'title' => '{title} — {site_name}',
+            'description' => '{description}',
+            'h1' => '{h1}',
+            'h1_description' => '{h1_description}',
+            'og_title' => '{og_title}',
+            'og_description' => '{og_description}',
+        ],
+        
+        'article' => [
+            'title' => '{title} — {site_name}',
+            'description' => '{description}',
+            'h1' => '{h1}',
+            'h1_description' => '{h1_description}',
+            'og_title' => '{og_title}',
+            'og_description' => '{og_description}',
+        ],
     ],
 ];
 

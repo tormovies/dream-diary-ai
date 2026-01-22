@@ -49,6 +49,10 @@ class SeoController extends Controller
             'notifications' => 'Уведомления',
             'dream-analyzer' => 'Толкование снов (форма)',
             'dream-analyzer-result' => 'Толкование сна (результат)',
+            'guide-index' => 'Инструкции (заглавная)',
+            'articles-index' => 'Статьи (заглавная)',
+            'guide' => 'Инструкция',
+            'article' => 'Статья',
         ];
 
         return view('admin.seo.index', compact('seoMetas', 'pageTypes'));
@@ -72,6 +76,10 @@ class SeoController extends Controller
             'notifications' => 'Уведомления',
             'dream-analyzer' => 'Толкование снов (форма)',
             'dream-analyzer-result' => 'Толкование сна (результат)',
+            'guide-index' => 'Инструкции (заглавная)',
+            'articles-index' => 'Статьи (заглавная)',
+            'guide' => 'Инструкция',
+            'article' => 'Статья',
         ];
 
         // Для выбора конкретных страниц
@@ -146,6 +154,10 @@ class SeoController extends Controller
             'notifications' => 'Уведомления',
             'dream-analyzer' => 'Толкование снов (форма)',
             'dream-analyzer-result' => 'Толкование сна (результат)',
+            'guide-index' => 'Инструкции (заглавная)',
+            'articles-index' => 'Статьи (заглавная)',
+            'guide' => 'Инструкция',
+            'article' => 'Статья',
         ];
 
         // Для выбора конкретных страниц

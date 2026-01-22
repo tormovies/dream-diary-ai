@@ -252,6 +252,14 @@ class SeoHelper
                 return $baseUrl . '/tolkovanie-snov';
             case 'dream-analyzer-result':
                 return $baseUrl . '/tolkovanie-snov/' . ($variables['hash'] ?? $pageId ?? '');
+            case 'guide':
+                return $baseUrl . '/guide/' . ($variables['slug'] ?? $pageId ?? '');
+            case 'article':
+                return $baseUrl . '/articles/' . ($variables['slug'] ?? $pageId ?? '');
+            case 'guide-index':
+                return $baseUrl . '/guide';
+            case 'articles-index':
+                return $baseUrl . '/articles';
             default:
                 return $baseUrl;
         }

@@ -55,6 +55,9 @@
                         <a href="{{ route('admin.seo.index') }}" class="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded text-center flex-1 min-w-[120px]">
                             SEO
                         </a>
+                        <a href="{{ route('admin.articles.index') }}" style="background-color: #1e40af;" class="hover:opacity-90 text-white font-bold py-2 px-4 rounded text-center flex-1 min-w-[120px] border-2 border-blue-700">
+                            Статьи
+                        </a>
                         <a href="{{ route('admin.settings') }}" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded text-center flex-1 min-w-[120px]">
                             Настройки
                         </a>

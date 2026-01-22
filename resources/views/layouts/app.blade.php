@@ -4,9 +4,8 @@
       x-bind:class="{ 'dark': theme === 'dark' }"
       x-init="
         // Загружаем тему из localStorage или из базы данных
-        const savedTheme = localStorage.getItem('theme') || '{{ auth()->check() ? (auth()->user()->theme ?? 'light') : 'light' }}';
-        theme = savedTheme;
-        if (savedTheme === 'dark') {
+        theme = localStorage.getItem('theme') || '{{ auth()->check() ? (auth()->user()->theme ?? 'light') : 'light' }}';
+        if (theme === 'dark') {
             document.documentElement.classList.add('dark');
         } else {
             document.documentElement.classList.remove('dark');
@@ -36,6 +35,8 @@
 
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
+        
+        @stack('styles')
 
         <!-- Top.Mail.Ru counter -->
         <script type="text/javascript">
@@ -72,5 +73,7 @@
                 {{ $slot }}
             </main>
         </div>
+        
+        @stack('scripts')
     </body>
 </html>

@@ -3,9 +3,8 @@
       x-data="{ theme: 'light' }"
       x-bind:class="{ 'dark': theme === 'dark' }"
       x-init="
-        const savedTheme = localStorage.getItem('theme') || 'light';
-        theme = savedTheme;
-        if (savedTheme === 'dark') {
+        theme = localStorage.getItem('theme') || 'light';
+        if (theme === 'dark') {
             document.documentElement.classList.add('dark');
         } else {
             document.documentElement.classList.remove('dark');

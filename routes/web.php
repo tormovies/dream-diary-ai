@@ -32,6 +32,12 @@ Route::get('/tolkovanie-snov/{hash}', [\App\Http\Controllers\DreamAnalyzerContro
 // Поиск отчетов (доступен всем)
 Route::get('/search', [\App\Http\Controllers\ReportController::class, 'search'])->name('reports.search');
 
+// Статьи и инструкции (доступны всем)
+Route::get('/guide', [\App\Http\Controllers\ArticleController::class, 'guideIndex'])->name('guide.index');
+Route::get('/guide/{slug}', [\App\Http\Controllers\ArticleController::class, 'guideShow'])->name('guide.show');
+Route::get('/articles', [\App\Http\Controllers\ArticleController::class, 'articlesIndex'])->name('articles.index');
+Route::get('/articles/{slug}', [\App\Http\Controllers\ArticleController::class, 'articleShow'])->name('articles.show');
+
 // Просмотр анализа отчета (доступен всем, проверка прав через Policy)
 Route::get('/reports/{report}/analysis', [\App\Http\Controllers\ReportController::class, 'showAnalysis'])->name('reports.analysis');
 
@@ -114,6 +120,13 @@ Route::middleware('auth')->group(function () {
         
         // SEO управление
         Route::resource('seo', \App\Http\Controllers\Admin\SeoController::class)->except(['show']);
+        
+        // Управление статьями
+        Route::resource('articles', \App\Http\Controllers\Admin\ArticleController::class);
+        Route::post('/articles/{article}/publish', [\App\Http\Controllers\Admin\ArticleController::class, 'publish'])->name('articles.publish');
+        Route::post('/articles/{article}/unpublish', [\App\Http\Controllers\Admin\ArticleController::class, 'unpublish'])->name('articles.unpublish');
+        Route::post('/articles/update-order', [\App\Http\Controllers\Admin\ArticleController::class, 'updateOrder'])->name('articles.update-order');
+        Route::post('/articles/image-upload', [\App\Http\Controllers\Admin\ArticleController::class, 'uploadImage'])->name('articles.image-upload');
     });
 });
 
