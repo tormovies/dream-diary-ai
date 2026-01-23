@@ -90,7 +90,19 @@
                             <i class="fas fa-align-left"></i> Текст статьи
                         </label>
                         <div id="editor-container" style="min-height: 450px;" class="mt-1 border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden bg-white dark:bg-gray-700"></div>
-                        <textarea id="content" name="content" style="display: none;">{!! old('content', $article->content) !!}</textarea>
+                        <textarea id="content" name="content" style="display: none;">{!! old('content', $article->content ?? '') !!}</textarea>
+                        <script>
+                            // Сохраняем контент в глобальную переменную для отладки
+                            (function() {
+                                var contentFromTextarea = document.getElementById('content');
+                                var contentValue = contentFromTextarea ? contentFromTextarea.value : '';
+                                window.articleContent = contentValue;
+                                console.log('Article content from server (stored in window.articleContent):');
+                                console.log('Length:', contentValue ? contentValue.length : 0);
+                                console.log('Preview:', contentValue ? contentValue.substring(0, 300) : 'EMPTY');
+                                console.log('Is empty?', !contentValue || contentValue.trim() === '' || contentValue.trim() === '<p><br></p>');
+                            })();
+                        </script>
                         <x-input-error class="mt-2" :messages="$errors->get('content')" />
                     </div>
 
@@ -204,18 +216,28 @@
         
         // Загружаем Quill динамически
         (function() {
+            // Проверяем, не загружен ли уже Quill
+            if (typeof Quill !== 'undefined') {
+                console.log('Quill already loaded');
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', initQuill);
+                } else {
+                    setTimeout(initQuill, 100);
+                }
+                return;
+            }
+            
             var quillScript = document.createElement('script');
             quillScript.src = '{{ asset('js/quill/quill.min.js') }}';
             quillScript.onload = function() {
                 console.log('Quill script loaded');
-                if (typeof initQuill === 'function') {
-                    initQuill();
+                // Ждем, пока DOM полностью загружен
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', function() {
+                        setTimeout(initQuill, 100);
+                    });
                 } else {
-                    setTimeout(function() {
-                        if (typeof initQuill === 'function') {
-                            initQuill();
-                        }
-                    }, 100);
+                    setTimeout(initQuill, 100);
                 }
             };
             quillScript.onerror = function() {
@@ -286,14 +308,38 @@
 
                 // Загружаем существующее содержимое
                 if (contentTextarea) {
-                    var content = contentTextarea.value || '';
-                    console.log('Loading content into Quill, length:', content.length);
-                    if (content) {
-                        quillEditor.root.innerHTML = content;
-                        console.log('Content loaded into Quill');
+                    // Сначала пробуем взять из глобальной переменной, потом из textarea
+                    var content = (typeof window !== 'undefined' && window.articleContent) 
+                        ? window.articleContent 
+                        : (contentTextarea.value || '');
+                    
+                    console.log('Loading content into Quill');
+                    console.log('Content length:', content.length);
+                    console.log('Content preview:', content ? content.substring(0, 200) : 'EMPTY');
+                    console.log('Content from textarea:', contentTextarea.value ? contentTextarea.value.substring(0, 200) : 'EMPTY');
+                    
+                    if (content && content.trim() !== '' && content.trim() !== '<p><br></p>' && content.trim() !== '<p></p>') {
+                        try {
+                            // Используем clipboard API для более надежной загрузки
+                            var delta = quillEditor.clipboard.convert(content);
+                            quillEditor.setContents(delta);
+                            console.log('Content loaded into Quill successfully using clipboard convert');
+                        } catch (e) {
+                            console.error('Error loading content with clipboard convert:', e);
+                            try {
+                                // Fallback на прямое присвоение
+                                quillEditor.root.innerHTML = content;
+                                console.log('Content loaded into Quill using innerHTML');
+                            } catch (e2) {
+                                console.error('Error loading content with innerHTML:', e2);
+                            }
+                        }
                     } else {
-                        console.log('No content to load');
+                        console.log('No content to load (empty or only empty paragraph)');
+                        console.log('Content value:', content);
                     }
+                } else {
+                    console.error('Content textarea not found!');
                 }
 
                 // Обработчик загрузки изображений

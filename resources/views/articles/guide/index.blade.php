@@ -1,16 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" 
-      x-data="{ theme: 'light' }"
-      x-bind:class="{ 'dark': theme === 'dark' }"
-      x-init="
-        var savedTheme = localStorage.getItem('theme') || 'light';
-        theme = savedTheme;
-        if (savedTheme === 'dark') {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
-      ">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -154,31 +143,37 @@
                     <div class="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden card-shadow border border-gray-200 dark:border-gray-700">
                         <div class="p-6">
                             @forelse($articles as $article)
-                                <div class="mb-6 pb-6 border-b border-gray-200 dark:border-gray-700 last:border-0 last:pb-0 last:mb-0">
-                                    <h3 class="text-xl font-semibold text-purple-600 dark:text-purple-400 mb-3">
-                                        <a href="{{ route('guide.show', $article->slug) }}" class="hover:text-purple-800 dark:hover:text-purple-300 transition-colors">
-                                            {{ $article->title }}
-                                        </a>
-                                    </h3>
-                                    @if($article->questions_preview)
-                                        @php
-                                            // Разбиваем текст по строкам и фильтруем пустые
-                                            $questions = array_filter(
-                                                array_map('trim', explode("\n", $article->questions_preview)),
-                                                function($line) {
-                                                    return !empty($line);
-                                                }
-                                            );
-                                        @endphp
-                                        @if(count($questions) > 0)
-                                            <ul class="list-disc list-inside space-y-1 text-gray-600 dark:text-gray-400 text-sm mb-3 ml-4">
-                                                @foreach($questions as $question)
-                                                    <li>{{ $question }}</li>
-                                                @endforeach
-                                            </ul>
-                                        @endif
-                                    @endif
-                                </div>
+                                <a href="{{ route('guide.show', $article->slug) }}" class="block mb-4 p-5 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-gray-700 dark:to-gray-700 hover:from-purple-100 hover:to-blue-100 dark:hover:from-gray-600 dark:hover:to-gray-600 border-l-4 border-purple-500 dark:border-purple-400 rounded-r-lg transition-all duration-200 hover:shadow-lg group">
+                                    <div class="flex items-start justify-between">
+                                        <div class="flex-1">
+                                            <h3 class="text-xl font-bold text-purple-700 dark:text-purple-300 mb-3 group-hover:text-purple-900 dark:group-hover:text-purple-100 transition-colors flex items-center">
+                                                <i class="fas fa-book-open mr-3 text-purple-500 dark:text-purple-400"></i>
+                                                {{ $article->title }}
+                                            </h3>
+                                            @if($article->questions_preview)
+                                                @php
+                                                    // Разбиваем текст по строкам и фильтруем пустые
+                                                    $questions = array_filter(
+                                                        array_map('trim', explode("\n", $article->questions_preview)),
+                                                        function($line) {
+                                                            return !empty($line);
+                                                        }
+                                                    );
+                                                @endphp
+                                                @if(count($questions) > 0)
+                                                    <ul class="list-disc list-inside space-y-1.5 text-gray-700 dark:text-gray-300 text-sm ml-7">
+                                                        @foreach($questions as $question)
+                                                            <li>{{ $question }}</li>
+                                                        @endforeach
+                                                    </ul>
+                                                @endif
+                                            @endif
+                                        </div>
+                                        <div class="ml-4 flex-shrink-0">
+                                            <i class="fas fa-arrow-right text-purple-500 dark:text-purple-400 group-hover:text-purple-700 dark:group-hover:text-purple-300 group-hover:translate-x-1 transition-all duration-200"></i>
+                                        </div>
+                                    </div>
+                                </a>
                             @empty
                                 <p class="text-gray-500 dark:text-gray-400 text-center py-8">
                                     Инструкции пока не добавлены.
@@ -189,21 +184,5 @@
                 </main>
             </div>
         </div>
-
-        <script>
-            function toggleTheme() {
-                const html = document.documentElement;
-                const currentTheme = html.classList.contains('dark') ? 'dark' : 'light';
-                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-                
-                if (newTheme === 'dark') {
-                    html.classList.add('dark');
-                } else {
-                    html.classList.remove('dark');
-                }
-                
-                localStorage.setItem('theme', newTheme);
-            }
-        </script>
     </body>
 </html>
