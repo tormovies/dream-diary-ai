@@ -89,18 +89,26 @@
                         <label for="content" class="form-label required">
                             <i class="fas fa-align-left"></i> Текст статьи
                         </label>
-                        <div id="editor-container" style="min-height: 450px;" class="mt-1 border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden bg-white dark:bg-gray-700"></div>
-                        <textarea id="content" name="content" style="display: none;">{!! old('content', $article->content ?? '') !!}</textarea>
+                        <textarea id="content" name="content" class="mt-1" style="min-height: 450px;">{!! old('content', $article->content ?? '') !!}</textarea>
                         <script>
                             // Сохраняем контент в глобальную переменную для отладки
                             (function() {
                                 var contentFromTextarea = document.getElementById('content');
-                                var contentValue = contentFromTextarea ? contentFromTextarea.value : '';
-                                window.articleContent = contentValue;
-                                console.log('Article content from server (stored in window.articleContent):');
-                                console.log('Length:', contentValue ? contentValue.length : 0);
-                                console.log('Preview:', contentValue ? contentValue.substring(0, 300) : 'EMPTY');
-                                console.log('Is empty?', !contentValue || contentValue.trim() === '' || contentValue.trim() === '<p><br></p>');
+                                if (contentFromTextarea) {
+                                    var contentValue = contentFromTextarea.value || '';
+                                    window.articleContent = contentValue;
+                                    console.log('=== Article Content Debug ===');
+                                    console.log('Textarea found:', !!contentFromTextarea);
+                                    console.log('Content length:', contentValue ? contentValue.length : 0);
+                                    console.log('Content preview (first 500 chars):', contentValue ? contentValue.substring(0, 500) : 'EMPTY');
+                                    console.log('Content preview (last 200 chars):', contentValue && contentValue.length > 200 ? contentValue.substring(contentValue.length - 200) : 'N/A');
+                                    console.log('Is empty?', !contentValue || contentValue.trim() === '' || contentValue.trim() === '<p><br></p>');
+                                    console.log('Raw textarea value exists:', !!contentFromTextarea.value);
+                                    console.log('Textarea innerHTML length:', contentFromTextarea.innerHTML ? contentFromTextarea.innerHTML.length : 0);
+                                    console.log('===========================');
+                                } else {
+                                    console.error('Textarea #content not found when trying to store content!');
+                                }
                             })();
                         </script>
                         <x-input-error class="mt-2" :messages="$errors->get('content')" />
@@ -167,85 +175,17 @@
         </div>
     </div>
 
-    <link href="{{ asset('js/quill/quill.snow.css') }}" rel="stylesheet">
+    <script src="{{ asset('js/tinymce/tinymce.min.js') }}"></script>
     <style>
-        /* Стилизация Quill редактора */
-        #editor-container .ql-container {
-            font-size: 15px;
-            line-height: 1.6;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        /* Стилизация TinyMCE редактора */
+        .tox-tinymce {
+            border-radius: 0.5rem !important;
         }
-        #editor-container .ql-editor {
-            min-height: 400px;
-            padding: 20px;
-        }
-        #editor-container .ql-toolbar {
-            border-top-left-radius: 0.5rem;
-            border-top-right-radius: 0.5rem;
-            border-bottom: 2px solid #e5e7eb;
-            background-color: #f9fafb;
-            padding: 12px;
-        }
-        .dark #editor-container .ql-toolbar {
-            background-color: #374151;
-            border-bottom-color: #4b5563;
-        }
-        #editor-container .ql-toolbar .ql-stroke {
-            stroke: #4b5563;
-        }
-        .dark #editor-container .ql-toolbar .ql-stroke {
-            stroke: #d1d5db;
-        }
-        #editor-container .ql-toolbar .ql-fill {
-            fill: #4b5563;
-        }
-        .dark #editor-container .ql-toolbar .ql-fill {
-            fill: #d1d5db;
-        }
-        #editor-container .ql-toolbar button:hover,
-        #editor-container .ql-toolbar button.ql-active {
-            color: #6366f1;
-        }
-        .dark #editor-container .ql-toolbar button:hover,
-        .dark #editor-container .ql-toolbar button.ql-active {
-            color: #818cf8;
+        .tox .tox-editor-header {
+            border-top-left-radius: 0.5rem !important;
+            border-top-right-radius: 0.5rem !important;
         }
     </style>
-    <script>
-        console.log('Article edit script started');
-        
-        // Загружаем Quill динамически
-        (function() {
-            // Проверяем, не загружен ли уже Quill
-            if (typeof Quill !== 'undefined') {
-                console.log('Quill already loaded');
-                if (document.readyState === 'loading') {
-                    document.addEventListener('DOMContentLoaded', initQuill);
-                } else {
-                    setTimeout(initQuill, 100);
-                }
-                return;
-            }
-            
-            var quillScript = document.createElement('script');
-            quillScript.src = '{{ asset('js/quill/quill.min.js') }}';
-            quillScript.onload = function() {
-                console.log('Quill script loaded');
-                // Ждем, пока DOM полностью загружен
-                if (document.readyState === 'loading') {
-                    document.addEventListener('DOMContentLoaded', function() {
-                        setTimeout(initQuill, 100);
-                    });
-                } else {
-                    setTimeout(initQuill, 100);
-                }
-            };
-            quillScript.onerror = function() {
-                console.error('Failed to load Quill script from:', quillScript.src);
-            };
-            document.head.appendChild(quillScript);
-        })();
-    </script>
     <script>
         // Функция транслитерации
         function transliterate(text) {
@@ -265,139 +205,10 @@
             return result.replace(/-+/g, '-').replace(/^-|-$/g, '');
         }
 
-        var quillEditor = null;
-
-        function initQuill() {
-            console.log('Initializing Quill...');
-            console.log('Quill available:', typeof Quill !== 'undefined');
-            
-            var editorContainer = document.getElementById('editor-container');
-            var contentTextarea = document.getElementById('content');
-            
-            console.log('Editor container found:', !!editorContainer);
-            console.log('Content textarea found:', !!contentTextarea);
-            
-            if (!editorContainer) {
-                console.error('Editor container not found!');
-                return;
-            }
-            
-            if (typeof Quill === 'undefined') {
-                console.error('Quill library not loaded!');
-                setTimeout(initQuill, 100);
-                return;
-            }
-            
-            try {
-                quillEditor = new Quill('#editor-container', {
-                    theme: 'snow',
-                    modules: {
-                        toolbar: [
-                            [{ 'header': [1, 2, 3, false] }],
-                            ['bold', 'italic', 'underline', 'strike'],
-                            [{ 'color': [] }, { 'background': [] }],
-                            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                            [{ 'align': [] }],
-                            ['link', 'image', 'video'],
-                            ['blockquote', 'code-block'],
-                            ['clean']
-                        ],
-                        // Настройка clipboard для сохранения всех атрибутов и классов
-                        clipboard: {
-                            matchVisual: false  // Не пытаться "очистить" HTML, сохранять как есть
-                        }
-                    },
-                    placeholder: 'Введите текст статьи...'
-                });
-
-                // Загружаем существующее содержимое
-                if (contentTextarea) {
-                    // Сначала пробуем взять из глобальной переменной, потом из textarea
-                    var content = (typeof window !== 'undefined' && window.articleContent) 
-                        ? window.articleContent 
-                        : (contentTextarea.value || '');
-                    
-                    console.log('Loading content into Quill');
-                    console.log('Content length:', content.length);
-                    console.log('Content preview:', content ? content.substring(0, 300) : 'EMPTY');
-                    
-                    if (content && content.trim() !== '' && content.trim() !== '<p><br></p>' && content.trim() !== '<p></p>') {
-                        // КРИТИЧЕСКИ ВАЖНО: Используем innerHTML напрямую для сохранения ВСЕГО форматирования
-                        // Quill clipboard.convert() и dangerouslyPasteHTML() могут терять Tailwind классы
-                        // и сложную структуру HTML. Прямая установка innerHTML сохраняет всё.
-                        // Это позволяет видеть и редактировать контент с сохранением всего форматирования.
-                        quillEditor.root.innerHTML = content;
-                        console.log('Content loaded into Quill successfully using innerHTML (preserves all formatting)');
-                        
-                        // Сохраняем исходный HTML в data-атрибут для отслеживания изменений
-                        if (quillEditor.root.dataset) {
-                            quillEditor.root.dataset.originalHtml = content;
-                        }
-                    } else {
-                        console.log('No content to load (empty or only empty paragraph)');
-                    }
-                } else {
-                    console.error('Content textarea not found!');
-                }
-
-                // Обработчик загрузки изображений
-                var toolbar = quillEditor.getModule('toolbar');
-                toolbar.addHandler('image', function() {
-                    var input = document.createElement('input');
-                    input.setAttribute('type', 'file');
-                    input.setAttribute('accept', 'image/*');
-                    input.click();
-                    
-                    input.onchange = function() {
-                        var file = input.files[0];
-                        if (file) {
-                            var formData = new FormData();
-                            formData.append('file', file);
-                            
-                            var xhr = new XMLHttpRequest();
-                            xhr.open('POST', '{{ route('admin.articles.image-upload') }}');
-                            xhr.setRequestHeader('X-CSRF-TOKEN', '{{ csrf_token() }}');
-                            
-                            xhr.onload = function() {
-                                if (xhr.status === 200) {
-                                    var response = JSON.parse(xhr.responseText);
-                                    if (response.location) {
-                                        var range = quillEditor.getSelection(true);
-                                        quillEditor.insertEmbed(range.index, 'image', response.location);
-                                    }
-                                } else {
-                                    alert('Ошибка загрузки изображения');
-                                }
-                            };
-                            
-                            xhr.onerror = function() {
-                                alert('Ошибка загрузки изображения');
-                            };
-                            
-                            xhr.send(formData);
-                        }
-                    };
-                });
-
-                // Обработчик загрузки видео
-                toolbar.addHandler('video', function() {
-                    var url = prompt('Введите URL видео:');
-                    if (url) {
-                        var range = quillEditor.getSelection(true);
-                        quillEditor.insertEmbed(range.index, 'video', url);
-                    }
-                });
-
-                console.log('Quill editor initialized successfully');
-            } catch (e) {
-                console.error('Error initializing Quill:', e);
-            }
-        }
-
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM loaded');
+            console.log('DOM loaded - initializing TinyMCE');
             
-            // Автогенерация slug (только если slug пустой)
+            // Автогенерация slug
             var titleInput = document.getElementById('title');
             var slugInput = document.getElementById('slug');
             if (titleInput && slugInput && !slugInput.value) {
@@ -414,39 +225,150 @@
                 });
             }
             
-            // Инициализация Quill будет вызвана после загрузки скрипта
-            // (см. обработчик onload выше)
+            // Инициализация TinyMCE
+            function initEditor() {
+                if (typeof tinymce !== 'undefined') {
+                    console.log('TinyMCE loaded, initializing editor');
+                    tinymce.init({
+                        license_key: 'gpl',
+                        selector: '#content',
+                        height: 600,
+                        menubar: false,
+                        plugins: [
+                            'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+                            'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+                            'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
+                        ],
+                        toolbar: 'undo redo | blocks | ' +
+                            'bold italic underline strikethrough | forecolor backcolor | ' +
+                            'alignleft aligncenter alignright alignjustify | ' +
+                            'bullist numlist | outdent indent | ' +
+                            'link image | code | fullscreen | help',
+                        content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 15px; line-height: 1.6; }',
+                        // Важно: сохраняем все теги и атрибуты, включая details и summary
+                        valid_elements: '*[*]',
+                        extended_valid_elements: '*[*]',
+                        valid_children: '*[*]',
+                        cleanup: false,
+                        verify_html: false,
+                        // Отключаем автоматическую очистку HTML
+                        remove_trailing_brs: false,
+                        // Разрешаем details и summary в схеме
+                        schema: 'html5',
+                        // Отключаем все фильтры, которые могут удалить details/summary
+                        convert_urls: false,
+                        remove_script_host: false,
+                        // Сохраняем HTML как есть
+                        preserve_cdata: true,
+                        // Используем p как корневой блок (по умолчанию)
+                        forced_root_block: 'p',
+                        // Путь к скинам и плагинам
+                        skin_url: '{{ asset('js/tinymce/skins/ui/oxide') }}',
+                        content_css: '{{ asset('js/tinymce/skins/content/default/content.min.css') }}',
+                        // Отключаем загрузку плагина licensekeymanager
+                        plugins_url: '{{ asset('js/tinymce') }}',
+                        // Настройка загрузки изображений
+                        images_upload_handler: function (blobInfo, progress) {
+                            return new Promise(function (resolve, reject) {
+                                var formData = new FormData();
+                                formData.append('file', blobInfo.blob(), blobInfo.filename());
+                                
+                                var xhr = new XMLHttpRequest();
+                                xhr.open('POST', '{{ route('admin.articles.image-upload') }}');
+                                xhr.setRequestHeader('X-CSRF-TOKEN', '{{ csrf_token() }}');
+                                
+                                xhr.upload.onprogress = function (e) {
+                                    progress(e.loaded / e.total * 100);
+                                };
+                                
+                                xhr.onload = function () {
+                                    if (xhr.status === 200) {
+                                        var response = JSON.parse(xhr.responseText);
+                                        if (response.location) {
+                                            resolve(response.location);
+                                        } else {
+                                            reject('Invalid JSON: ' + xhr.responseText);
+                                        }
+                                    } else {
+                                        reject('HTTP Error: ' + xhr.status);
+                                    }
+                                };
+                                
+                                xhr.onerror = function () {
+                                    reject('Image upload failed');
+                                };
+                                
+                                xhr.send(formData);
+                            });
+                        },
+                        setup: function(editor) {
+                            console.log('TinyMCE editor initialized successfully');
+                            
+                            // При загрузке контента - загружаем напрямую из textarea
+                            editor.on('init', function() {
+                                var textarea = document.getElementById('content');
+                                if (textarea && textarea.value) {
+                                    var content = textarea.value;
+                                    console.log('Loading content from textarea, length:', content.length);
+                                    console.log('Contains details:', content.includes('<details'));
+                                    
+                                    // Загружаем контент напрямую в body, обходя обработку TinyMCE
+                                    editor.getBody().innerHTML = content;
+                                    
+                                    // Проверяем, что details загрузились
+                                    var detailsElements = editor.getBody().querySelectorAll('details');
+                                    console.log('Details elements after load:', detailsElements.length);
+                                    
+                                    if (detailsElements.length === 0 && content.includes('<details')) {
+                                        console.warn('Details were removed! Trying to restore...');
+                                        // Пытаемся восстановить
+                                        editor.getBody().innerHTML = content;
+                                    }
+                                }
+                            });
+                            
+                            // При получении контента - всегда используем innerHTML
+                            editor.on('GetContent', function(e) {
+                                // Всегда получаем HTML напрямую из DOM
+                                if (editor.getBody().querySelector('details')) {
+                                    e.content = editor.getBody().innerHTML;
+                                    console.log('Content retrieved from DOM, contains details:', e.content.includes('<details'));
+                                }
+                            });
+                        }
+                    });
+                } else {
+                    console.log('Waiting for TinyMCE to load...');
+                    setTimeout(initEditor, 100);
+                }
+            }
             
-            // Синхронизация Quill с textarea перед отправкой формы
+            initEditor();
+            
+            // Обработчик отправки формы - сохраняем содержимое TinyMCE напрямую
             var form = document.getElementById('article-form');
             if (form) {
                 form.addEventListener('submit', function(e) {
-                    var contentTextarea = document.getElementById('content');
-                    if (quillEditor && contentTextarea) {
-                        // ВАЖНО: Используем root.innerHTML для сохранения ВСЕГО форматирования
-                        // включая Tailwind классы и сложную структуру HTML
-                        var html = quillEditor.root.innerHTML;
-                        var text = quillEditor.getText().trim();
-                        
-                        console.log('Form submit - HTML length:', html.length);
-                        console.log('Form submit - Text length:', text.length);
-                        console.log('Form submit - HTML preview:', html.substring(0, 500));
-                        
-                        if (!text) {
-                            e.preventDefault();
-                            alert('Пожалуйста, заполните поле "Текст статьи"');
-                            quillEditor.focus();
-                            return false;
+                    // Получаем редактор
+                    if (typeof tinymce !== 'undefined') {
+                        var editor = tinymce.get('content');
+                        if (editor) {
+                            // Получаем HTML напрямую из DOM, обходя возможную очистку TinyMCE
+                            // Используем innerHTML напрямую, чтобы получить весь HTML без обработки
+                            var content = editor.getBody().innerHTML;
+                            
+                            console.log('Saving content from editor body, length:', content.length);
+                            console.log('Contains details:', content.includes('<details'));
+                            console.log('Contains summary:', content.includes('<summary'));
+                            
+                            // Сохраняем в textarea
+                            var textarea = document.getElementById('content');
+                            if (textarea) {
+                                textarea.value = content;
+                                console.log('Content saved to textarea, length:', content.length);
+                                console.log('Contains details:', content.includes('<details'));
+                            }
                         }
-                        
-                        // Сохраняем полный HTML в textarea (сохраняет все форматирование)
-                        contentTextarea.value = html;
-                        console.log('Content saved to textarea, length:', contentTextarea.value.length);
-                    } else {
-                        console.error('Quill editor or textarea not found!', {
-                            quillEditor: !!quillEditor,
-                            contentTextarea: !!contentTextarea
-                        });
                     }
                 });
             }

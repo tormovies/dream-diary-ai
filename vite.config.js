@@ -4,10 +4,15 @@ import laravel from 'laravel-vite-plugin';
 export default defineConfig({
     plugins: [
         laravel({
-            input: ['resources/css/app.css', 'resources/js/app.js'],
+            input: ['resources/css/app.css', 'resources/js/app.js', 'resources/js/tinymce-init.js'],
             refresh: true,
         }),
     ],
+    resolve: {
+        alias: {
+            // Убеждаемся, что TinyMCE правильно резолвится
+        }
+    },
     build: {
         // Минификация
         minify: 'terser',

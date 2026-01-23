@@ -17,7 +17,7 @@
         @else
             <title>Инструкции - {{ config('app.name', 'Дневник сновидений') }}</title>
         @endif
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
+        @vite(['resources/css/app.css', 'resources/css/articles.css', 'resources/js/app.js'])
         <x-header-styles />
     </head>
     <body class="font-sans antialiased bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
@@ -141,26 +141,6 @@
 
                     <!-- Список инструкций -->
                     <div class="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden card-shadow border border-gray-200 dark:border-gray-700">
-                        <style>
-                            /* Стили для ссылок на инструкции - розовый градиент при наведении */
-                            .guide-item-link {
-                                background: linear-gradient(to right, #faf5ff, #eff6ff) !important;
-                            }
-                            .guide-item-link:hover {
-                                background: linear-gradient(to right, #f3e8ff, #dbeafe) !important;
-                            }
-                            /* Для темной темы */
-                            .dark .guide-item-link {
-                                background: #374151 !important;
-                            }
-                            .dark .guide-item-link:hover {
-                                background: #4b5563 !important;
-                            }
-                            /* Переопределяем Tailwind классы для гарантии работы на продакшене */
-                            .guide-item-link.bg-gradient-to-r.from-purple-50.to-blue-50:hover {
-                                background: linear-gradient(to right, #f3e8ff, #dbeafe) !important;
-                            }
-                        </style>
                         <div class="p-6">
                             @forelse($articles as $article)
                                 <a href="{{ route('guide.show', $article->slug) }}" class="guide-item-link block mb-4 p-5 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-gray-700 dark:to-gray-700 hover:from-purple-100 hover:to-blue-100 dark:hover:from-gray-600 dark:hover:to-gray-600 border-l-4 border-purple-500 dark:border-purple-400 rounded-r-lg transition-all duration-200 hover:shadow-lg group">

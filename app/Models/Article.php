@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Helpers\ArticleContentHelper;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -88,6 +89,23 @@ class Article extends Model
             $this->attributes['slug'] = $this->generateUniqueSlug($this->attributes['title']);
         } else {
             $this->attributes['slug'] = $value;
+        }
+    }
+
+    /**
+     * Автоматическая очистка контента от инлайн стилей и неподдерживаемых тегов
+     * И преобразование h2 в details/summary для статей типа 'guide', если TinyMCE удалил их
+     */
+    public function setContentAttribute($value)
+    {
+        if (!empty($value)) {
+            // Сначала преобразуем h2 в details/summary (только для guide, если их нет)
+            $articleType = $this->attributes['type'] ?? $this->type ?? null;
+            $value = ArticleContentHelper::convertH2ToDetails($value, $articleType);
+            // Затем очищаем от инлайн стилей
+            $this->attributes['content'] = ArticleContentHelper::sanitize($value);
+        } else {
+            $this->attributes['content'] = $value;
         }
     }
 
