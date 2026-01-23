@@ -301,7 +301,11 @@
                             ['link', 'image', 'video'],
                             ['blockquote', 'code-block'],
                             ['clean']
-                        ]
+                        ],
+                        // Настройка clipboard для сохранения всех атрибутов и классов
+                        clipboard: {
+                            matchVisual: false  // Не пытаться "очистить" HTML, сохранять как есть
+                        }
                     },
                     placeholder: 'Введите текст статьи...'
                 });
@@ -315,28 +319,22 @@
                     
                     console.log('Loading content into Quill');
                     console.log('Content length:', content.length);
-                    console.log('Content preview:', content ? content.substring(0, 200) : 'EMPTY');
-                    console.log('Content from textarea:', contentTextarea.value ? contentTextarea.value.substring(0, 200) : 'EMPTY');
+                    console.log('Content preview:', content ? content.substring(0, 300) : 'EMPTY');
                     
                     if (content && content.trim() !== '' && content.trim() !== '<p><br></p>' && content.trim() !== '<p></p>') {
-                        try {
-                            // Используем clipboard API для более надежной загрузки
-                            var delta = quillEditor.clipboard.convert(content);
-                            quillEditor.setContents(delta);
-                            console.log('Content loaded into Quill successfully using clipboard convert');
-                        } catch (e) {
-                            console.error('Error loading content with clipboard convert:', e);
-                            try {
-                                // Fallback на прямое присвоение
-                                quillEditor.root.innerHTML = content;
-                                console.log('Content loaded into Quill using innerHTML');
-                            } catch (e2) {
-                                console.error('Error loading content with innerHTML:', e2);
-                            }
+                        // КРИТИЧЕСКИ ВАЖНО: Используем innerHTML напрямую для сохранения ВСЕГО форматирования
+                        // Quill clipboard.convert() и dangerouslyPasteHTML() могут терять Tailwind классы
+                        // и сложную структуру HTML. Прямая установка innerHTML сохраняет всё.
+                        // Это позволяет видеть и редактировать контент с сохранением всего форматирования.
+                        quillEditor.root.innerHTML = content;
+                        console.log('Content loaded into Quill successfully using innerHTML (preserves all formatting)');
+                        
+                        // Сохраняем исходный HTML в data-атрибут для отслеживания изменений
+                        if (quillEditor.root.dataset) {
+                            quillEditor.root.dataset.originalHtml = content;
                         }
                     } else {
                         console.log('No content to load (empty or only empty paragraph)');
-                        console.log('Content value:', content);
                     }
                 } else {
                     console.error('Content textarea not found!');
@@ -425,11 +423,14 @@
                 form.addEventListener('submit', function(e) {
                     var contentTextarea = document.getElementById('content');
                     if (quillEditor && contentTextarea) {
+                        // ВАЖНО: Используем root.innerHTML для сохранения ВСЕГО форматирования
+                        // включая Tailwind классы и сложную структуру HTML
                         var html = quillEditor.root.innerHTML;
                         var text = quillEditor.getText().trim();
                         
                         console.log('Form submit - HTML length:', html.length);
                         console.log('Form submit - Text length:', text.length);
+                        console.log('Form submit - HTML preview:', html.substring(0, 500));
                         
                         if (!text) {
                             e.preventDefault();
@@ -438,7 +439,7 @@
                             return false;
                         }
                         
-                        // Сохраняем HTML в textarea
+                        // Сохраняем полный HTML в textarea (сохраняет все форматирование)
                         contentTextarea.value = html;
                         console.log('Content saved to textarea, length:', contentTextarea.value.length);
                     } else {
@@ -446,27 +447,6 @@
                             quillEditor: !!quillEditor,
                             contentTextarea: !!contentTextarea
                         });
-                    }
-                });
-            }
-            
-            // Синхронизация Quill с textarea перед отправкой формы
-            var form = document.getElementById('article-form');
-            if (form) {
-                form.addEventListener('submit', function(e) {
-                    if (quillEditor) {
-                        var html = quillEditor.root.innerHTML;
-                        var text = quillEditor.getText().trim();
-                        
-                        if (!text) {
-                            e.preventDefault();
-                            alert('Пожалуйста, заполните поле "Текст статьи"');
-                            quillEditor.focus();
-                            return false;
-                        }
-                        
-                        // Сохраняем HTML в textarea
-                        contentTextarea.value = html;
                     }
                 });
             }
