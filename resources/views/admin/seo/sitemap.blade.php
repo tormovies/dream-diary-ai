@@ -65,6 +65,29 @@
                             </p>
                         </div>
 
+                        <!-- Настройка количества ссылок при перелинковке -->
+                        <div class="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600">
+                            <label for="linking_links_count" class="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                                Количество ссылок при перелинковке
+                            </label>
+                            <div class="flex items-center gap-3">
+                                <input type="number" 
+                                       id="linking_links_count" 
+                                       name="linking_links_count" 
+                                       value="{{ $linkingLinksCount }}" 
+                                       min="1" 
+                                       max="20" 
+                                       step="1"
+                                       class="w-24 px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                                <span class="text-xs text-gray-600 dark:text-gray-400">
+                                    (минимум: 1, максимум: 20)
+                                </span>
+                            </div>
+                            <p class="text-xs text-gray-500 dark:text-gray-500 mt-1.5">
+                                Количество похожих/последних толкований, отображаемых в блоках перелинковки
+                            </p>
+                        </div>
+
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                             @foreach([
                                 'static' => ['name' => 'Статические страницы', 'description' => 'Главная, толкование снов, инструкции, статьи, активность'],
@@ -133,6 +156,36 @@
                             </button>
                         </div>
                     </form>
+                    
+                    <!-- Форма очистки кеша (отдельно от формы настроек) -->
+                    <div class="mt-4 flex justify-between items-center">
+                        <div class="flex items-center gap-4">
+                            <form method="POST" action="{{ route('admin.seo.sitemap.clear-cache') }}" class="inline">
+                                @csrf
+                                <button type="submit" 
+                                        onclick="return confirm('Вы уверены, что хотите очистить кеш sitemap? Это заставит систему перегенерировать все sitemap файлы при следующем запросе.')"
+                                        class="bg-orange-600 hover:bg-orange-700 text-white font-semibold py-1.5 px-4 rounded text-sm">
+                                    <i class="fas fa-sync-alt mr-2"></i>Очистить кеш sitemap
+                                </button>
+                            </form>
+                            @if($lastCacheUpdate && $lastCacheUpdate instanceof \Carbon\Carbon)
+                                <div class="text-xs {{ $cacheExists ? 'text-gray-600 dark:text-gray-400' : 'text-orange-600 dark:text-orange-400' }}">
+                                    <i class="fas fa-clock mr-1"></i>
+                                    @if($cacheExists)
+                                        Последнее обновление: {{ $lastCacheUpdate->format('d.m.Y H:i') }}
+                                    @else
+                                        Кеш очищен: {{ $lastCacheUpdate->format('d.m.Y H:i') }}<br>
+                                        <span class="text-xs">(будет пересоздан автоматически при запросе любого sitemap файла: /sitemap.xml, /sitemap-static.xml и т.д. - обычно это делают поисковые роботы)</span>
+                                    @endif
+                                </div>
+                            @else
+                                <div class="text-xs text-gray-500 dark:text-gray-500">
+                                    <i class="fas fa-clock mr-1"></i>
+                                    Кеш еще не был сгенерирован
+                                </div>
+                            @endif
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -142,6 +195,7 @@
                     <div>• Изменения применяются сразу после сохранения</div>
                     <div>• Отключенные типы контента не будут включены в sitemap index</div>
                     <div>• Статистика обновляется в реальном времени</div>
+                    <div>• Sitemap кешируется на 1 час для производительности</div>
                 </div>
             </div>
         </div>

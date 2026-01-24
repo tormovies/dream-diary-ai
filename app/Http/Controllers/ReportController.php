@@ -1043,14 +1043,25 @@ class ReportController extends Controller
         $userStats = null;
         $todayReportsCount = 0;
         
-        // Общая статистика для гостей
-        $stats = [
-            'users' => \App\Models\User::count(),
-            'reports' => \App\Models\Report::count(),
-            'dreams' => \App\Models\Dream::count(),
-            'comments' => \App\Models\Comment::count(),
-            'tags' => \App\Models\Tag::count(),
-        ];
+        // Общая статистика (с кешированием, как в DreamAnalyzerController)
+        $stats = \Illuminate\Support\Facades\Cache::remember('global_statistics', 900, function () {
+            $minDate = \Carbon\Carbon::create(2026, 1, 16, 0, 0, 0);
+            return [
+                'users' => \App\Models\User::count(),
+                'reports' => \App\Models\Report::where('status', 'published')->count(),
+                'dreams' => \Illuminate\Support\Facades\DB::table('dreams')
+                    ->join('reports', 'dreams.report_id', '=', 'reports.id')
+                    ->where('reports.status', 'published')
+                    ->count(),
+                'comments' => \App\Models\Comment::count(),
+                'tags' => \App\Models\Tag::count(),
+                'interpretations' => \App\Models\DreamInterpretation::where('processing_status', 'completed')
+                    ->whereNull('api_error')
+                    ->whereHas('result')
+                    ->where('created_at', '>=', $minDate)
+                    ->count(),
+            ];
+        });
         
         if ($user) {
             $userReportsCount = $user->reports()->count();
@@ -1076,7 +1087,10 @@ class ReportController extends Controller
             $todayReportsCount = \App\Models\Report::whereDate('report_date', today())->where('status', 'published')->count();
         }
         
-        return view('reports.analysis', compact('report', 'interpretation', 'seo', 'userStats', 'todayReportsCount', 'stats'));
+        // Получаем похожие толкования для перелинковки (лимит из настроек)
+        $similarInterpretations = \App\Helpers\InterpretationLinkHelper::getSimilarInterpretations($interpretation);
+        
+        return view('reports.analysis', compact('report', 'interpretation', 'seo', 'userStats', 'todayReportsCount', 'stats', 'similarInterpretations'));
     }
 
     /**

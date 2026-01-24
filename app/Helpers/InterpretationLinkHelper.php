@@ -15,8 +15,13 @@ class InterpretationLinkHelper
      * @param int $limit Количество похожих толкований (по умолчанию 5)
      * @return \Illuminate\Support\Collection
      */
-    public static function getSimilarInterpretations(DreamInterpretation $interpretation, int $limit = 5)
+    public static function getSimilarInterpretations(DreamInterpretation $interpretation, ?int $limit = null)
     {
+        // Получаем лимит из настроек, если не передан
+        if ($limit === null) {
+            $limit = (int)\App\Models\Setting::getValue('sitemap.linking_links_count', 5);
+        }
+        
         // Получаем SEO данные текущего толкования
         $currentSeo = SeoHelper::forDreamAnalyzerResult($interpretation);
         
@@ -52,8 +57,13 @@ class InterpretationLinkHelper
      * @param int $limit Количество
      * @return \Illuminate\Support\Collection
      */
-    public static function getLatestInterpretations(int $excludeId = 0, int $limit = 5)
+    public static function getLatestInterpretations(int $excludeId = 0, ?int $limit = null)
     {
+        // Получаем лимит из настроек, если не передан
+        if ($limit === null) {
+            $limit = (int)\App\Models\Setting::getValue('sitemap.linking_links_count', 5);
+        }
+        
         $minDate = \Carbon\Carbon::create(2026, 1, 16, 0, 0, 0);
         
         $query = DreamInterpretation::where('processing_status', 'completed')

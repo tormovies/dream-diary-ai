@@ -366,8 +366,8 @@ class DreamAnalyzerController extends Controller
         $layoutData = $this->getLayoutData();
         $seo = \App\Helpers\SeoHelper::forDreamAnalyzerResult($interpretation);
         
-        // Получаем похожие толкования для перелинковки
-        $similarInterpretations = \App\Helpers\InterpretationLinkHelper::getSimilarInterpretations($interpretation, 5);
+        // Получаем похожие толкования для перелинковки (лимит из настроек)
+        $similarInterpretations = \App\Helpers\InterpretationLinkHelper::getSimilarInterpretations($interpretation);
 
         return view('dream-analyzer.show', array_merge(compact('interpretation', 'request', 'similarInterpretations'), $layoutData, compact('seo')));
     }

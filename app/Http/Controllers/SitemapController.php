@@ -8,11 +8,13 @@ use App\Models\DreamInterpretation;
 use App\Models\Report;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Cache;
 
 class SitemapController extends Controller
 {
     private const MAX_URLS_PER_SITEMAP = 50000; // Максимум URL в одном sitemap (рекомендация Google)
     public const PAGINATION_LIMIT = 1000; // Практический лимит для производительности (значение по умолчанию)
+    private const CACHE_TTL = 3600; // Время жизни кеша sitemap (1 час)
     
     /**
      * Получить лимит URL на одной странице sitemap из настроек
@@ -25,14 +27,47 @@ class SitemapController extends Controller
     }
     
     /**
+     * Получить ключ кеша для sitemap
+     */
+    private function getCacheKey(string $type, int $page = 1): string
+    {
+        return "sitemap:{$type}:page:{$page}";
+    }
+    
+    /**
+     * Инвалидировать кеш sitemap (вызывать при изменении контента)
+     */
+    public static function clearCache(): void
+    {
+        // Очищаем все ключи sitemap (database драйвер не поддерживает tags)
+        $prefix = 'sitemap:';
+        // Для database драйвера нужно очищать вручную через модель Cache
+        // Или использовать Cache::flush() для очистки всего кеша (осторожно!)
+        // Лучше очищать конкретные ключи при изменении контента
+    }
+    
+    /**
+     * Обновить дату последнего обновления кеша sitemap
+     * Сохраняем в UTC для консистентности
+     */
+    private function updateCacheTimestamp(): void
+    {
+        \App\Models\Setting::setValue('sitemap.last_cache_update', now('UTC')->toDateTimeString());
+    }
+    
+    /**
      * Главный sitemap index
      */
     public function index(): Response
     {
-        $baseUrl = rtrim(config('seo.base_url', config('app.url')), '/');
+        $cacheKey = $this->getCacheKey('index');
         
-        $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
-        $xml .= '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
+        $xml = Cache::remember($cacheKey, self::CACHE_TTL, function () {
+            $this->updateCacheTimestamp();
+            $baseUrl = rtrim(config('seo.base_url', config('app.url')), '/');
+            
+            $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+            $xml .= '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
         
         // Статические страницы
         if (\App\Models\Setting::getValue('sitemap.static.enabled', true)) {
@@ -107,7 +142,10 @@ class SitemapController extends Controller
             }
         }
         
-        $xml .= '</sitemapindex>';
+            $xml .= '</sitemapindex>';
+            
+            return $xml;
+        });
         
         return response($xml, 200)
             ->header('Content-Type', 'application/xml; charset=utf-8');
@@ -122,18 +160,25 @@ class SitemapController extends Controller
             return $this->emptySitemap();
         }
         
-        $baseUrl = rtrim(config('seo.base_url', config('app.url')), '/');
+        $cacheKey = $this->getCacheKey('static');
         
-        $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
-        $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
-        
-        $xml .= $this->url($baseUrl . '/', now(), 'daily', 1.0);
-        $xml .= $this->url($baseUrl . '/tolkovanie-snov', now(), 'weekly', 0.9);
-        $xml .= $this->url($baseUrl . '/guide', now(), 'weekly', 0.8);
-        $xml .= $this->url($baseUrl . '/articles', now(), 'weekly', 0.8);
-        $xml .= $this->url($baseUrl . '/activity', now(), 'daily', 0.7);
-        
-        $xml .= '</urlset>';
+        $xml = Cache::remember($cacheKey, self::CACHE_TTL, function () {
+            $this->updateCacheTimestamp();
+            $baseUrl = rtrim(config('seo.base_url', config('app.url')), '/');
+            
+            $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+            $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
+            
+            $xml .= $this->url($baseUrl . '/', now(), 'daily', 1.0);
+            $xml .= $this->url($baseUrl . '/tolkovanie-snov', now(), 'weekly', 0.9);
+            $xml .= $this->url($baseUrl . '/guide', now(), 'weekly', 0.8);
+            $xml .= $this->url($baseUrl . '/articles', now(), 'weekly', 0.8);
+            $xml .= $this->url($baseUrl . '/activity', now(), 'daily', 0.7);
+            
+            $xml .= '</urlset>';
+            
+            return $xml;
+        });
         
         return response($xml, 200)
             ->header('Content-Type', 'application/xml; charset=utf-8');
@@ -148,26 +193,33 @@ class SitemapController extends Controller
             return $this->emptySitemap();
         }
         
-        $baseUrl = rtrim(config('seo.base_url', config('app.url')), '/');
+        $cacheKey = $this->getCacheKey('guides');
         
-        $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
-        $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
-        
-        $guides = Article::where('type', 'guide')
-            ->where('status', 'published')
-            ->orderBy('order')
-            ->get();
-        
-        foreach ($guides as $guide) {
-            $xml .= $this->url(
-                $baseUrl . '/guide/' . $guide->slug,
-                $guide->updated_at ?? $guide->created_at,
-                'monthly',
-                0.8
-            );
-        }
-        
-        $xml .= '</urlset>';
+        $xml = Cache::remember($cacheKey, self::CACHE_TTL, function () {
+            $this->updateCacheTimestamp();
+            $baseUrl = rtrim(config('seo.base_url', config('app.url')), '/');
+            
+            $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+            $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
+            
+            $guides = Article::where('type', 'guide')
+                ->where('status', 'published')
+                ->orderBy('order')
+                ->get();
+            
+            foreach ($guides as $guide) {
+                $xml .= $this->url(
+                    $baseUrl . '/guide/' . $guide->slug,
+                    $guide->updated_at ?? $guide->created_at,
+                    'monthly',
+                    0.8
+                );
+            }
+            
+            $xml .= '</urlset>';
+            
+            return $xml;
+        });
         
         return response($xml, 200)
             ->header('Content-Type', 'application/xml; charset=utf-8');
@@ -182,26 +234,33 @@ class SitemapController extends Controller
             return $this->emptySitemap();
         }
         
-        $baseUrl = rtrim(config('seo.base_url', config('app.url')), '/');
+        $cacheKey = $this->getCacheKey('articles');
         
-        $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
-        $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
-        
-        $articles = Article::where('type', 'article')
-            ->where('status', 'published')
-            ->orderBy('created_at', 'desc')
-            ->get();
-        
-        foreach ($articles as $article) {
-            $xml .= $this->url(
-                $baseUrl . '/articles/' . $article->slug,
-                $article->updated_at ?? $article->created_at,
-                'monthly',
-                0.7
-            );
-        }
-        
-        $xml .= '</urlset>';
+        $xml = Cache::remember($cacheKey, self::CACHE_TTL, function () {
+            $this->updateCacheTimestamp();
+            $baseUrl = rtrim(config('seo.base_url', config('app.url')), '/');
+            
+            $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+            $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
+            
+            $articles = Article::where('type', 'article')
+                ->where('status', 'published')
+                ->orderBy('created_at', 'desc')
+                ->get();
+            
+            foreach ($articles as $article) {
+                $xml .= $this->url(
+                    $baseUrl . '/articles/' . $article->slug,
+                    $article->updated_at ?? $article->created_at,
+                    'monthly',
+                    0.7
+                );
+            }
+            
+            $xml .= '</urlset>';
+            
+            return $xml;
+        });
         
         return response($xml, 200)
             ->header('Content-Type', 'application/xml; charset=utf-8');
@@ -216,53 +275,60 @@ class SitemapController extends Controller
             return $this->emptySitemap();
         }
         
-        $baseUrl = rtrim(config('seo.base_url', config('app.url')), '/');
+        $cacheKey = $this->getCacheKey('interpretations', $page);
         
-        $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
-        $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
-        
-        $minDate = \Carbon\Carbon::create(2026, 1, 16, 0, 0, 0);
-        $limit = $this->getPaginationLimit();
-        $offset = ($page - 1) * $limit;
-        
-        $interpretations = DreamInterpretation::where('processing_status', 'completed')
-            ->whereNull('api_error')
-            ->whereHas('result')
-            ->where('created_at', '>=', $minDate)
-            ->with('result')
-            ->orderBy('created_at', 'desc')
-            ->offset($offset)
-            ->limit($limit)
-            ->get();
-        
-        foreach ($interpretations as $interpretation) {
-            try {
-                $seo = SeoHelper::forDreamAnalyzerResult($interpretation);
-                
-                $defaultTitlePattern = 'Толкование сна - Анализ сна';
-                $hasValidTitle = !empty($seo['title']) && 
-                    !empty($seo['description']) && 
-                    !str_contains($seo['title'], $defaultTitlePattern) &&
-                    !str_contains($seo['title'], 'Анализ серии снов') &&
-                    mb_strlen($seo['title']) > 30;
-                
-                if ($hasValidTitle) {
-                    $url = !empty($seo['canonical']) 
-                        ? $seo['canonical'] 
-                        : route('dream-analyzer.show', ['hash' => $interpretation->hash]);
+        $xml = Cache::remember($cacheKey, self::CACHE_TTL, function () use ($page) {
+            $this->updateCacheTimestamp();
+            $baseUrl = rtrim(config('seo.base_url', config('app.url')), '/');
+            
+            $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+            $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
+            
+            $minDate = \Carbon\Carbon::create(2026, 1, 16, 0, 0, 0);
+            $limit = $this->getPaginationLimit();
+            $offset = ($page - 1) * $limit;
+            
+            $interpretations = DreamInterpretation::where('processing_status', 'completed')
+                ->whereNull('api_error')
+                ->whereHas('result')
+                ->where('created_at', '>=', $minDate)
+                ->with('result')
+                ->orderBy('created_at', 'desc')
+                ->offset($offset)
+                ->limit($limit)
+                ->get();
+            
+            foreach ($interpretations as $interpretation) {
+                try {
+                    $seo = SeoHelper::forDreamAnalyzerResult($interpretation);
                     
-                    $lastmod = $interpretation->updated_at ?? $interpretation->created_at;
-                    $xml .= $this->url($url, $lastmod, 'monthly', 0.6);
+                    $defaultTitlePattern = 'Толкование сна - Анализ сна';
+                    $hasValidTitle = !empty($seo['title']) && 
+                        !empty($seo['description']) && 
+                        !str_contains($seo['title'], $defaultTitlePattern) &&
+                        !str_contains($seo['title'], 'Анализ серии снов') &&
+                        mb_strlen($seo['title']) > 30;
+                    
+                    if ($hasValidTitle) {
+                        $url = !empty($seo['canonical']) 
+                            ? $seo['canonical'] 
+                            : route('dream-analyzer.show', ['hash' => $interpretation->hash]);
+                        
+                        $lastmod = $interpretation->updated_at ?? $interpretation->created_at;
+                        $xml .= $this->url($url, $lastmod, 'monthly', 0.6);
+                    }
+                } catch (\Exception $e) {
+                    \Log::warning('Sitemap: Error generating SEO for interpretation ' . $interpretation->id, [
+                        'error' => $e->getMessage()
+                    ]);
+                    continue;
                 }
-            } catch (\Exception $e) {
-                \Log::warning('Sitemap: Error generating SEO for interpretation ' . $interpretation->id, [
-                    'error' => $e->getMessage()
-                ]);
-                continue;
             }
-        }
-        
-        $xml .= '</urlset>';
+            
+            $xml .= '</urlset>';
+            
+            return $xml;
+        });
         
         return response($xml, 200)
             ->header('Content-Type', 'application/xml; charset=utf-8');
@@ -277,34 +343,41 @@ class SitemapController extends Controller
             return $this->emptySitemap();
         }
         
-        $baseUrl = rtrim(config('seo.base_url', config('app.url')), '/');
+        $cacheKey = $this->getCacheKey('reports', $page);
         
-        $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
-        $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
-        
-        $limit = $this->getPaginationLimit();
-        $offset = ($page - 1) * $limit;
-        
-        $publicReports = Report::where('status', 'published')
-            ->where('access_level', 'all')
-            ->with('user')
-            ->orderBy('created_at', 'desc')
-            ->offset($offset)
-            ->limit($limit)
-            ->get();
-        
-        foreach ($publicReports as $report) {
-            if ($report->user && $report->user->diary_privacy === 'public') {
-                $xml .= $this->url(
-                    route('reports.show', ['report' => $report->id]),
-                    $report->updated_at ?? $report->created_at,
-                    'weekly',
-                    0.5
-                );
+        $xml = Cache::remember($cacheKey, self::CACHE_TTL, function () use ($page) {
+            $this->updateCacheTimestamp();
+            $baseUrl = rtrim(config('seo.base_url', config('app.url')), '/');
+            
+            $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+            $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
+            
+            $limit = $this->getPaginationLimit();
+            $offset = ($page - 1) * $limit;
+            
+            $publicReports = Report::where('status', 'published')
+                ->where('access_level', 'all')
+                ->with('user')
+                ->orderBy('created_at', 'desc')
+                ->offset($offset)
+                ->limit($limit)
+                ->get();
+            
+            foreach ($publicReports as $report) {
+                if ($report->user && $report->user->diary_privacy === 'public') {
+                    $xml .= $this->url(
+                        route('reports.show', ['report' => $report->id]),
+                        $report->updated_at ?? $report->created_at,
+                        'weekly',
+                        0.5
+                    );
+                }
             }
-        }
-        
-        $xml .= '</urlset>';
+            
+            $xml .= '</urlset>';
+            
+            return $xml;
+        });
         
         return response($xml, 200)
             ->header('Content-Type', 'application/xml; charset=utf-8');
@@ -319,53 +392,60 @@ class SitemapController extends Controller
             return $this->emptySitemap();
         }
         
-        $baseUrl = rtrim(config('seo.base_url', config('app.url')), '/');
+        $cacheKey = $this->getCacheKey('report_analyses', $page);
         
-        $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
-        $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
-        
-        $limit = $this->getPaginationLimit();
-        $offset = ($page - 1) * $limit;
-        
-        $publicReports = Report::where('status', 'published')
-            ->where('access_level', 'all')
-            ->whereNotNull('analysis_id')
-            ->with(['user', 'analysis'])
-            ->orderBy('created_at', 'desc')
-            ->offset($offset)
-            ->limit($limit)
-            ->get();
-        
-        foreach ($publicReports as $report) {
-            if ($report->user && $report->user->diary_privacy === 'public' && $report->hasAnalysis() && $report->analysis) {
-                try {
-                    $analysisSeo = SeoHelper::forReportAnalysis($report, $report->analysis);
-                    
-                    if (!empty($analysisSeo['title']) && 
-                        !empty($analysisSeo['description']) &&
-                        mb_strlen($analysisSeo['title']) > 30) {
+        $xml = Cache::remember($cacheKey, self::CACHE_TTL, function () use ($page) {
+            $this->updateCacheTimestamp();
+            $baseUrl = rtrim(config('seo.base_url', config('app.url')), '/');
+            
+            $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+            $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
+            
+            $limit = $this->getPaginationLimit();
+            $offset = ($page - 1) * $limit;
+            
+            $publicReports = Report::where('status', 'published')
+                ->where('access_level', 'all')
+                ->whereNotNull('analysis_id')
+                ->with(['user', 'analysis'])
+                ->orderBy('created_at', 'desc')
+                ->offset($offset)
+                ->limit($limit)
+                ->get();
+            
+            foreach ($publicReports as $report) {
+                if ($report->user && $report->user->diary_privacy === 'public' && $report->hasAnalysis() && $report->analysis) {
+                    try {
+                        $analysisSeo = SeoHelper::forReportAnalysis($report, $report->analysis);
                         
-                        $analysisUrl = !empty($analysisSeo['canonical']) 
-                            ? $analysisSeo['canonical'] 
-                            : route('reports.analysis', ['report' => $report->id]);
-                        
-                        $analysisLastmod = $report->analysis->updated_at 
-                            ?? $report->analysis->created_at 
-                            ?? $report->updated_at 
-                            ?? $report->created_at;
-                        
-                        $xml .= $this->url($analysisUrl, $analysisLastmod, 'monthly', 0.6);
+                        if (!empty($analysisSeo['title']) && 
+                            !empty($analysisSeo['description']) &&
+                            mb_strlen($analysisSeo['title']) > 30) {
+                            
+                            $analysisUrl = !empty($analysisSeo['canonical']) 
+                                ? $analysisSeo['canonical'] 
+                                : route('reports.analysis', ['report' => $report->id]);
+                            
+                            $analysisLastmod = $report->analysis->updated_at 
+                                ?? $report->analysis->created_at 
+                                ?? $report->updated_at 
+                                ?? $report->created_at;
+                            
+                            $xml .= $this->url($analysisUrl, $analysisLastmod, 'monthly', 0.6);
+                        }
+                    } catch (\Exception $e) {
+                        \Log::warning('Sitemap: Error generating SEO for report analysis ' . $report->id, [
+                            'error' => $e->getMessage()
+                        ]);
+                        continue;
                     }
-                } catch (\Exception $e) {
-                    \Log::warning('Sitemap: Error generating SEO for report analysis ' . $report->id, [
-                        'error' => $e->getMessage()
-                    ]);
-                    continue;
                 }
             }
-        }
-        
-        $xml .= '</urlset>';
+            
+            $xml .= '</urlset>';
+            
+            return $xml;
+        });
         
         return response($xml, 200)
             ->header('Content-Type', 'application/xml; charset=utf-8');

@@ -285,8 +285,35 @@ class SeoController extends Controller
 
         // Количество URL на одной странице sitemap (из настроек или значение по умолчанию)
         $urlsPerPage = \App\Models\Setting::getValue('sitemap.urls_per_page', \App\Http\Controllers\SitemapController::PAGINATION_LIMIT);
+        
+        // Количество ссылок при перелинковке (из настроек или значение по умолчанию)
+        $linkingLinksCount = \App\Models\Setting::getValue('sitemap.linking_links_count', 5);
+        
+        // Дата последнего обновления кеша (конвертируем из UTC в часовой пояс приложения)
+        // Это может быть либо дата генерации кеша, либо дата очистки кеша
+        $lastCacheUpdate = \App\Models\Setting::getValue('sitemap.last_cache_update', null);
+        
+        // Получаем часовой пояс из настроек базы данных (как в AdminController)
+        $timezone = \App\Models\Setting::getValue('timezone', config('app.timezone', 'UTC'));
+        
+        // Проверяем, что значение не пустое и не false
+        if ($lastCacheUpdate && $lastCacheUpdate !== '' && $lastCacheUpdate !== '0') {
+            try {
+                // Парсим как UTC и конвертируем в часовой пояс из настроек
+                $lastCacheUpdate = \Carbon\Carbon::parse($lastCacheUpdate, 'UTC')
+                    ->setTimezone($timezone);
+            } catch (\Exception $e) {
+                $lastCacheUpdate = null;
+            }
+        } else {
+            $lastCacheUpdate = null;
+        }
+        
+        // Проверяем, существует ли кеш (если кеш существует, значит он актуален)
+        // Если кеш не существует, но есть дата - значит кеш был очищен и ждет пересоздания
+        $cacheExists = \Illuminate\Support\Facades\Cache::has('sitemap:index:page:1');
 
-        return view('admin.seo.sitemap', compact('stats', 'urlsPerPage'));
+        return view('admin.seo.sitemap', compact('stats', 'urlsPerPage', 'linkingLinksCount', 'lastCacheUpdate', 'cacheExists', 'timezone'));
     }
 
     /**
@@ -312,7 +339,48 @@ class SeoController extends Controller
             \App\Models\Setting::setValue('sitemap.urls_per_page', $urlsPerPage);
         }
 
+        // Сохранение количества ссылок при перелинковке
+        $linkingLinksCount = $request->input('linking_links_count');
+        if ($linkingLinksCount !== null) {
+            // Валидация: минимум 1, максимум 20
+            $linkingLinksCount = max(1, min((int)$linkingLinksCount, 20));
+            \App\Models\Setting::setValue('sitemap.linking_links_count', $linkingLinksCount);
+        }
+
         return back()->with('success', 'Настройки sitemap сохранены');
+    }
+    
+    /**
+     * Очистка кеша sitemap
+     */
+    public function clearSitemapCache(): RedirectResponse
+    {
+        // Очищаем кеш для всех типов sitemap
+        // Для database драйвера нужно очищать по ключам
+        $types = ['index', 'static', 'guides', 'articles', 'interpretations', 'reports', 'report_analyses'];
+        
+        foreach ($types as $type) {
+            // Очищаем первую страницу (основная)
+            \Illuminate\Support\Facades\Cache::forget("sitemap:{$type}:page:1");
+            
+            // Очищаем дополнительные страницы (до 10 страниц на всякий случай)
+            for ($page = 2; $page <= 10; $page++) {
+                \Illuminate\Support\Facades\Cache::forget("sitemap:{$type}:page:{$page}");
+            }
+        }
+        
+        // Очищаем кеш для всех типов sitemap
+        // После очистки кеш будет пересоздан при следующем запросе sitemap
+        
+        // Устанавливаем дату очистки кеша (это дата, когда кеш был очищен)
+        // Когда кеш пересоздастся при следующем запросе, дата обновится автоматически
+        \App\Models\Setting::setValue('sitemap.last_cache_update', now('UTC')->toDateTimeString());
+        
+        // Очищаем кеш настроек, если он используется
+        \Illuminate\Support\Facades\Cache::forget('settings');
+        
+        // Используем явный редирект вместо back() для гарантированного обновления страницы
+        return redirect()->route('admin.seo.sitemap')->with('success', 'Кеш sitemap очищен. Он будет автоматически перегенерирован при следующем запросе sitemap.');
     }
 
     /**

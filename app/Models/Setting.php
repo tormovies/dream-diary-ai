@@ -36,6 +36,12 @@ class Setting extends Model
      */
     public static function setValue(string $key, $value): void
     {
+        // Если значение null, удаляем запись
+        if ($value === null) {
+            self::where('key', $key)->delete();
+            return;
+        }
+        
         // Если значение - массив или объект, кодируем в JSON
         if (is_array($value) || is_object($value)) {
             $value = json_encode($value);

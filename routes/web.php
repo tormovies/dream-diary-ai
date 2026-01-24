@@ -123,6 +123,7 @@ Route::middleware('auth')->group(function () {
         Route::resource('seo', \App\Http\Controllers\Admin\SeoController::class)->except(['show']);
         Route::get('/seo/sitemap', [\App\Http\Controllers\Admin\SeoController::class, 'sitemap'])->name('seo.sitemap');
         Route::post('/seo/sitemap/settings', [\App\Http\Controllers\Admin\SeoController::class, 'updateSitemapSettings'])->name('seo.sitemap.settings');
+        Route::post('/seo/sitemap/clear-cache', [\App\Http\Controllers\Admin\SeoController::class, 'clearSitemapCache'])->name('seo.sitemap.clear-cache');
         
         // Управление статьями
         Route::resource('articles', \App\Http\Controllers\Admin\ArticleController::class);
