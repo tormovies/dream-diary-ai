@@ -182,7 +182,7 @@ class ArticleController extends Controller
         // Сохранение SEO
         $this->saveSeoMeta($article, $validated);
 
-        return redirect()->route('admin.articles.index')
+        return redirect()->route('admin.articles.edit', $article)
             ->with('success', 'Статья успешно обновлена');
     }
 
