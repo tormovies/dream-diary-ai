@@ -64,6 +64,6 @@ cd ~/snovidec.ru/laravel && git pull origin main && npm install && npm run build
 
 ## Важно
 
-- **npm установлен на сервере** (Node.js v20.11.0, npm 10.2.4)
+- **npm установлен на сервере** (Node.js v20.19.0, npm 10.2.4)
 - Build пересобирается автоматически после каждого `git pull`
 - Не нужно загружать `public/build` с локальной машины
