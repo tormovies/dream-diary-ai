@@ -68,3 +68,6 @@ Desktop.ini
 !/storage/framework/testing/.gitignore
 /storage/framework/views/*
 !/storage/framework/views/.gitignore
+
+# Export files
+articles_export.json

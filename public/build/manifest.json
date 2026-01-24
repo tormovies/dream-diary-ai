@@ -51,6 +51,15 @@
       "app.css"
     ]
   },
+  "resources/css/articles.css": {
+    "file": "assets/articles-QJrw4zta.css",
+    "src": "resources/css/articles.css",
+    "isEntry": true,
+    "name": "articles",
+    "names": [
+      "articles.css"
+    ]
+  },
   "resources/js/app.js": {
     "file": "assets/app-CrWqryZP.js",
     "name": "app",

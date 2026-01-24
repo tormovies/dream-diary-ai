@@ -137,14 +137,6 @@
                                 @if(isset($seo['h1_description']) && !empty($seo['h1_description']))
                                     <p class="text-gray-600 dark:text-gray-300 mt-3 text-lg leading-relaxed">{{ $seo['h1_description'] }}</p>
                                 @endif
-                                <div class="flex flex-wrap gap-2 mt-2">
-                                    <span class="text-xs px-2 py-1 rounded {{ $article->type === 'guide' ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-300' : 'bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-300' }}">
-                                        {{ $article->type === 'guide' ? 'Инструкция' : 'Статья' }}
-                                    </span>
-                                    <span class="text-xs px-2 py-1 rounded bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300">
-                                        Опубликовано
-                                    </span>
-                                </div>
                             </div>
                             <div class="flex flex-col sm:flex-row gap-2 sm:items-stretch">
                                 @php
