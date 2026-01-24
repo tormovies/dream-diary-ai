@@ -71,17 +71,23 @@ cd ~/snovidec.ru/laravel
 git pull origin main
 ```
 
-### Шаг 4: Установка/обновление зависимостей Composer
+### Шаг 4: Установка/обновление зависимостей npm и сборка фронтенда
+```bash
+npm install
+npm run build
+```
+
+### Шаг 5: Установка/обновление зависимостей Composer
 ```bash
 php8.3 /home/a/adminfeg/.local/bin/composer install --no-dev --optimize-autoloader
 ```
 
-### Шаг 5: Применение миграций (если есть новые)
+### Шаг 6: Применение миграций (если есть новые)
 ```bash
 php8.3 artisan migrate --force
 ```
 
-### Шаг 6: Очистка кэша (КРИТИЧЕСКИ ВАЖНО!)
+### Шаг 7: Очистка кэша (КРИТИЧЕСКИ ВАЖНО!)
 ```bash
 php8.3 artisan view:clear
 php8.3 artisan cache:clear
@@ -89,45 +95,15 @@ php8.3 artisan config:clear
 php8.3 artisan route:clear
 ```
 
-### Шаг 7: Сборка фронтенда (если еще не собрано)
-**Выполните на локальном компьютере:**
-```bash
-cd C:\Users\torle\snovidec
-npm run build
-```
-
-Это создаст папку `public/build` с собранными файлами, включая `articles.css`.
-
-### Шаг 8: Загрузка файла экспорта и build на сервер
+### Шаг 8: Загрузка файла экспорта на сервер (если нужно импортировать статьи)
 **Выполните на локальном компьютере (из директории проекта):**
-
-**Вариант 1: Загрузка через scp (рекомендуется)**
 ```bash
-# Загрузить файл экспорта
 scp articles_export.json adminfeg@adminfeg.beget.tech:~/snovidec.ru/laravel/
-
-# Загрузить папку build (собранный фронтенд)
-scp -r public/build adminfeg@adminfeg.beget.tech:~/snovidec.ru/laravel/public/
 ```
 
-**Вариант 2: Создать архив и загрузить**
-```bash
-# Создать архив
-tar -czf build.tar.gz public/build
+Или используйте FTP/SFTP клиент для загрузки файла.
 
-# Загрузить архив
-scp build.tar.gz adminfeg@adminfeg.beget.tech:~/snovidec.ru/laravel/
-
-# На сервере распаковать (выполнить на сервере)
-ssh adminfeg@adminfeg.beget.tech
-cd ~/snovidec.ru/laravel
-tar -xzf build.tar.gz
-rm build.tar.gz
-```
-
-Или используйте FTP/SFTP клиент для загрузки файлов.
-
-### Шаг 9: Импорт статей на продакшн
+### Шаг 9: Импорт статей на продакшн (если нужно)
 **На сервере выполните:**
 ```bash
 php8.3 import_articles.php articles_export.json
@@ -149,7 +125,9 @@ php8.3 artisan optimize
 
 ## Важно
 
-- Файл `articles_export.json` содержит все данные статей, включая контент
+- **npm установлен на сервере** - build пересобирается автоматически после `git pull`
+- Не нужно загружать `public/build` через scp - он собирается на сервере
+- Файл `articles_export.json` нужен только для импорта статей (если нужно)
 - Скрипт импорта обновит существующие статьи по slug
 - Если статьи не существуют, они будут созданы
 - SEO метаданные также будут обновлены/созданы
