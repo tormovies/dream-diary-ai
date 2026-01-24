@@ -235,4 +235,143 @@ class SeoController extends Controller
 
         return redirect()->route('admin.seo.index')->with('success', 'SEO-запись удалена успешно');
     }
+
+    /**
+     * Управление sitemap
+     */
+    public function sitemap(): View
+    {
+        $today = now()->startOfDay();
+        
+        // Статистика по типам контента
+        $stats = [
+            'static' => [
+                'enabled' => \App\Models\Setting::getValue('sitemap.static.enabled', true),
+                'total' => 5, // Статические страницы всегда 5
+                'today' => 0, // Статические страницы не добавляются ежедневно
+            ],
+            'guides' => [
+                'enabled' => \App\Models\Setting::getValue('sitemap.guides.enabled', true),
+                'total' => \App\Models\Article::where('type', 'guide')->where('status', 'published')->count(),
+                'today' => \App\Models\Article::where('type', 'guide')
+                    ->where('status', 'published')
+                    ->whereDate('created_at', $today)
+                    ->count(),
+            ],
+            'articles' => [
+                'enabled' => \App\Models\Setting::getValue('sitemap.articles.enabled', true),
+                'total' => \App\Models\Article::where('type', 'article')->where('status', 'published')->count(),
+                'today' => \App\Models\Article::where('type', 'article')
+                    ->where('status', 'published')
+                    ->whereDate('created_at', $today)
+                    ->count(),
+            ],
+            'interpretations' => [
+                'enabled' => \App\Models\Setting::getValue('sitemap.interpretations.enabled', true),
+                'total' => $this->getValidInterpretationsCount(),
+                'today' => $this->getValidInterpretationsCount($today),
+            ],
+            'reports' => [
+                'enabled' => \App\Models\Setting::getValue('sitemap.reports.enabled', true),
+                'total' => $this->getPublicReportsCount(),
+                'today' => $this->getPublicReportsCount($today),
+            ],
+            'report_analyses' => [
+                'enabled' => \App\Models\Setting::getValue('sitemap.report_analyses.enabled', true),
+                'total' => $this->getPublicReportAnalysesCount(),
+                'today' => $this->getPublicReportAnalysesCount($today),
+            ],
+        ];
+
+        // Количество URL на одной странице sitemap (из настроек или значение по умолчанию)
+        $urlsPerPage = \App\Models\Setting::getValue('sitemap.urls_per_page', \App\Http\Controllers\SitemapController::PAGINATION_LIMIT);
+
+        return view('admin.seo.sitemap', compact('stats', 'urlsPerPage'));
+    }
+
+    /**
+     * Сохранение настроек sitemap
+     */
+    public function updateSitemapSettings(Request $request): RedirectResponse
+    {
+        // Checkbox не отправляется, если не отмечен, поэтому проверяем наличие поля
+        // Если поле есть в запросе - true, если нет - false
+        
+        \App\Models\Setting::setValue('sitemap.static.enabled', $request->has('static_enabled'));
+        \App\Models\Setting::setValue('sitemap.guides.enabled', $request->has('guides_enabled'));
+        \App\Models\Setting::setValue('sitemap.articles.enabled', $request->has('articles_enabled'));
+        \App\Models\Setting::setValue('sitemap.interpretations.enabled', $request->has('interpretations_enabled'));
+        \App\Models\Setting::setValue('sitemap.reports.enabled', $request->has('reports_enabled'));
+        \App\Models\Setting::setValue('sitemap.report_analyses.enabled', $request->has('report_analyses_enabled'));
+
+        // Сохранение количества URL на странице
+        $urlsPerPage = $request->input('urls_per_page');
+        if ($urlsPerPage !== null) {
+            // Валидация: минимум 100, максимум 50000
+            $urlsPerPage = max(100, min((int)$urlsPerPage, 50000));
+            \App\Models\Setting::setValue('sitemap.urls_per_page', $urlsPerPage);
+        }
+
+        return back()->with('success', 'Настройки sitemap сохранены');
+    }
+
+    /**
+     * Получить количество валидных толкований
+     * Примечание: это приблизительное количество (готовые толкования),
+     * реальное количество в sitemap может быть меньше из-за проверки SEO заголовков
+     */
+    private function getValidInterpretationsCount($dateFrom = null): int
+    {
+        $minDate = \Carbon\Carbon::create(2026, 1, 16, 0, 0, 0);
+        $query = \App\Models\DreamInterpretation::where('processing_status', 'completed')
+            ->whereNull('api_error')
+            ->whereHas('result')
+            ->where('created_at', '>=', $minDate);
+
+        if ($dateFrom) {
+            $query->whereDate('created_at', $dateFrom);
+        }
+
+        return $query->count();
+    }
+
+    /**
+     * Получить количество публичных отчетов
+     */
+    private function getPublicReportsCount($dateFrom = null): int
+    {
+        $query = \App\Models\Report::where('status', 'published')
+            ->where('access_level', 'all')
+            ->with('user');
+
+        if ($dateFrom) {
+            $query->whereDate('created_at', $dateFrom);
+        }
+
+        return $query->get()->filter(function($r) {
+            return $r->user && $r->user->diary_privacy === 'public';
+        })->count();
+    }
+
+    /**
+     * Получить количество публичных анализов отчетов
+     */
+    private function getPublicReportAnalysesCount($dateFrom = null): int
+    {
+        $query = \App\Models\Report::where('status', 'published')
+            ->where('access_level', 'all')
+            ->whereNotNull('analysis_id')
+            ->with(['user', 'analysis']);
+
+        if ($dateFrom) {
+            $query->whereDate('created_at', $dateFrom);
+        }
+
+        return $query->get()->filter(function($r) {
+            return $r->user && 
+                   $r->user->diary_privacy === 'public' && 
+                   $r->hasAnalysis() && 
+                   $r->analysis;
+        })->count();
+    }
 }

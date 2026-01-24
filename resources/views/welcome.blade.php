@@ -204,42 +204,6 @@
                 
                 <!-- Правая панель -->
                 <aside class="space-y-6">
-                    <!-- Карточка пользователя -->
-                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
-                        <div class="text-center">
-                            <div class="flex justify-center">
-                                <x-avatar :user="auth()->user()" size="lg" />
-                            </div>
-                            <div class="mt-4">
-                                <div class="font-semibold text-lg text-gray-900 dark:text-white">{{ auth()->user()->nickname }}</div>
-                                <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                                    @if($userStats)
-                                        {{ $userStats['reports'] }} {{ $userStats['reports'] == 1 ? 'запись' : ($userStats['reports'] < 5 ? 'записи' : 'записей') }}
-                                    @else
-                                        Пользователь
-                                    @endif
-                                </div>
-                            </div>
-                            
-                            @if($userStats)
-                            <div class="flex justify-between mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                                <div class="text-center flex-1">
-                                    <div class="text-xl font-bold text-purple-600 dark:text-purple-400">{{ $userStats['friends'] }}</div>
-                                    <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">друзей</div>
-                                </div>
-                                <div class="text-center flex-1">
-                                    <div class="text-xl font-bold text-purple-600 dark:text-purple-400">{{ $userStats['dreams'] }}</div>
-                                    <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">снов</div>
-                                </div>
-                                <div class="text-center flex-1">
-                                    <div class="text-xl font-bold text-purple-600 dark:text-purple-400">{{ $userStats['avg_per_month'] }}</div>
-                                    <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">снов/мес</div>
-                                </div>
-                            </div>
-                            @endif
-                        </div>
-                    </div>
-                    
                     @if($userStats && $friendsOnline->count() > 0)
                     <!-- Друзья онлайн -->
                     <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
@@ -291,6 +255,43 @@
                             </div>
                         </div>
                     </div>
+                    
+                    <!-- Последние толкования -->
+                    @if(isset($latestInterpretations) && $latestInterpretations->count() > 0)
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
+                        <h3 class="text-lg font-semibold mb-4 text-purple-600 dark:text-purple-400 flex items-center gap-2">
+                            <i class="fas fa-link"></i> Последние толкования
+                        </h3>
+                        <ul class="space-y-3">
+                            @foreach($latestInterpretations as $interpretation)
+                                @php
+                                    $interpretationSeo = \App\Helpers\SeoHelper::forDreamAnalyzerResult($interpretation);
+                                    $linkTitle = $interpretationSeo['title'] ?? 'Толкование сна';
+                                    // Обрезаем title если слишком длинный
+                                    if (mb_strlen($linkTitle) > 70) {
+                                        $linkTitle = mb_substr($linkTitle, 0, 67) . '...';
+                                    }
+                                @endphp
+                                <li>
+                                    <a href="{{ route('dream-analyzer.show', ['hash' => $interpretation->hash]) }}" 
+                                       class="block p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-purple-500 dark:hover:border-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all group">
+                                        <div class="text-sm font-medium text-gray-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 line-clamp-2">
+                                            {{ $linkTitle }}
+                                        </div>
+                                        @if(!empty($interpretationSeo['description']))
+                                            <div class="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
+                                                {{ mb_substr($interpretationSeo['description'], 0, 80) }}{{ mb_strlen($interpretationSeo['description']) > 80 ? '...' : '' }}
+                                            </div>
+                                        @endif
+                                        <div class="text-xs text-gray-400 dark:text-gray-500 mt-2">
+                                            {{ $interpretation->created_at->format('d.m.Y') }}
+                                        </div>
+                                    </a>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                    @endif
                     
                     @if(false)
                     <!-- Сонник дня (скрыт) -->
@@ -468,6 +469,43 @@
                 
                 <!-- Правая панель -->
                 <aside class="space-y-6">
+                    <!-- Последние толкования -->
+                    @if(isset($latestInterpretations) && $latestInterpretations->count() > 0)
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
+                        <h3 class="text-lg font-semibold mb-4 text-purple-600 dark:text-purple-400 flex items-center gap-2">
+                            <i class="fas fa-link"></i> Последние толкования
+                        </h3>
+                        <ul class="space-y-3">
+                            @foreach($latestInterpretations as $interpretation)
+                                @php
+                                    $interpretationSeo = \App\Helpers\SeoHelper::forDreamAnalyzerResult($interpretation);
+                                    $linkTitle = $interpretationSeo['title'] ?? 'Толкование сна';
+                                    // Обрезаем title если слишком длинный
+                                    if (mb_strlen($linkTitle) > 70) {
+                                        $linkTitle = mb_substr($linkTitle, 0, 67) . '...';
+                                    }
+                                @endphp
+                                <li>
+                                    <a href="{{ route('dream-analyzer.show', ['hash' => $interpretation->hash]) }}" 
+                                       class="block p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-purple-500 dark:hover:border-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all group">
+                                        <div class="text-sm font-medium text-gray-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 line-clamp-2">
+                                            {{ $linkTitle }}
+                                        </div>
+                                        @if(!empty($interpretationSeo['description']))
+                                            <div class="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
+                                                {{ mb_substr($interpretationSeo['description'], 0, 80) }}{{ mb_strlen($interpretationSeo['description']) > 80 ? '...' : '' }}
+                                            </div>
+                                        @endif
+                                        <div class="text-xs text-gray-400 dark:text-gray-500 mt-2">
+                                            {{ $interpretation->created_at->format('d.m.Y') }}
+                                        </div>
+                                    </a>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                    @endif
+                    
                     <!-- Статистика проекта -->
                     <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
                         <h3 class="text-lg font-semibold mb-4 text-purple-600 dark:text-purple-400 flex items-center gap-2">

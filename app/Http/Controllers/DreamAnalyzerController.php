@@ -31,6 +31,7 @@ class DreamAnalyzerController extends Controller
         
         // Статистика проекта
         $stats = Cache::remember('global_statistics', 900, function () {
+            $minDate = \Carbon\Carbon::create(2026, 1, 16, 0, 0, 0);
             return [
                 'users' => User::count(),
                 'reports' => Report::where('status', 'published')->count(),
@@ -40,6 +41,11 @@ class DreamAnalyzerController extends Controller
                     ->count(),
                 'comments' => Comment::count(),
                 'tags' => Tag::count(),
+                'interpretations' => DreamInterpretation::where('processing_status', 'completed')
+                    ->whereNull('api_error')
+                    ->whereHas('result')
+                    ->where('created_at', '>=', $minDate)
+                    ->count(),
             ];
         });
         
@@ -359,8 +365,11 @@ class DreamAnalyzerController extends Controller
         
         $layoutData = $this->getLayoutData();
         $seo = \App\Helpers\SeoHelper::forDreamAnalyzerResult($interpretation);
+        
+        // Получаем похожие толкования для перелинковки
+        $similarInterpretations = \App\Helpers\InterpretationLinkHelper::getSimilarInterpretations($interpretation, 5);
 
-        return view('dream-analyzer.show', array_merge(compact('interpretation', 'request'), $layoutData, compact('seo')));
+        return view('dream-analyzer.show', array_merge(compact('interpretation', 'request', 'similarInterpretations'), $layoutData, compact('seo')));
     }
 
     /**

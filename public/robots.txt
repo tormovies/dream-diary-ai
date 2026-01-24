@@ -1,2 +1,9 @@
 User-agent: *
-Disallow:
+Allow: /
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /api/
+Disallow: /*?*search=*
+Disallow: /*?*page=*
+
+Sitemap: https://snovidec.ru/sitemap.xml

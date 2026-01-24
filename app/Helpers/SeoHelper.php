@@ -508,6 +508,11 @@ class SeoHelper
             }
         }
         
+        // Убеждаемся, что canonical URL правильный (используем hash для маршрута dream-analyzer.show)
+        if (empty($seoResult['canonical']) || !str_contains($seoResult['canonical'], $interpretation->hash)) {
+            $seoResult['canonical'] = route('dream-analyzer.show', ['hash' => $interpretation->hash]);
+        }
+        
         return $seoResult;
     }
 }

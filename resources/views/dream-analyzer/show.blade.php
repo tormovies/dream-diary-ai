@@ -836,6 +836,43 @@
 
                 <!-- Правая панель -->
                 <aside class="space-y-6">
+                    <!-- Похожие толкования -->
+                    @if(isset($similarInterpretations) && $similarInterpretations->count() > 0)
+                        <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
+                            <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">
+                                <i class="fas fa-link mr-2 text-purple-600 dark:text-purple-400"></i>
+                                Похожие толкования
+                            </h2>
+                            <ul class="space-y-3">
+                                @foreach($similarInterpretations as $similar)
+                                    @php
+                                        $similarSeo = \App\Helpers\SeoHelper::forDreamAnalyzerResult($similar);
+                                        $linkTitle = $similarSeo['title'] ?? 'Толкование сна';
+                                        // Обрезаем title если слишком длинный
+                                        if (mb_strlen($linkTitle) > 80) {
+                                            $linkTitle = mb_substr($linkTitle, 0, 77) . '...';
+                                        }
+                                    @endphp
+                                    <li>
+                                        <a href="{{ route('dream-analyzer.show', ['hash' => $similar->hash]) }}" 
+                                           class="block p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-purple-500 dark:hover:border-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all group">
+                                            <div class="text-sm font-medium text-gray-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 line-clamp-2">
+                                                {{ $linkTitle }}
+                                            </div>
+                                            @if(!empty($similarSeo['description']))
+                                                <div class="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
+                                                    {{ mb_substr($similarSeo['description'], 0, 100) }}{{ mb_strlen($similarSeo['description']) > 100 ? '...' : '' }}
+                                                </div>
+                                            @endif
+                                            <div class="text-xs text-gray-400 dark:text-gray-500 mt-2">
+                                                {{ $similar->created_at->format('d.m.Y') }}
+                                            </div>
+                                        </a>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
                     @guest
                         <!-- Статистика проекта (для неавторизованных) -->
                         <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
@@ -856,66 +893,35 @@
                                     <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">Снов</div>
                                 </div>
                                 <div class="text-center">
-                                    <div class="text-2xl font-bold text-orange-600 dark:text-orange-400">{{ number_format($stats['comments'], 0, ',', ' ') }}</div>
-                                    <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">Комментариев</div>
-                                </div>
-                                <div class="text-center">
-                                    <div class="text-2xl font-bold text-pink-600 dark:text-pink-400">{{ number_format($stats['tags'], 0, ',', ' ') }}</div>
-                                    <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">Тегов</div>
+                                    <div class="text-2xl font-bold text-pink-600 dark:text-pink-400">{{ number_format($stats['interpretations'] ?? 0, 0, ',', ' ') }}</div>
+                                    <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">Толкований</div>
                                 </div>
                             </div>
                         </div>
                     @endguest
                     @auth
-                        <!-- Приветственная карточка (для авторизованных) -->
-                        <div class="gradient-primary rounded-2xl p-6 text-white card-shadow">
-                            <h3 class="text-xl font-bold mb-2">Добро пожаловать, {{ auth()->user()->nickname }}!</h3>
-                            <p class="text-purple-100 mb-4 text-sm">
-                                @if($todayReportsCount > 0)
-                                    Сегодня {{ $todayReportsCount }} {{ $todayReportsCount == 1 ? 'человек поделился' : ($todayReportsCount < 5 ? 'человека поделились' : 'человек поделились') }} своими сновидениями.
-                                @else
-                                    Сегодня пока никто не поделился сновидениями.
-                                @endif
-                                Не забывайте записывать свои сны!
-                            </p>
-                            <a href="{{ route('reports.create') }}" class="inline-block bg-white text-purple-600 px-4 py-2 rounded-lg font-semibold hover:bg-purple-50 transition-colors text-sm">
-                                <i class="fas fa-plus mr-2"></i>Добавить сон
-                            </a>
-                        </div>
-                        
-                        <!-- Карточка пользователя (для авторизованных) -->
+                        <!-- Статистика проекта (для авторизованных) -->
                         <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
-                            <div class="text-center">
-                                <div class="flex justify-center">
-                                    <x-avatar :user="auth()->user()" size="lg" />
+                            <h3 class="text-lg font-semibold mb-4 text-purple-600 dark:text-purple-400 flex items-center gap-2">
+                                <i class="fas fa-chart-bar"></i> Статистика проекта
+                            </h3>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="text-center">
+                                    <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">{{ number_format($stats['users'], 0, ',', ' ') }}</div>
+                                    <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">Пользователей</div>
                                 </div>
-                                <div class="mt-4">
-                                    <div class="font-semibold text-lg text-gray-900 dark:text-white">{{ auth()->user()->nickname }}</div>
-                                    <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                                        @if($userStats)
-                                            {{ $userStats['reports'] }} {{ $userStats['reports'] == 1 ? 'запись' : ($userStats['reports'] < 5 ? 'записи' : 'записей') }}
-                                        @else
-                                            Пользователь
-                                        @endif
-                                    </div>
+                                <div class="text-center">
+                                    <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ number_format($stats['reports'], 0, ',', ' ') }}</div>
+                                    <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">Отчетов</div>
                                 </div>
-                                
-                                @if($userStats)
-                                <div class="flex justify-between mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                                    <div class="text-center flex-1">
-                                        <div class="text-xl font-bold text-purple-600 dark:text-purple-400">{{ $userStats['friends'] }}</div>
-                                        <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">друзей</div>
-                                    </div>
-                                    <div class="text-center flex-1">
-                                        <div class="text-xl font-bold text-purple-600 dark:text-purple-400">{{ $userStats['dreams'] }}</div>
-                                        <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">снов</div>
-                                    </div>
-                                    <div class="text-center flex-1">
-                                        <div class="text-xl font-bold text-purple-600 dark:text-purple-400">{{ $userStats['avg_per_month'] }}</div>
-                                        <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">снов/мес</div>
-                                    </div>
+                                <div class="text-center">
+                                    <div class="text-2xl font-bold text-green-600 dark:text-green-400">{{ number_format($stats['dreams'], 0, ',', ' ') }}</div>
+                                    <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">Снов</div>
                                 </div>
-                                @endif
+                                <div class="text-center">
+                                    <div class="text-2xl font-bold text-pink-600 dark:text-pink-400">{{ number_format($stats['interpretations'] ?? 0, 0, ',', ' ') }}</div>
+                                    <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">Толкований</div>
+                                </div>
                             </div>
                         </div>
 

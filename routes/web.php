@@ -121,6 +121,8 @@ Route::middleware('auth')->group(function () {
         
         // SEO управление
         Route::resource('seo', \App\Http\Controllers\Admin\SeoController::class)->except(['show']);
+        Route::get('/seo/sitemap', [\App\Http\Controllers\Admin\SeoController::class, 'sitemap'])->name('seo.sitemap');
+        Route::post('/seo/sitemap/settings', [\App\Http\Controllers\Admin\SeoController::class, 'updateSitemapSettings'])->name('seo.sitemap.settings');
         
         // Управление статьями
         Route::resource('articles', \App\Http\Controllers\Admin\ArticleController::class);
@@ -133,6 +135,15 @@ Route::middleware('auth')->group(function () {
 
 // Публичный просмотр отчетов (доступен всем) - должен быть после resource маршрутов
 Route::get('/reports/{report}', [\App\Http\Controllers\ReportController::class, 'show'])->name('reports.show');
+
+// Sitemap (многостраничный)
+Route::get('/sitemap.xml', [\App\Http\Controllers\SitemapController::class, 'index'])->name('sitemap');
+Route::get('/sitemap-static.xml', [\App\Http\Controllers\SitemapController::class, 'static'])->name('sitemap.static');
+Route::get('/sitemap-guides.xml', [\App\Http\Controllers\SitemapController::class, 'guides'])->name('sitemap.guides');
+Route::get('/sitemap-articles.xml', [\App\Http\Controllers\SitemapController::class, 'articles'])->name('sitemap.articles');
+Route::get('/sitemap-interpretations-{page}.xml', [\App\Http\Controllers\SitemapController::class, 'interpretations'])->name('sitemap.interpretations')->where('page', '[0-9]+');
+Route::get('/sitemap-reports-{page}.xml', [\App\Http\Controllers\SitemapController::class, 'reports'])->name('sitemap.reports')->where('page', '[0-9]+');
+Route::get('/sitemap-report-analyses-{page}.xml', [\App\Http\Controllers\SitemapController::class, 'reportAnalyses'])->name('sitemap.report-analyses')->where('page', '[0-9]+');
 
 // Редиректы со старых URL дневника Tor
 if (file_exists(__DIR__.'/redirects.php')) {

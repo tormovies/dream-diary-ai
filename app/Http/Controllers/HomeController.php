@@ -185,13 +185,16 @@ class HomeController extends Controller
             ['symbol' => 'Потеряться', 'meaning' => 'Указывает на чувство растерянности в реальной жизни, поиск своего пути или необходимость принятия важного решения.'],
         ];
 
+        // Последние толкования для перелинковки (5 штук)
+        $latestInterpretations = \App\Helpers\InterpretationLinkHelper::getLatestInterpretations(0, 5);
+
         // SEO данные
         $seo = SeoHelper::get('home', null, [
             'total_reports' => $globalStats['reports'],
             'today_reports' => $todayReportsCount,
         ]);
 
-        return view('welcome', compact('stats', 'globalStats', 'reports', 'userStats', 'friendsOnline', 'todayReportsCount', 'popularTags', 'dreamDictionary', 'seo'));
+        return view('welcome', compact('stats', 'globalStats', 'reports', 'userStats', 'friendsOnline', 'todayReportsCount', 'popularTags', 'dreamDictionary', 'seo', 'latestInterpretations'));
     }
 }
 
