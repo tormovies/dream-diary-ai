@@ -435,7 +435,7 @@
                 </main>
 
                 <!-- Правая панель -->
-                <aside class="space-y-6">
+                <aside class="space-y-6 not-prose" style="font-style: normal;">
                     <!-- Похожие толкования -->
                     @if(isset($similarInterpretations) && $similarInterpretations->count() > 0)
                         <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">

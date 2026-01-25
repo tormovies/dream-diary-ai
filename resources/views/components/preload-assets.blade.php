@@ -16,7 +16,7 @@
             // Preload JS - основной файл
             if (isset($manifest['resources/js/app.js']['file'])) {
                 $jsPath = '/build/' . $manifest['resources/js/app.js']['file'];
-                echo '<link rel="preload" href="' . $jsPath . '" as="script">' . "\n";
+                echo '<link rel="preload" href="' . $jsPath . '" as="script" crossorigin="anonymous">' . "\n";
             }
         }
     }
