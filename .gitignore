@@ -71,3 +71,7 @@ Desktop.ini
 
 # Export files
 articles_export.json
+
+# SEO check results
+seo_check.csv
+*.csv
