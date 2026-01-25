@@ -183,6 +183,7 @@ class ArticleController extends Controller
         $seo = SeoHelper::get('guide', $article->id, [
             'title' => $article->title,
             'slug' => $article->slug,
+            'article' => $article, // Для article мета-тегов
         ]);
 
         // Статистика проекта (с кэшированием на 15 минут)
@@ -280,6 +281,7 @@ class ArticleController extends Controller
         $seo = SeoHelper::get('article', $article->id, [
             'title' => $article->title,
             'slug' => $article->slug,
+            'article' => $article, // Для article мета-тегов
         ]);
 
         // Статистика проекта (с кэшированием на 15 минут)

@@ -30,9 +30,13 @@
         $bgColor = 'bg-gray-200';
         $darkBgColor = 'dark:bg-gray-700';
     }
+    
+    // Формируем aria-label для доступности
+    $userName = $user->nickname ?? $user->name ?? 'Пользователь';
+    $ariaLabel = "Аватар пользователя {$userName}";
 @endphp
 
-<div class="{{ $sizeClass }} rounded-full {{ $bgColor }} {{ $darkBgColor }} flex items-center justify-center border-2 border-gray-300 dark:border-gray-600 flex-shrink-0">
+<div class="{{ $sizeClass }} rounded-full {{ $bgColor }} {{ $darkBgColor }} flex items-center justify-center border-2 border-gray-300 dark:border-gray-600 flex-shrink-0" role="img" aria-label="{{ $ariaLabel }}">
     @if($user->avatar)
         <span class="{{ $textSize }}">{{ $emoji }}</span>
     @else

@@ -76,6 +76,19 @@ class SeoHelper
         // Формируем canonical URL
         $result['canonical'] = self::generateCanonicalUrl($pageType, $pageId, $variables);
 
+        // Для статей и инструкций устанавливаем og_type='article' и добавляем article мета-теги
+        if (in_array($pageType, ['article', 'guide']) && isset($variables['article'])) {
+            $article = $variables['article'];
+            $result['og_type'] = 'article';
+            $result['article_author'] = config('seo.site_name', 'Дневник сновидений');
+            if ($article->created_at) {
+                $result['article_published_time'] = $article->created_at->toIso8601String();
+            }
+            if ($article->updated_at) {
+                $result['article_modified_time'] = $article->updated_at->toIso8601String();
+            }
+        }
+
         return $result;
     }
 

@@ -1,4 +1,4 @@
-@props(['src', 'alt' => '', 'class' => ''])
+@props(['src', 'alt' => '', 'class' => '', 'width' => null, 'height' => null])
 
 <img 
     src="{{ $src }}" 
@@ -6,6 +6,8 @@
     class="{{ $class }}" 
     loading="lazy"
     decoding="async"
+    @if($width) width="{{ $width }}" @endif
+    @if($height) height="{{ $height }}" @endif
     {{ $attributes }}
 >
 
