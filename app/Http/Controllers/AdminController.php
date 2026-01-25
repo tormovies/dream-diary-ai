@@ -436,6 +436,7 @@ class AdminController extends Controller
             }
 
             $dayInterpretations = $dayQuery
+                ->with('report')
                 ->orderBy('created_at', 'desc')
                 ->paginate(50)
                 ->withQueryString();
