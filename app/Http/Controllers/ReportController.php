@@ -150,22 +150,7 @@ class ReportController extends Controller
         $user = auth()->user();
 
         // Статистика проекта (с кэшированием на 15 минут)
-        $globalStats = \Illuminate\Support\Facades\Cache::remember('global_statistics', 900, function () {
-            return [
-                'users' => \App\Models\User::count(),
-                'reports' => Report::where('status', 'published')->count(),
-                'dreams' => DB::table('dreams')
-                    ->join('reports', 'dreams.report_id', '=', 'reports.id')
-                    ->where('reports.status', 'published')
-                    ->count(),
-                'comments' => \App\Models\Comment::count(),
-                'tags' => Tag::count(),
-                'avg_dreams_per_report' => Report::where('status', 'published')
-                    ->withCount('dreams')
-                    ->get()
-                    ->avg('dreams_count') ?: 0,
-            ];
-        });
+        $globalStats = \App\Helpers\StatisticsHelper::getGlobalStatistics(true);
 
         // Статистика пользователя
         $userReportsCount = $user->reports()->count();
@@ -555,22 +540,7 @@ class ReportController extends Controller
         $user = auth()->user();
 
         // Статистика проекта (с кэшированием на 15 минут)
-        $globalStats = \Illuminate\Support\Facades\Cache::remember('global_statistics', 900, function () {
-            return [
-                'users' => \App\Models\User::count(),
-                'reports' => Report::where('status', 'published')->count(),
-                'dreams' => DB::table('dreams')
-                    ->join('reports', 'dreams.report_id', '=', 'reports.id')
-                    ->where('reports.status', 'published')
-                    ->count(),
-                'comments' => \App\Models\Comment::count(),
-                'tags' => Tag::count(),
-                'avg_dreams_per_report' => Report::where('status', 'published')
-                    ->withCount('dreams')
-                    ->get()
-                    ->avg('dreams_count') ?: 0,
-            ];
-        });
+        $globalStats = \App\Helpers\StatisticsHelper::getGlobalStatistics(true);
 
         // Статистика пользователя (только для авторизованных)
         $userStats = null;
@@ -1044,24 +1014,7 @@ class ReportController extends Controller
         $todayReportsCount = 0;
         
         // Общая статистика (с кешированием, как в DreamAnalyzerController)
-        $stats = \Illuminate\Support\Facades\Cache::remember('global_statistics', 900, function () {
-            $minDate = \Carbon\Carbon::create(2026, 1, 16, 0, 0, 0);
-            return [
-                'users' => \App\Models\User::count(),
-                'reports' => \App\Models\Report::where('status', 'published')->count(),
-                'dreams' => \Illuminate\Support\Facades\DB::table('dreams')
-                    ->join('reports', 'dreams.report_id', '=', 'reports.id')
-                    ->where('reports.status', 'published')
-                    ->count(),
-                'comments' => \App\Models\Comment::count(),
-                'tags' => \App\Models\Tag::count(),
-                'interpretations' => \App\Models\DreamInterpretation::where('processing_status', 'completed')
-                    ->whereNull('api_error')
-                    ->whereHas('result')
-                    ->where('created_at', '>=', $minDate)
-                    ->count(),
-            ];
-        });
+        $stats = \App\Helpers\StatisticsHelper::getGlobalStatistics();
         
         if ($user) {
             $userReportsCount = $user->reports()->count();
@@ -1221,13 +1174,19 @@ class ReportController extends Controller
             );
             
             // Обновляем запись с результатами
+            $isCompleted = !empty($result['analysis_data']);
             $interpretation->update([
                 'analysis_data' => $result['analysis_data'] ?? null,
                 'raw_api_request' => $result['raw_request'] ?? null,
                 'raw_api_response' => $result['raw_response'] ?? null,
                 'api_error' => $result['error'] ?? null,
-                'processing_status' => !empty($result['analysis_data']) ? 'completed' : 'failed',
+                'processing_status' => $isCompleted ? 'completed' : 'failed',
             ]);
+            
+            // Очищаем кеш статистики, если толкование завершено
+            if ($isCompleted) {
+                \App\Helpers\StatisticsHelper::clearCache();
+            }
             
             \Log::info('Async analysis completed', [
                 'interpretation_id' => $interpretation->id,

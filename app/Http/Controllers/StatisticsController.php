@@ -85,22 +85,7 @@ class StatisticsController extends Controller
             ->get();
 
         // Статистика проекта (с кэшированием на 15 минут)
-        $globalStats = Cache::remember('global_statistics', 900, function () {
-            return [
-                'users' => User::count(),
-                'reports' => Report::where('status', 'published')->count(),
-                'dreams' => DB::table('dreams')
-                    ->join('reports', 'dreams.report_id', '=', 'reports.id')
-                    ->where('reports.status', 'published')
-                    ->count(),
-                'comments' => \App\Models\Comment::count(),
-                'tags' => Tag::count(),
-                'avg_dreams_per_report' => Report::where('status', 'published')
-                    ->withCount('dreams')
-                    ->get()
-                    ->avg('dreams_count') ?: 0,
-            ];
-        });
+        $globalStats = \App\Helpers\StatisticsHelper::getGlobalStatistics(true);
 
         // Статистика пользователя
         $userReportsCount = $user->reports()->count();

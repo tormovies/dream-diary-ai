@@ -23,18 +23,7 @@ class ArticleController extends Controller
         $seo = SeoHelper::get('guide-index');
 
         // Статистика проекта (с кэшированием на 15 минут)
-        $globalStats = \Illuminate\Support\Facades\Cache::remember('global_statistics', 900, function () {
-            return [
-                'users' => \App\Models\User::count(),
-                'reports' => \App\Models\Report::where('status', 'published')->count(),
-                'dreams' => \Illuminate\Support\Facades\DB::table('dreams')
-                    ->join('reports', 'dreams.report_id', '=', 'reports.id')
-                    ->where('reports.status', 'published')
-                    ->count(),
-                'comments' => \App\Models\Comment::count(),
-                'tags' => \App\Models\Tag::count(),
-            ];
-        });
+        $globalStats = \App\Helpers\StatisticsHelper::getGlobalStatistics();
 
         // Статистика пользователя (только для авторизованных)
         $userStats = null;
@@ -98,18 +87,7 @@ class ArticleController extends Controller
         $seo = SeoHelper::get('articles-index');
 
         // Статистика проекта (с кэшированием на 15 минут)
-        $globalStats = \Illuminate\Support\Facades\Cache::remember('global_statistics', 900, function () {
-            return [
-                'users' => \App\Models\User::count(),
-                'reports' => \App\Models\Report::where('status', 'published')->count(),
-                'dreams' => \Illuminate\Support\Facades\DB::table('dreams')
-                    ->join('reports', 'dreams.report_id', '=', 'reports.id')
-                    ->where('reports.status', 'published')
-                    ->count(),
-                'comments' => \App\Models\Comment::count(),
-                'tags' => \App\Models\Tag::count(),
-            ];
-        });
+        $globalStats = \App\Helpers\StatisticsHelper::getGlobalStatistics();
 
         // Статистика пользователя (только для авторизованных)
         $userStats = null;
@@ -184,18 +162,7 @@ class ArticleController extends Controller
         ]);
 
         // Статистика проекта (с кэшированием на 15 минут)
-        $globalStats = \Illuminate\Support\Facades\Cache::remember('global_statistics', 900, function () {
-            return [
-                'users' => \App\Models\User::count(),
-                'reports' => \App\Models\Report::where('status', 'published')->count(),
-                'dreams' => \Illuminate\Support\Facades\DB::table('dreams')
-                    ->join('reports', 'dreams.report_id', '=', 'reports.id')
-                    ->where('reports.status', 'published')
-                    ->count(),
-                'comments' => \App\Models\Comment::count(),
-                'tags' => \App\Models\Tag::count(),
-            ];
-        });
+        $globalStats = \App\Helpers\StatisticsHelper::getGlobalStatistics();
 
         // Статистика пользователя (только для авторизованных)
         $userStats = null;
@@ -270,18 +237,7 @@ class ArticleController extends Controller
         ]);
 
         // Статистика проекта (с кэшированием на 15 минут)
-        $globalStats = \Illuminate\Support\Facades\Cache::remember('global_statistics', 900, function () {
-            return [
-                'users' => \App\Models\User::count(),
-                'reports' => \App\Models\Report::where('status', 'published')->count(),
-                'dreams' => \Illuminate\Support\Facades\DB::table('dreams')
-                    ->join('reports', 'dreams.report_id', '=', 'reports.id')
-                    ->where('reports.status', 'published')
-                    ->count(),
-                'comments' => \App\Models\Comment::count(),
-                'tags' => \App\Models\Tag::count(),
-            ];
-        });
+        $globalStats = \App\Helpers\StatisticsHelper::getGlobalStatistics();
 
         // Статистика пользователя (только для авторизованных)
         $userStats = null;

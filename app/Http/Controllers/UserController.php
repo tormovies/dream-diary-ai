@@ -56,30 +56,18 @@ class UserController extends Controller
         $user = auth()->user();
         
         // Статистика проекта (с кэшированием на 15 минут)
-        $globalStats = \Illuminate\Support\Facades\Cache::remember('global_statistics', 900, function () {
-            return [
-                'users' => User::notBanned()->count(), // Только незаблокированные
-                'reports' => \App\Models\Report::where('status', 'published')->count(),
-                'dreams' => \Illuminate\Support\Facades\DB::table('dreams')
-                    ->join('reports', 'dreams.report_id', '=', 'reports.id')
-                    ->where('reports.status', 'published')
-                    ->count(),
-                'comments' => \App\Models\Comment::count(),
-                'tags' => \App\Models\Tag::count(),
-                'avg_dreams_per_report' => \App\Models\Report::where('status', 'published')
-                    ->withCount('dreams')
-                    ->get()
-                    ->avg('dreams_count') ?: 0,
-            ];
-        });
+        $globalStats = \App\Helpers\StatisticsHelper::getGlobalStatistics(true);
+        // Переопределяем users для незаблокированных
+        $globalStats['users'] = User::notBanned()->count();
         
         // Статистика проекта (для неавторизованных)
         $stats = [
             'users' => $globalStats['users'],
             'reports' => $globalStats['reports'],
             'dreams' => $globalStats['dreams'],
-            'comments' => $globalStats['comments'],
-            'tags' => $globalStats['tags'],
+            'comments' => $globalStats['comments'] ?? 0,
+            'tags' => $globalStats['tags'] ?? 0,
+            'interpretations' => $globalStats['interpretations'] ?? 0,
         ];
         
         // Статистика пользователя (если авторизован)

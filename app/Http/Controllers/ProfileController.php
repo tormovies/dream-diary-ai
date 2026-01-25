@@ -19,22 +19,7 @@ class ProfileController extends Controller
         $user = $request->user();
         
         // Статистика проекта (с кэшированием на 15 минут)
-        $globalStats = \Illuminate\Support\Facades\Cache::remember('global_statistics', 900, function () {
-            return [
-                'users' => \App\Models\User::count(),
-                'reports' => \App\Models\Report::where('status', 'published')->count(),
-                'dreams' => \Illuminate\Support\Facades\DB::table('dreams')
-                    ->join('reports', 'dreams.report_id', '=', 'reports.id')
-                    ->where('reports.status', 'published')
-                    ->count(),
-                'comments' => \App\Models\Comment::count(),
-                'tags' => \App\Models\Tag::count(),
-                'avg_dreams_per_report' => \App\Models\Report::where('status', 'published')
-                    ->withCount('dreams')
-                    ->get()
-                    ->avg('dreams_count') ?: 0,
-            ];
-        });
+        $globalStats = \App\Helpers\StatisticsHelper::getGlobalStatistics(true);
         
         // Статистика пользователя
         $userReportsCount = $user->reports()->count();

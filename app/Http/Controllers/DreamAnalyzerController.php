@@ -30,24 +30,7 @@ class DreamAnalyzerController extends Controller
         $user = auth()->user();
         
         // Статистика проекта
-        $stats = Cache::remember('global_statistics', 900, function () {
-            $minDate = \Carbon\Carbon::create(2026, 1, 16, 0, 0, 0);
-            return [
-                'users' => User::count(),
-                'reports' => Report::where('status', 'published')->count(),
-                'dreams' => DB::table('dreams')
-                    ->join('reports', 'dreams.report_id', '=', 'reports.id')
-                    ->where('reports.status', 'published')
-                    ->count(),
-                'comments' => Comment::count(),
-                'tags' => Tag::count(),
-                'interpretations' => DreamInterpretation::where('processing_status', 'completed')
-                    ->whereNull('api_error')
-                    ->whereHas('result')
-                    ->where('created_at', '>=', $minDate)
-                    ->count(),
-            ];
-        });
+        $stats = \App\Helpers\StatisticsHelper::getGlobalStatistics();
         
         $userStats = null;
         $todayReportsCount = 0;
@@ -760,13 +743,19 @@ class DreamAnalyzerController extends Controller
             ]);
             
             // Обновляем запись с результатами
+            $isCompleted = $result['success'] ?? false;
             $updateData = [
                 'analysis_data' => $result['analysis_data'] ?? null,
                 'raw_api_request' => $result['raw_request'] ?? null,
                 'raw_api_response' => $result['raw_response'] ?? null,
-                'api_error' => $result['success'] ? null : ($result['error'] ?? 'Неизвестная ошибка'),
-                'processing_status' => $result['success'] ? 'completed' : 'failed',
+                'api_error' => $isCompleted ? null : ($result['error'] ?? 'Неизвестная ошибка'),
+                'processing_status' => $isCompleted ? 'completed' : 'failed',
             ];
+            
+            // Очищаем кеш статистики, если толкование завершено
+            if ($isCompleted) {
+                \App\Helpers\StatisticsHelper::clearCache();
+            }
             
             \Log::info('Updating interpretation with data', [
                 'interpretation_id' => $interpretation->id,
