@@ -96,10 +96,15 @@ class InterpretationLinkHelper
             ->limit($limit * 3) // Берем больше, чтобы отфильтровать по SEO и дубликатам
             ->get()
             ->filter(function($interpretation) {
+                // Исключаем толкования, у которых report_id есть, но report удален
+                // Такие записи не должны попадать в перелинковку
+                if ($interpretation->report_id && !$interpretation->report) {
+                    return false;
+                }
                 // Проверяем, что у толкования есть валидные SEO данные
                 try {
                     // Используем правильный метод SEO в зависимости от типа
-                    if ($interpretation->report_id) {
+                    if ($interpretation->report_id && $interpretation->report) {
                         // Это анализ отчета
                         $seo = SeoHelper::forReportAnalysis($interpretation->report, $interpretation);
                     } else {
@@ -203,7 +208,15 @@ class InterpretationLinkHelper
             ->with(['result', 'report']) // Загружаем связь report для анализов отчетов
             ->orderBy('created_at', 'desc')
             ->limit(100) // Ограничиваем для производительности
-            ->get();
+            ->get()
+            ->filter(function($interpretation) {
+                // Исключаем толкования, у которых report_id есть, но report удален
+                // Такие записи не должны попадать в перелинковку
+                if ($interpretation->report_id && !$interpretation->report) {
+                    return false;
+                }
+                return true;
+            });
         
         // Для каждого толкования вычисляем релевантность
         $scored = $interpretations->map(function($interpretation) use ($keywords) {
@@ -286,6 +299,12 @@ class InterpretationLinkHelper
         
         return $interpretations->filter(function($interpretation) use (&$seenTitles, $excludeTitleNormalized) {
             try {
+                // Исключаем толкования, у которых report_id есть, но report удален
+                // Такие записи не должны попадать в перелинковку
+                if ($interpretation->report_id && !$interpretation->report) {
+                    return false;
+                }
+                
                 // Используем правильный метод SEO в зависимости от типа
                 if ($interpretation->report_id && $interpretation->report) {
                     // Это анализ отчета
