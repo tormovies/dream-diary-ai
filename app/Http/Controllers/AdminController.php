@@ -497,8 +497,14 @@ class AdminController extends Controller
             $interpretation->result->delete();
         }
         
-        // Удаляем связанную SEO запись (если есть)
+        // Удаляем связанные SEO записи (если есть)
+        // Для толкований снов
         \App\Models\SeoMeta::where('page_type', 'dream-analyzer-result')
+            ->where('page_id', $interpretation->id)
+            ->delete();
+        
+        // Для анализов отчетов
+        \App\Models\SeoMeta::where('page_type', 'report-analysis')
             ->where('page_id', $interpretation->id)
             ->delete();
 

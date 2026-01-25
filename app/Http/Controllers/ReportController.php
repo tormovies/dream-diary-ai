@@ -1119,6 +1119,11 @@ class ReportController extends Controller
         if ($interpretation) {
             $interpretation->report_id = null;
             $interpretation->save();
+            
+            // Удаляем SEO записи для этого анализа отчета
+            SeoMeta::where('page_type', 'report-analysis')
+                ->where('page_id', $interpretation->id)
+                ->delete();
         }
 
         return redirect()->route('reports.show', $report)
