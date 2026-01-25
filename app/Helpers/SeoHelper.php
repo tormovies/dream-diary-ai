@@ -433,10 +433,31 @@ class SeoHelper
             'hash' => $interpretation->hash,
         ]);
         
+        // Убеждаемся, что все необходимые ключи присутствуют (fallback значения)
+        if (empty($seoResult['title'])) {
+            $seoResult['title'] = 'Толкование ' . ($isSeries ? 'снов' : 'сна') . ' - ' . $dreamTitle . ' | ' . config('app.name');
+        }
+        if (empty($seoResult['description'])) {
+            $seoResult['description'] = mb_substr($coreMessage, 0, 160);
+        }
+        if (empty($seoResult['h1'])) {
+            $seoResult['h1'] = $isSeries ? 'Расшифровка снов' : 'Расшифровка сна';
+        }
+        if (empty($seoResult['og_title'])) {
+            $seoResult['og_title'] = 'Толкование ' . ($isSeries ? 'снов' : 'сна') . ' - ' . $dreamTitle;
+        }
+        if (empty($seoResult['og_description'])) {
+            $seoResult['og_description'] = mb_substr($coreMessage, 0, 160);
+        }
+        
         // Для серии снов изменяем title и h1 на множественное число
         if ($isSeries) {
-            $seoResult['title'] = str_replace('Толкование сна', 'Толкование снов', $seoResult['title']);
-            $seoResult['og_title'] = str_replace('расшифровка сна', 'расшифровка снов', $seoResult['og_title']);
+            if (isset($seoResult['title'])) {
+                $seoResult['title'] = str_replace('Толкование сна', 'Толкование снов', $seoResult['title']);
+            }
+            if (isset($seoResult['og_title'])) {
+                $seoResult['og_title'] = str_replace('расшифровка сна', 'расшифровка снов', $seoResult['og_title']);
+            }
             if (isset($seoResult['h1'])) {
                 $seoResult['h1'] = str_replace('Расшифровка сна', 'Расшифровка снов', $seoResult['h1']);
             }

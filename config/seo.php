@@ -190,6 +190,15 @@ return [
             'og_description' => '{core_message}',
         ],
         
+        'report-analysis' => [
+            'title' => 'Толкование сна - {dream_title} | {site_name}',
+            'description' => '{core_message}',
+            'h1' => 'Расшифровка сна',
+            'h1_description' => null,
+            'og_title' => '{dream_title} — расшифровка сна',
+            'og_description' => '{core_message}',
+        ],
+        
         'guide-index' => [
             'title' => 'Инструкции — {site_name}',
             'description' => 'Полезные инструкции и руководства по использованию платформы для ведения дневника сновидений.',
