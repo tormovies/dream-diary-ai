@@ -57,6 +57,7 @@ Route::middleware('auth')->group(function () {
     // Анализ отчётов (создание и управление - только для авторизованных)
     Route::post('/reports/{report}/analyze', [\App\Http\Controllers\ReportController::class, 'analyze'])->name('reports.analyze');
     Route::post('/reports/{report}/analysis/process', [\App\Http\Controllers\ReportController::class, 'processAnalysis'])->name('reports.analysis.process');
+    Route::post('/reports/{report}/analysis/retry', [\App\Http\Controllers\ReportController::class, 'retryAnalysis'])->name('reports.analysis.retry');
     Route::delete('/reports/{report}/analysis', [\App\Http\Controllers\ReportController::class, 'detachAnalysis'])->name('reports.analysis.detach');
     
     // Редирект со старой страницы отчетов на dashboard

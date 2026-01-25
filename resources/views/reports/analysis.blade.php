@@ -52,6 +52,13 @@
         <x-header-styles />
         
         <x-yandex-metrika />
+        
+        <style>
+            #toast.show {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        </style>
     </head>
     <body class="font-sans antialiased bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
         <x-header />
@@ -156,66 +163,79 @@
 
                     @if($processingStatus === 'failed' || $interpretation->api_error)
                         <!-- Ошибка API -->
-                        <div class="bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-300 rounded-2xl p-6">
-                            <div class="flex items-start gap-4">
-                                <div class="flex-shrink-0">
-                                    <i class="fas fa-exclamation-triangle text-4xl text-red-600 dark:text-red-400"></i>
-                                </div>
+                        <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-400 dark:border-yellow-700 text-yellow-800 dark:text-yellow-200 px-6 py-6 rounded-lg">
+                            <div class="flex items-start gap-3 mb-4">
+                                <i class="fas fa-exclamation-triangle text-2xl text-yellow-600 dark:text-yellow-400 mt-1"></i>
                                 <div class="flex-1">
-                                    <h2 class="font-bold text-xl mb-2">Ошибка при анализе</h2>
-                                    <p class="mb-4">{{ $interpretation->api_error ?? 'Анализ завершился с ошибкой' }}</p>
-                                    
-                                    <div class="space-y-3 mt-4">
-                                        <h4 class="font-semibold text-red-800 dark:text-red-200">
-                                            <i class="fas fa-lightbulb text-yellow-600 dark:text-yellow-400 mr-2"></i>Что делать:
-                                        </h4>
-                                        <ul class="list-disc list-inside space-y-2 text-red-700 dark:text-red-300">
-                                            <li>
-                                                <strong>Попробуйте создать анализ заново</strong> — в большинстве случаев повторный запрос работает успешно
-                                            </li>
-                                            <li>
-                                                Если проблема повторяется, попробуйте:
-                                                <ul class="list-circle list-inside ml-6 mt-1 text-sm">
-                                                    <li>Сократить описание сна/снов</li>
-                                                    <li>Разделить серию снов на несколько анализов</li>
-                                                    <li>Убрать лишние детали из контекста</li>
-                                                </ul>
-                                            </li>
-                                            <li>
-                                                Возможно, API временно перегружен — попробуйте позже
-                                            </li>
+                                    <h2 class="font-bold text-lg mb-2">Временные трудности в толковании сновидений</h2>
+                                    <p class="mb-4">
+                                        К сожалению, при обработке вашего запроса возникла техническая ошибка. 
+                                        Это может быть связано с временными проблемами на стороне сервиса анализа.
+                                    </p>
+                                    <div class="bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-300 dark:border-yellow-800 rounded p-3 mb-4">
+                                        <p class="text-sm font-semibold mb-1">Что вы можете сделать:</p>
+                                        <ul class="text-sm list-disc list-inside space-y-1">
+                                            <li>Попробуйте повторить анализ через несколько минут</li>
+                                            <li>Используйте кнопку "Повторить анализ" ниже</li>
+                                            <li>Если проблема сохраняется, обратитесь в службу поддержки</li>
                                         </ul>
                                     </div>
-                                    
-                                    <div class="flex flex-wrap gap-3 mt-6">
+                                    <div class="flex flex-col sm:flex-row gap-3 mt-4">
+                                        @auth
+                                            @if(auth()->id() === $report->user_id || auth()->user()->isAdmin())
+                                                <form method="POST" action="{{ route('reports.analysis.retry', $report) }}" class="inline">
+                                                    @csrf
+                                                    <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors">
+                                                        <i class="fas fa-redo mr-2"></i>Повторить анализ
+                                                    </button>
+                                                </form>
+                                            @endif
+                                        @endauth
+                                        <a href="https://t.me/snovidec_ru" target="_blank" rel="noopener noreferrer" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors inline-flex items-center justify-center">
+                                            <i class="fab fa-telegram mr-2"></i>Служба поддержки
+                                        </a>
                                         <a href="{{ route('reports.show', $report) }}" 
                                            class="inline-flex items-center px-6 py-3 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-semibold rounded-lg transition-colors">
                                             <i class="fas fa-arrow-left mr-2"></i>
                                             Вернуться к отчёту
                                         </a>
                                     </div>
-                                    
-                                    @if(isset($interpretation->raw_api_response) && $interpretation->raw_api_response)
-                                        <details class="mt-4">
-                                            <summary class="cursor-pointer font-semibold">Техническая информация (ответ API)</summary>
-                                            <pre class="mt-2 text-xs overflow-auto bg-red-50 dark:bg-red-950 p-4 rounded">{{ $interpretation->raw_api_response }}</pre>
-                                        </details>
-                                    @endif
                                 </div>
                             </div>
+                            @if(isset($interpretation->raw_api_response) && $interpretation->raw_api_response)
+                                <details class="mt-4">
+                                    <summary class="cursor-pointer font-semibold text-sm">Техническая информация (для отладки)</summary>
+                                    <pre class="mt-2 text-xs overflow-auto bg-yellow-50 dark:bg-yellow-950 p-4 rounded border border-yellow-200 dark:border-yellow-800">{{ $interpretation->raw_api_response }}</pre>
+                                </details>
+                            @endif
+                            @if($interpretation->api_error)
+                                <details class="mt-2">
+                                    <summary class="cursor-pointer font-semibold text-sm">Сообщение об ошибке</summary>
+                                    <p class="mt-2 text-sm bg-yellow-50 dark:bg-yellow-950 p-3 rounded border border-yellow-200 dark:border-yellow-800">{{ $interpretation->api_error }}</p>
+                                </details>
+                            @endif
                         </div>
                     @elseif(!$interpretation->result)
                         <!-- Прогресс (если анализ еще выполняется) -->
                         <div class="bg-blue-100 dark:bg-blue-900 border border-blue-400 dark:border-blue-700 rounded-2xl p-6">
                             <div class="flex items-center gap-4">
                                 <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
-                                <div>
+                                <div class="flex-1">
                                     <h3 class="text-lg font-semibold text-blue-800 dark:text-blue-200 mb-1">
                                         Анализ выполняется...
                                     </h3>
                                     <p class="text-blue-700 dark:text-blue-300 text-sm">
                                         Это может занять до 3 минут. Страница обновится автоматически.
                                     </p>
+                                    <p class="text-blue-700 dark:text-blue-300 text-sm mt-2">
+                                        Если вам кажется что анализ затянулся, вы всегда можете вернуться на данную страницу, как только она будет обновлена - анализ будет продолжен, если видите ошибки - сообщите <a href="https://t.me/snovidec_ru" target="_blank" rel="noopener noreferrer" class="text-blue-900 dark:text-blue-100 underline font-semibold hover:text-blue-600 dark:hover:text-blue-300">Службе поддержки</a>.
+                                    </p>
+                                    <div class="mt-3">
+                                        <button onclick="copyAnalysisLink()" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-800 dark:hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+                                            <i class="fas fa-link"></i>
+                                            Скопировать ссылку на эту страницу
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -584,6 +604,43 @@
                 try {
                     document.execCommand('copy');
                     showToast('✅ Ссылка скопирована!');
+                } catch (err) {
+                    showToast('❌ Не удалось скопировать');
+                }
+                
+                document.body.removeChild(textarea);
+            }
+            
+            // Копировать ссылку на страницу анализа
+            function copyAnalysisLink() {
+                const currentUrl = window.location.href;
+                
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    // Современный способ
+                    navigator.clipboard.writeText(currentUrl).then(() => {
+                        showToast('✅ Ссылка на страницу скопирована!');
+                    }).catch(() => {
+                        // Fallback если не сработало
+                        fallbackCopyAnalysisLink(currentUrl);
+                    });
+                } else {
+                    // Fallback для старых браузеров
+                    fallbackCopyAnalysisLink(currentUrl);
+                }
+            }
+            
+            // Fallback метод копирования для ссылки анализа
+            function fallbackCopyAnalysisLink(url) {
+                const textarea = document.createElement('textarea');
+                textarea.value = url;
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
+                document.body.appendChild(textarea);
+                textarea.select();
+                
+                try {
+                    document.execCommand('copy');
+                    showToast('✅ Ссылка на страницу скопирована!');
                 } catch (err) {
                     showToast('❌ Не удалось скопировать');
                 }

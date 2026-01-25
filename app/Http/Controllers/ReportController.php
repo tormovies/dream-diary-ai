@@ -11,6 +11,7 @@ use App\Models\Report;
 use App\Models\Dream;
 use App\Models\Tag;
 use App\Models\DreamInterpretation;
+use App\Models\SeoMeta;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Http\RedirectResponse;
@@ -1364,5 +1365,43 @@ class ReportController extends Controller
                 'trace' => $e->getTraceAsString(),
             ]);
         }
+    }
+
+    /**
+     * Повторить анализ отчета (при ошибке)
+     */
+    public function retryAnalysis(Report $report): RedirectResponse
+    {
+        // Проверяем права доступа
+        Gate::authorize('update', $report);
+
+        // Проверяем наличие анализа
+        if (!$report->hasAnalysis()) {
+            return redirect()->route('reports.analysis', $report)
+                ->with('error', 'Анализ не найден');
+        }
+
+        $interpretation = $report->analysis;
+
+        // Сбрасываем статус и ошибки для повторной попытки
+        $interpretation->update([
+            'processing_status' => 'pending',
+            'api_error' => null,
+            'processing_started_at' => null,
+        ]);
+
+        // Удаляем старые результаты, если есть
+        if ($interpretation->result) {
+            $interpretation->result->delete();
+        }
+
+        // Удаляем старые SEO записи для этого толкования
+        SeoMeta::where('page_type', 'report-analysis')
+            ->where('page_id', $interpretation->id)
+            ->delete();
+
+        // Редиректим на страницу результата (анализ запустится автоматически)
+        return redirect()->route('reports.analysis', $report)
+            ->with('success', 'Анализ запущен повторно. Пожалуйста, подождите...');
     }
 }
