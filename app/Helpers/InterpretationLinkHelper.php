@@ -22,8 +22,20 @@ class InterpretationLinkHelper
             $limit = (int)\App\Models\Setting::getValue('sitemap.linking_links_count', 5);
         }
         
+        // Загружаем связь report, если она есть
+        if ($interpretation->report_id && !$interpretation->relationLoaded('report')) {
+            $interpretation->load('report');
+        }
+        
         // Получаем SEO данные текущего толкования
-        $currentSeo = SeoHelper::forDreamAnalyzerResult($interpretation);
+        // Используем правильный метод SEO в зависимости от типа
+        if ($interpretation->report_id && $interpretation->report) {
+            // Это анализ отчета
+            $currentSeo = SeoHelper::forReportAnalysis($interpretation->report, $interpretation);
+        } else {
+            // Это толкование сна
+            $currentSeo = SeoHelper::forDreamAnalyzerResult($interpretation);
+        }
         
         // Извлекаем ключевые слова из title, description, h1
         $keywords = self::extractKeywords([
@@ -79,14 +91,22 @@ class InterpretationLinkHelper
         }
         
         $interpretations = $query
-            ->with('result')
+            ->with(['result', 'report']) // Загружаем связь report для анализов отчетов
             ->orderBy('created_at', 'desc')
             ->limit($limit * 3) // Берем больше, чтобы отфильтровать по SEO и дубликатам
             ->get()
             ->filter(function($interpretation) {
                 // Проверяем, что у толкования есть валидные SEO данные
                 try {
-                    $seo = SeoHelper::forDreamAnalyzerResult($interpretation);
+                    // Используем правильный метод SEO в зависимости от типа
+                    if ($interpretation->report_id) {
+                        // Это анализ отчета
+                        $seo = SeoHelper::forReportAnalysis($interpretation->report, $interpretation);
+                    } else {
+                        // Это толкование сна
+                        $seo = SeoHelper::forDreamAnalyzerResult($interpretation);
+                    }
+                    
                     $title = $seo['title'] ?? '';
                     
                     // Проверяем, что title не пустой и не дефолтный
@@ -180,7 +200,7 @@ class InterpretationLinkHelper
             ->whereHas('result')
             ->where('created_at', '>=', $minDate)
             ->where('id', '!=', $excludeId)
-            ->with('result')
+            ->with(['result', 'report']) // Загружаем связь report для анализов отчетов
             ->orderBy('created_at', 'desc')
             ->limit(100) // Ограничиваем для производительности
             ->get();
@@ -188,7 +208,14 @@ class InterpretationLinkHelper
         // Для каждого толкования вычисляем релевантность
         $scored = $interpretations->map(function($interpretation) use ($keywords) {
             try {
-                $seo = SeoHelper::forDreamAnalyzerResult($interpretation);
+                // Используем правильный метод SEO в зависимости от типа
+                if ($interpretation->report_id && $interpretation->report) {
+                    // Это анализ отчета
+                    $seo = SeoHelper::forReportAnalysis($interpretation->report, $interpretation);
+                } else {
+                    // Это толкование сна
+                    $seo = SeoHelper::forDreamAnalyzerResult($interpretation);
+                }
                 
                 // Проверяем валидность SEO
                 $title = $seo['title'] ?? '';
@@ -259,7 +286,15 @@ class InterpretationLinkHelper
         
         return $interpretations->filter(function($interpretation) use (&$seenTitles, $excludeTitleNormalized) {
             try {
-                $seo = SeoHelper::forDreamAnalyzerResult($interpretation);
+                // Используем правильный метод SEO в зависимости от типа
+                if ($interpretation->report_id && $interpretation->report) {
+                    // Это анализ отчета
+                    $seo = SeoHelper::forReportAnalysis($interpretation->report, $interpretation);
+                } else {
+                    // Это толкование сна
+                    $seo = SeoHelper::forDreamAnalyzerResult($interpretation);
+                }
+                
                 $title = $seo['title'] ?? '';
                 
                 if (empty($title)) {

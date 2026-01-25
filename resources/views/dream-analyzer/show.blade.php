@@ -846,7 +846,22 @@
                             <ul class="space-y-3">
                                 @foreach($similarInterpretations as $similar)
                                     @php
-                                        $similarSeo = \App\Helpers\SeoHelper::forDreamAnalyzerResult($similar);
+                                        // Загружаем связь report, если она есть
+                                        if ($similar->report_id && !$similar->relationLoaded('report')) {
+                                            $similar->load('report');
+                                        }
+                                        
+                                        // Используем правильный метод SEO в зависимости от типа
+                                        if ($similar->report_id && $similar->report) {
+                                            // Это анализ отчета
+                                            $similarSeo = \App\Helpers\SeoHelper::forReportAnalysis($similar->report, $similar);
+                                            $linkUrl = route('reports.analysis', $similar->report->id);
+                                        } else {
+                                            // Это толкование сна
+                                            $similarSeo = \App\Helpers\SeoHelper::forDreamAnalyzerResult($similar);
+                                            $linkUrl = route('dream-analyzer.show', ['hash' => $similar->hash]);
+                                        }
+                                        
                                         $linkTitle = $similarSeo['title'] ?? 'Толкование сна';
                                         // Обрезаем title если слишком длинный
                                         if (mb_strlen($linkTitle) > 80) {
@@ -854,7 +869,7 @@
                                         }
                                     @endphp
                                     <li>
-                                        <a href="{{ route('dream-analyzer.show', ['hash' => $similar->hash]) }}" 
+                                        <a href="{{ $linkUrl }}" 
                                            class="block p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-purple-500 dark:hover:border-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all group">
                                             <div class="text-sm font-medium text-gray-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 line-clamp-2">
                                                 {{ $linkTitle }}

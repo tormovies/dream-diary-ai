@@ -265,7 +265,22 @@
                         <ul class="space-y-3">
                             @foreach($latestInterpretations as $interpretation)
                                 @php
-                                    $interpretationSeo = \App\Helpers\SeoHelper::forDreamAnalyzerResult($interpretation);
+                                    // Загружаем связь report, если она есть
+                                    if ($interpretation->report_id && !$interpretation->relationLoaded('report')) {
+                                        $interpretation->load('report');
+                                    }
+                                    
+                                    // Используем правильный метод SEO в зависимости от типа
+                                    if ($interpretation->report_id && $interpretation->report) {
+                                        // Это анализ отчета
+                                        $interpretationSeo = \App\Helpers\SeoHelper::forReportAnalysis($interpretation->report, $interpretation);
+                                        $linkUrl = route('reports.analysis', $interpretation->report->id);
+                                    } else {
+                                        // Это толкование сна
+                                        $interpretationSeo = \App\Helpers\SeoHelper::forDreamAnalyzerResult($interpretation);
+                                        $linkUrl = route('dream-analyzer.show', ['hash' => $interpretation->hash]);
+                                    }
+                                    
                                     $linkTitle = $interpretationSeo['title'] ?? 'Толкование сна';
                                     // Обрезаем title если слишком длинный
                                     if (mb_strlen($linkTitle) > 70) {
@@ -273,7 +288,7 @@
                                     }
                                 @endphp
                                 <li>
-                                    <a href="{{ route('dream-analyzer.show', ['hash' => $interpretation->hash]) }}" 
+                                    <a href="{{ $linkUrl }}" 
                                        class="block p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-purple-500 dark:hover:border-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all group">
                                         <div class="text-sm font-medium text-gray-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 line-clamp-2">
                                             {{ $linkTitle }}
@@ -478,7 +493,22 @@
                         <ul class="space-y-3">
                             @foreach($latestInterpretations as $interpretation)
                                 @php
-                                    $interpretationSeo = \App\Helpers\SeoHelper::forDreamAnalyzerResult($interpretation);
+                                    // Загружаем связь report, если она есть
+                                    if ($interpretation->report_id && !$interpretation->relationLoaded('report')) {
+                                        $interpretation->load('report');
+                                    }
+                                    
+                                    // Используем правильный метод SEO в зависимости от типа
+                                    if ($interpretation->report_id && $interpretation->report) {
+                                        // Это анализ отчета
+                                        $interpretationSeo = \App\Helpers\SeoHelper::forReportAnalysis($interpretation->report, $interpretation);
+                                        $linkUrl = route('reports.analysis', $interpretation->report->id);
+                                    } else {
+                                        // Это толкование сна
+                                        $interpretationSeo = \App\Helpers\SeoHelper::forDreamAnalyzerResult($interpretation);
+                                        $linkUrl = route('dream-analyzer.show', ['hash' => $interpretation->hash]);
+                                    }
+                                    
                                     $linkTitle = $interpretationSeo['title'] ?? 'Толкование сна';
                                     // Обрезаем title если слишком длинный
                                     if (mb_strlen($linkTitle) > 70) {
@@ -486,7 +516,7 @@
                                     }
                                 @endphp
                                 <li>
-                                    <a href="{{ route('dream-analyzer.show', ['hash' => $interpretation->hash]) }}" 
+                                    <a href="{{ $linkUrl }}" 
                                        class="block p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-purple-500 dark:hover:border-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all group">
                                         <div class="text-sm font-medium text-gray-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 line-clamp-2">
                                             {{ $linkTitle }}

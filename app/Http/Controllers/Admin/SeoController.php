@@ -37,13 +37,14 @@ class SeoController extends Controller
 
         // Сортировка по ID
         $sortBy = $request->get('sort_by');
-        $sortOrder = $request->get('sort_order', 'asc');
+        $sortOrder = $request->get('sort_order');
         
         if ($sortBy === 'id') {
-            $query->orderBy('id', $sortOrder);
+            // Если явно указана сортировка по ID, используем её
+            $query->orderBy('id', $sortOrder ?? 'desc');
         } else {
-            // Сортировка по умолчанию
-            $query->orderBy('page_type')->orderBy('priority', 'desc');
+            // Сортировка по умолчанию - по ID по убыванию (последние записи первыми)
+            $query->orderBy('id', 'desc');
         }
 
         $seoMetas = $query->paginate(20)->appends($request->query());
