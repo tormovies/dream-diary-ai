@@ -441,8 +441,7 @@
                                 <div class="flex flex-wrap gap-2">
                                     @foreach($analysis['analysis']['traditions'] as $tradition)
                                         @php
-                                            $traditionKey = strtolower($tradition);
-                                            $traditionName = config("traditions.{$traditionKey}.name_short", ucfirst($tradition));
+                                            $traditionName = \App\Helpers\TraditionHelper::getDisplayName($tradition);
                                         @endphp
                                         <span class="inline-block bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-3 py-1 rounded-full text-sm">
                                             {{ $traditionName }}
@@ -453,8 +452,7 @@
                         @elseif(isset($analysis['analysis']['tradition']))
                             <div class="mb-4">
                                 @php
-                                    $traditionKey = strtolower($analysis['analysis']['tradition']);
-                                    $traditionName = config("traditions.{$traditionKey}.name_short", $analysis['analysis']['tradition']);
+                                    $traditionName = \App\Helpers\TraditionHelper::getDisplayName($analysis['analysis']['tradition']);
                                 @endphp
                                 <span class="inline-block bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-3 py-1 rounded-full text-sm">
                                     {{ $traditionName }}

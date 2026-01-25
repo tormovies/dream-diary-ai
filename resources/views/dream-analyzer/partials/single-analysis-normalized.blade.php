@@ -35,8 +35,7 @@
                 <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Традиции анализа:</span>
                 @foreach($traditionsToDisplay as $tradition)
                     @php
-                        $traditionKey = strtolower($tradition);
-                        $traditionName = config("traditions.{$traditionKey}.name_short", ucfirst($tradition));
+                        $traditionName = \App\Helpers\TraditionHelper::getDisplayName($tradition);
                     @endphp
                     <span class="inline-block bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-3 py-1 rounded-full text-sm">
                         {{ $traditionName }}
