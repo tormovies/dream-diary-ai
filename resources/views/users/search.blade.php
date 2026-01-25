@@ -1,35 +1,8 @@
-<!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" 
-      x-data="{ theme: 'light' }"
-      x-bind:class="{ 'dark': theme === 'dark' }"
-      x-init="
-        const savedTheme = localStorage.getItem('theme') || 'light';
-        theme = savedTheme;
-        if (savedTheme === 'dark') {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
-      ">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="csrf-token" content="{{ csrf_token() }}">
-        
-        @if(isset($seo))
-            <x-seo-head :seo="$seo" />
-        @else
-            <title>Сообщество - {{ config('app.name', 'Дневник сновидений') }}</title>
-        @endif
-        
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
-        <x-header-styles />
-    </head>
-    <body class="font-sans antialiased bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
-        <x-header />
+@extends('layouts.base')
 
-        <!-- Основной контент -->
-        <div class="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+@section('content')
+    <!-- Основной контент -->
+    <div class="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
             @auth
             <!-- Для авторизованных: трехколоночный layout -->
             <div class="main-grid w-full">
@@ -480,5 +453,4 @@
                 localStorage.setItem('theme', newTheme);
             }
         </script>
-    </body>
-</html>
+@endsection

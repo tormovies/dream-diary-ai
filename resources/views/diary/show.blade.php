@@ -1,79 +1,48 @@
-<!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" 
-      x-data="{ theme: 'light' }"
-      x-bind:class="{ 'dark': theme === 'dark' }"
-      x-init="
-        const savedTheme = localStorage.getItem('theme') || 'light';
-        theme = savedTheme;
-        if (savedTheme === 'dark') {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
-      ">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="csrf-token" content="{{ csrf_token() }}">
-        
-        @if(isset($seo))
-            <x-seo-head :seo="$seo" />
-        @else
-            <title>Дневник: {{ $user->nickname }} - {{ config('app.name', 'Дневник сновидений') }}</title>
-        @endif
-        
-        {{-- Структурированные данные (JSON-LD) --}}
-        @if(isset($structuredData) && !empty($structuredData))
-            @foreach($structuredData as $data)
-                <x-structured-data :data="$data" />
-            @endforeach
-        @endif
-        
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
-        <style>
-            .gradient-primary {
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            }
-            .card-shadow {
-                box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
-            }
-            .dark .card-shadow {
-                box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
-            }
-            .profile-grid {
-                display: grid;
-                grid-template-columns: 1fr;
-                gap: 1.5rem;
-                width: 100%;
-            }
-            @media (min-width: 1024px) {
-                .profile-grid {
-                    grid-template-columns: 280px 1fr;
-                    gap: 2rem;
-                }
-            }
-            @media (min-width: 1400px) {
-                .profile-grid {
-                    grid-template-columns: 320px 1fr;
-                    gap: 2.5rem;
-                }
-            }
-            .sidebar-menu {
-                display: none;
-            }
-            @media (min-width: 1024px) {
-                .sidebar-menu {
-                    display: block;
-                }
-            }
-        </style>
-        <x-header-styles />
-    </head>
-    <body class="font-sans antialiased bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
-        <x-header />
+@extends('layouts.base')
 
-        <!-- Основной контент -->
-        <div class="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+@push('styles')
+    <style>
+        .gradient-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .card-shadow {
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+        }
+        .dark .card-shadow {
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+        }
+        .profile-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+            width: 100%;
+        }
+        @media (min-width: 1024px) {
+            .profile-grid {
+                grid-template-columns: 280px 1fr;
+                gap: 2rem;
+            }
+        }
+        @media (min-width: 1400px) {
+            .profile-grid {
+                grid-template-columns: 320px 1fr;
+                gap: 2.5rem;
+            }
+        }
+        .sidebar-menu {
+            display: none;
+        }
+        @media (min-width: 1024px) {
+            .sidebar-menu {
+                display: block;
+            }
+        }
+    </style>
+@endpush
+
+@section('content')
+    <!-- Основной контент -->
+    <div class="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <div class="profile-grid w-full">
                 <!-- Левая панель -->
                 <aside class="space-y-6">
@@ -281,8 +250,7 @@
                 localStorage.setItem('theme', newTheme);
             }
         </script>
-    </body>
-</html>
+@endsection
 
 
 

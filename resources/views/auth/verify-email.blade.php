@@ -1,29 +1,7 @@
-<!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" 
-      x-data="{ theme: 'light' }"
-      x-bind:class="{ 'dark': theme === 'dark' }"
-      x-init="
-        const savedTheme = localStorage.getItem('theme') || 'light';
-        theme = savedTheme;
-        if (savedTheme === 'dark') {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
-      ">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="csrf-token" content="{{ csrf_token() }}">
-        
-        @if(isset($seo))
-            <x-seo-head :seo="$seo" />
-        @else
-            <title>Подтверждение email — {{ config('app.name', 'Дневник сновидений') }}</title>
-        @endif
-        
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
-        <style>
+@extends('layouts.base')
+
+@push('styles')
+    <style>
             .card-shadow {
                 box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
             }
@@ -184,5 +162,4 @@
                 </div>
             </div>
         </div>
-    </body>
-</html>
+@endsection

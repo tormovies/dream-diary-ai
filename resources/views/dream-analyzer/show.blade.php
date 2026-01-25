@@ -1,82 +1,17 @@
-<!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" 
-      x-data="{ theme: 'light' }"
-      x-bind:class="{ 'dark': theme === 'dark' }"
-      x-init="
-        theme = localStorage.getItem('theme') || 'light';
-        if (theme === 'dark') {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
+@extends('layouts.base')
+
+@push('styles')
+    <style>
+        #toast.show {
+            transform: translateY(0);
+            opacity: 1;
         }
-      ">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="csrf-token" content="{{ csrf_token() }}">
-        
-        <!-- Resource Hints для оптимизации загрузки -->
-        <link rel="preconnect" href="https://top-fwz1.mail.ru" crossorigin>
-        <link rel="dns-prefetch" href="https://top-fwz1.mail.ru">
-        
-        <!-- Preload критических ресурсов -->
-        <x-preload-assets />
-        
-        @if(isset($seo))
-            <x-seo-head :seo="$seo" />
-        @else
-            @php
-                $result = $interpretation->result;
-                if ($result) {
-                    $isSeries = $result->type === 'series';
-                } else {
-                    $analysis = $interpretation->analysis_data ?? [];
-                    $isSeries = isset($analysis['series_analysis']) && isset($analysis['dreams']);
-                }
-                $titleText = $isSeries ? 'Расшифровка снов' : 'Расшифровка сна';
-            @endphp
-            <title>{{ $titleText }} - {{ config('app.name', 'Дневник сновидений') }}</title>
-        @endif
-        
-        {{-- Структурированные данные (JSON-LD) --}}
-        @if(isset($structuredData) && !empty($structuredData))
-            @foreach($structuredData as $data)
-                <x-structured-data :data="$data" />
-            @endforeach
-        @endif
-        
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
+    </style>
+@endpush
 
-        <!-- Top.Mail.Ru counter -->
-        <script type="text/javascript">
-        var _tmr = window._tmr || (window._tmr = []);
-        _tmr.push({id: "3733093", type: "pageView", start: (new Date()).getTime()});
-        (function (d, w, id) {
-          if (d.getElementById(id)) return;
-          var ts = d.createElement("script"); ts.type = "text/javascript"; ts.async = true; ts.id = id;
-          ts.src = "https://top-fwz1.mail.ru/js/code.js";
-          var f = function () {var s = d.getElementsByTagName("script")[0]; s.parentNode.insertBefore(ts, s);};
-          if (w.opera == "[object Opera]") { d.addEventListener("DOMContentLoaded", f, false); } else { f(); }
-        })(document, window, "tmr-code");
-        </script>
-        <noscript><div><img src="https://top-fwz1.mail.ru/counter?id=3733093;js=na" style="position:absolute;left:-9999px;" alt="Top.Mail.Ru" /></div></noscript>
-        <!-- /Top.Mail.Ru counter -->
-        <x-header-styles />
-        
-        <x-yandex-metrika />
-        
-        <style>
-            #toast.show {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        </style>
-    </head>
-    <body class="font-sans antialiased bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
-        <x-header />
-
-        <!-- Основной контент -->
-        <div class="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+@section('content')
+    <!-- Основной контент -->
+    <div class="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <div class="two-column-grid w-full">
                 <!-- Объединенная левая и центральная панель -->
                 <main class="space-y-6 min-w-0">
@@ -1037,8 +972,7 @@
                 document.body.removeChild(textarea);
             }
         </script>
-    </body>
-</html>
+@endsection
 
 
 
