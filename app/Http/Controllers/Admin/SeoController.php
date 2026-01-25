@@ -7,6 +7,7 @@ use App\Models\SeoMeta;
 use App\Models\Report;
 use App\Models\User;
 use App\Models\DreamInterpretation;
+use App\Models\Article;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -34,7 +35,98 @@ class SeoController extends Controller
             });
         }
 
-        $seoMetas = $query->orderBy('page_type')->orderBy('priority', 'desc')->paginate(20);
+        // Сортировка по ID
+        $sortBy = $request->get('sort_by');
+        $sortOrder = $request->get('sort_order', 'asc');
+        
+        if ($sortBy === 'id') {
+            $query->orderBy('id', $sortOrder);
+        } else {
+            // Сортировка по умолчанию
+            $query->orderBy('page_type')->orderBy('priority', 'desc');
+        }
+
+        $seoMetas = $query->paginate(20)->appends($request->query());
+        
+        // Загружаем данные для формирования ссылок одним запросом
+        $interpretationIds = [];
+        $reportIds = [];
+        $userIds = [];
+        $articleIds = [];
+        
+        foreach ($seoMetas as $seo) {
+            if ($seo->page_id) {
+                switch ($seo->page_type) {
+                    case 'dream-analyzer-result':
+                        $interpretationIds[] = $seo->page_id;
+                        break;
+                    case 'report-analysis':
+                        // Для анализов отчетов нужно загрузить interpretation, чтобы получить report_id
+                        $interpretationIds[] = $seo->page_id;
+                        break;
+                    case 'report':
+                        $reportIds[] = $seo->page_id;
+                        break;
+                    case 'profile':
+                    case 'diary':
+                        $userIds[] = $seo->page_id;
+                        break;
+                    case 'guide':
+                    case 'article':
+                        $articleIds[] = $seo->page_id;
+                        break;
+                }
+            }
+        }
+        
+        // Загружаем все данные одним запросом
+        $interpretations = [];
+        $reportAnalysisReports = []; // Отчеты для анализов отчетов
+        if (!empty($interpretationIds)) {
+            $interpretations = DreamInterpretation::whereIn('id', array_unique($interpretationIds))
+                ->with('report:id') // Загружаем связанный отчет для анализов
+                ->get(['id', 'hash', 'report_id'])
+                ->keyBy('id');
+            
+            // Собираем report_id для анализов отчетов
+            foreach ($interpretations as $interpretation) {
+                if ($interpretation->report_id) {
+                    $reportAnalysisReports[$interpretation->id] = $interpretation->report_id;
+                }
+            }
+        }
+        
+        // Инициализируем как коллекцию, чтобы можно было использовать merge()
+        $reports = collect();
+        if (!empty($reportIds)) {
+            $reports = Report::whereIn('id', array_unique($reportIds))
+                ->get(['id'])
+                ->keyBy('id');
+        }
+        
+        // Добавляем отчеты из анализов в общий массив
+        if (!empty($reportAnalysisReports)) {
+            $reportIdsFromAnalysis = array_unique(array_values($reportAnalysisReports));
+            $reportsFromAnalysis = Report::whereIn('id', $reportIdsFromAnalysis)
+                ->get(['id'])
+                ->keyBy('id');
+            // Объединяем коллекции
+            $reports = $reports->merge($reportsFromAnalysis);
+        }
+        
+        $users = [];
+        if (!empty($userIds)) {
+            $users = User::whereIn('id', array_unique($userIds))
+                ->get(['id', 'public_link'])
+                ->keyBy('id');
+        }
+        
+        $articles = [];
+        if (!empty($articleIds)) {
+            $articles = Article::whereIn('id', array_unique($articleIds))
+                ->get(['id', 'slug', 'type'])
+                ->keyBy('id');
+        }
 
         $pageTypes = [
             'home' => 'Главная',
@@ -49,13 +141,14 @@ class SeoController extends Controller
             'notifications' => 'Уведомления',
             'dream-analyzer' => 'Толкование снов (форма)',
             'dream-analyzer-result' => 'Толкование сна (результат)',
+            'report-analysis' => 'Анализ отчета (результат)',
             'guide-index' => 'Инструкции (заглавная)',
             'articles-index' => 'Статьи (заглавная)',
             'guide' => 'Инструкция',
             'article' => 'Статья',
         ];
 
-        return view('admin.seo.index', compact('seoMetas', 'pageTypes'));
+        return view('admin.seo.index', compact('seoMetas', 'pageTypes', 'interpretations', 'reports', 'users', 'articles', 'reportAnalysisReports'));
     }
 
     /**
@@ -76,6 +169,7 @@ class SeoController extends Controller
             'notifications' => 'Уведомления',
             'dream-analyzer' => 'Толкование снов (форма)',
             'dream-analyzer-result' => 'Толкование сна (результат)',
+            'report-analysis' => 'Анализ отчета (результат)',
             'guide-index' => 'Инструкции (заглавная)',
             'articles-index' => 'Статьи (заглавная)',
             'guide' => 'Инструкция',
@@ -154,6 +248,7 @@ class SeoController extends Controller
             'notifications' => 'Уведомления',
             'dream-analyzer' => 'Толкование снов (форма)',
             'dream-analyzer-result' => 'Толкование сна (результат)',
+            'report-analysis' => 'Анализ отчета (результат)',
             'guide-index' => 'Инструкции (заглавная)',
             'articles-index' => 'Статьи (заглавная)',
             'guide' => 'Инструкция',

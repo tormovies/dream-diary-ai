@@ -44,10 +44,13 @@ class InterpretationLinkHelper
         // Если нашли меньше нужного количества, дополняем последними
         if ($similar->count() < $limit) {
             $latest = self::getLatestInterpretations($interpretation->id, $limit - $similar->count());
-            $similar = $similar->merge($latest)->unique('id')->take($limit);
+            $similar = $similar->merge($latest)->unique('id');
         }
         
-        return $similar;
+        // Исключаем дубликаты по meta title (полностью одинаковые заголовки)
+        $similar = self::removeDuplicateTitles($similar, $currentSeo['title'] ?? '');
+        
+        return $similar->take($limit);
     }
     
     /**
@@ -75,10 +78,10 @@ class InterpretationLinkHelper
             $query->where('id', '!=', $excludeId);
         }
         
-        return $query
+        $interpretations = $query
             ->with('result')
             ->orderBy('created_at', 'desc')
-            ->limit($limit * 2) // Берем больше, чтобы отфильтровать по SEO
+            ->limit($limit * 3) // Берем больше, чтобы отфильтровать по SEO и дубликатам
             ->get()
             ->filter(function($interpretation) {
                 // Проверяем, что у толкования есть валидные SEO данные
@@ -105,8 +108,12 @@ class InterpretationLinkHelper
                 } catch (\Exception $e) {
                     return false;
                 }
-            })
-            ->take($limit);
+            });
+        
+        // Исключаем дубликаты по meta title (полностью одинаковые заголовки)
+        $interpretations = self::removeDuplicateTitles($interpretations);
+        
+        return $interpretations->take($limit);
     }
     
     /**
@@ -229,9 +236,77 @@ class InterpretationLinkHelper
         })
         ->filter()
         ->sortByDesc('score')
-        ->take($limit)
         ->pluck('interpretation');
         
-        return $scored;
+        // Исключаем дубликаты по meta title (полностью одинаковые заголовки)
+        $scored = self::removeDuplicateTitles($scored);
+        
+        return $scored->take($limit);
+    }
+    
+    /**
+     * Удалить дубликаты по meta title (полностью одинаковые заголовки)
+     * Оставляет только первое вхождение каждого уникального title
+     * 
+     * @param \Illuminate\Support\Collection $interpretations Коллекция толкований
+     * @param string|null $excludeTitle Заголовок для исключения (например, текущего толкования)
+     * @return \Illuminate\Support\Collection
+     */
+    private static function removeDuplicateTitles($interpretations, ?string $excludeTitle = null): \Illuminate\Support\Collection
+    {
+        $seenTitles = [];
+        $excludeTitleNormalized = $excludeTitle ? self::normalizeTitle($excludeTitle) : null;
+        
+        return $interpretations->filter(function($interpretation) use (&$seenTitles, $excludeTitleNormalized) {
+            try {
+                $seo = SeoHelper::forDreamAnalyzerResult($interpretation);
+                $title = $seo['title'] ?? '';
+                
+                if (empty($title)) {
+                    return false;
+                }
+                
+                // Нормализуем title для сравнения (убираем лишние пробелы, приводим к нижнему регистру)
+                $normalizedTitle = self::normalizeTitle($title);
+                
+                // Исключаем, если это заголовок текущего толкования
+                if ($excludeTitleNormalized && $normalizedTitle === $excludeTitleNormalized) {
+                    return false;
+                }
+                
+                // Если такой title уже встречался, исключаем дубликат
+                if (isset($seenTitles[$normalizedTitle])) {
+                    return false;
+                }
+                
+                // Запоминаем этот title
+                $seenTitles[$normalizedTitle] = true;
+                
+                return true;
+            } catch (\Exception $e) {
+                return false;
+            }
+        });
+    }
+    
+    /**
+     * Нормализовать заголовок для сравнения
+     * Убирает лишние пробелы, приводит к нижнему регистру, удаляет знаки препинания на концах
+     * 
+     * @param string $title
+     * @return string
+     */
+    private static function normalizeTitle(string $title): string
+    {
+        // Приводим к нижнему регистру
+        $title = mb_strtolower($title);
+        
+        // Убираем лишние пробелы (множественные пробелы заменяем на один)
+        $title = preg_replace('/\s+/', ' ', $title);
+        
+        // Убираем пробелы в начале и конце
+        $title = trim($title);
+        
+        return $title;
     }
 }

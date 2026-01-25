@@ -54,9 +54,22 @@
                     <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                         <thead class="bg-gray-50 dark:bg-gray-700">
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Тип / ID</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+                                    <a href="{{ route('admin.seo.index', array_merge(request()->query(), ['sort_by' => 'id', 'sort_order' => request('sort_by') === 'id' && request('sort_order') === 'asc' ? 'desc' : 'asc'])) }}" class="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200">
+                                        ID
+                                        @if(request('sort_by') === 'id')
+                                            @if(request('sort_order') === 'asc')
+                                                <i class="fas fa-sort-up"></i>
+                                            @else
+                                                <i class="fas fa-sort-down"></i>
+                                            @endif
+                                        @else
+                                            <i class="fas fa-sort text-gray-400"></i>
+                                        @endif
+                                    </a>
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Тип</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Title</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">H1</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Приоритет</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Статус</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Действия</th>
@@ -64,7 +77,120 @@
                         </thead>
                         <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                             @forelse($seoMetas as $seo)
+                                @php
+                                    // Формируем ссылку для каждого типа страницы
+                                    $pageLink = null;
+                                    
+                                    switch ($seo->page_type) {
+                                        case 'home':
+                                            $pageLink = route('home');
+                                            break;
+                                            
+                                        case 'report':
+                                            if ($seo->page_id && isset($reports[$seo->page_id])) {
+                                                $pageLink = route('reports.show', $seo->page_id);
+                                            }
+                                            break;
+                                            
+                                        case 'profile':
+                                            if ($seo->page_id && isset($users[$seo->page_id])) {
+                                                $user = $users[$seo->page_id];
+                                                $pageLink = route('users.profile', $seo->page_id);
+                                            }
+                                            break;
+                                            
+                                        case 'diary':
+                                            if ($seo->page_id && isset($users[$seo->page_id])) {
+                                                $user = $users[$seo->page_id];
+                                                if ($user->public_link) {
+                                                    $pageLink = route('diary.public', $user->public_link);
+                                                }
+                                            }
+                                            break;
+                                            
+                                        case 'search':
+                                            $pageLink = route('reports.search');
+                                            break;
+                                            
+                                        case 'activity':
+                                            $pageLink = route('activity.index');
+                                            break;
+                                            
+                                        case 'users':
+                                            $pageLink = route('users.search');
+                                            break;
+                                            
+                                        case 'dashboard':
+                                            $pageLink = route('dashboard');
+                                            break;
+                                            
+                                        case 'statistics':
+                                            $pageLink = route('statistics.index');
+                                            break;
+                                            
+                                        case 'notifications':
+                                            $pageLink = route('notifications.index');
+                                            break;
+                                            
+                                        case 'dream-analyzer':
+                                            $pageLink = route('dream-analyzer.create');
+                                            break;
+                                            
+                                        case 'dream-analyzer-result':
+                                            if ($seo->page_id && isset($interpretations[$seo->page_id])) {
+                                                $interpretation = $interpretations[$seo->page_id];
+                                                if ($interpretation && $interpretation->hash) {
+                                                    $pageLink = route('dream-analyzer.show', ['hash' => $interpretation->hash]);
+                                                }
+                                            }
+                                            break;
+                                            
+                                        case 'report-analysis':
+                                            if ($seo->page_id) {
+                                                // Получаем интерпретацию (работает для коллекций и массивов)
+                                                try {
+                                                    $interpretation = $interpretations[$seo->page_id] ?? null;
+                                                    if ($interpretation && isset($interpretation->report_id) && $interpretation->report_id) {
+                                                        // Формируем ссылку напрямую по report_id
+                                                        $pageLink = route('reports.analysis', $interpretation->report_id);
+                                                    }
+                                                } catch (\Exception $e) {
+                                                    // Если возникла ошибка, просто не создаем ссылку
+                                                }
+                                            }
+                                            break;
+                                            
+                                        case 'guide-index':
+                                            $pageLink = route('guide.index');
+                                            break;
+                                            
+                                        case 'articles-index':
+                                            $pageLink = route('articles.index');
+                                            break;
+                                            
+                                        case 'guide':
+                                            if ($seo->page_id && isset($articles[$seo->page_id])) {
+                                                $article = $articles[$seo->page_id];
+                                                if ($article && $article->slug) {
+                                                    $pageLink = route('guide.show', $article->slug);
+                                                }
+                                            }
+                                            break;
+                                            
+                                        case 'article':
+                                            if ($seo->page_id && isset($articles[$seo->page_id])) {
+                                                $article = $articles[$seo->page_id];
+                                                if ($article && $article->slug) {
+                                                    $pageLink = route('articles.show', $article->slug);
+                                                }
+                                            }
+                                            break;
+                                    }
+                                @endphp
                                 <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                                        {{ $seo->id }}
+                                    </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="text-sm font-medium text-gray-900 dark:text-white">
                                             {{ $pageTypes[$seo->page_type] ?? $seo->page_type }}
@@ -74,14 +200,16 @@
                                         @endif
                                     </td>
                                     <td class="px-6 py-4">
-                                        <div class="text-sm text-gray-900 dark:text-white">
-                                            {{ Str::limit($seo->title ?? '—', 50) }}
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <div class="text-sm text-gray-900 dark:text-white">
-                                            {{ Str::limit($seo->h1 ?? '—', 40) }}
-                                        </div>
+                                        @if($pageLink)
+                                            <a href="{{ $pageLink }}" target="_blank" class="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline">
+                                                {{ Str::limit($seo->title ?? '—', 50) }}
+                                                <i class="fas fa-external-link-alt ml-1 text-xs"></i>
+                                            </a>
+                                        @else
+                                            <div class="text-sm text-gray-900 dark:text-white">
+                                                {{ Str::limit($seo->title ?? '—', 50) }}
+                                            </div>
+                                        @endif
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                         {{ $seo->priority }}

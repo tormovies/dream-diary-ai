@@ -1319,14 +1319,14 @@ class ReportController extends Controller
                 return;
             }
             
-            // Ищем существующую SEO запись для этого толкования
-            $seoMeta = \App\Models\SeoMeta::where('page_type', 'dream-analyzer-result')
+            // Ищем существующую SEO запись для этого анализа отчета
+            $seoMeta = \App\Models\SeoMeta::where('page_type', 'report-analysis')
                 ->where('page_id', $interpretation->id)
                 ->first();
             
             // Подготавливаем данные для сохранения (только непустые поля)
             $seoDataToSave = [
-                'page_type' => 'dream-analyzer-result',
+                'page_type' => 'report-analysis',
                 'page_id' => $interpretation->id,
                 'is_active' => true,
                 'priority' => 0,

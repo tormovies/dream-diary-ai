@@ -75,6 +75,12 @@
                             </p>
                         </div>
                         
+                        @if(isset($seo['h1_description']) && !empty($seo['h1_description']))
+                            <div class="border-l-4 border-purple-500 dark:border-purple-400 pl-4 py-2 my-4 bg-purple-50 dark:bg-purple-900/20 rounded-r-lg">
+                                <p class="text-gray-700 dark:text-gray-300 text-base italic leading-relaxed">{{ $seo['h1_description'] }}</p>
+                            </div>
+                        @endif
+                        
                         <!-- Спойлер с исходным описанием сна и кнопки -->
                         <div class="flex flex-wrap items-start gap-3 mt-4">
                             <details class="flex-1 min-w-[200px]">
