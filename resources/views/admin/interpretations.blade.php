@@ -210,13 +210,22 @@
                                                     @endif
                                                 </td>
                                                 <td class="px-6 py-4 text-sm text-gray-900">
-                                                    @if($interpretation->traditions && count($interpretation->traditions) > 0)
-                                                        @foreach($interpretation->traditions as $traditionKey)
-                                                            @php
-                                                                $traditionName = $traditionsConfig[$traditionKey]['name_short'] ?? $traditionKey;
-                                                            @endphp
-                                                            <span class="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded mr-1 mb-1">{{ $traditionName }}</span>
-                                                        @endforeach
+                                                    @php
+                                                        $traditions = $interpretation->traditions ?? [];
+                                                        $traditionsCount = count($traditions);
+                                                    @endphp
+                                                    @if($traditionsCount > 0)
+                                                        @php
+                                                            $firstTradition = $traditions[0];
+                                                            $firstTraditionName = \App\Helpers\TraditionHelper::getDisplayName($firstTradition);
+                                                            $additionalCount = $traditionsCount - 1;
+                                                        @endphp
+                                                        <span class="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded mr-1 mb-1">
+                                                            {{ $firstTraditionName }}
+                                                            @if($additionalCount > 0)
+                                                                <span class="font-semibold">+{{ $additionalCount }}</span>
+                                                            @endif
+                                                        </span>
                                                     @else
                                                         <span class="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded mr-1 mb-1">Комплексная</span>
                                                     @endif
