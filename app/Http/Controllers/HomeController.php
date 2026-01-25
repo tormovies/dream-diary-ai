@@ -181,6 +181,8 @@ class HomeController extends Controller
         ]);
 
         // Структурированные данные для SEO (WebSite + Organization)
+        // Используем отдельные блоки (Google может не показывать SearchAction в Rich Results Test,
+        // но разметка должна быть валидной для Schema.org)
         $structuredData = [
             SeoHelper::getStructuredDataForWebSite(),
             SeoHelper::getStructuredDataForOrganization()

@@ -28,6 +28,14 @@
         @else
             <title>Профиль: {{ $user->nickname }} - {{ config('app.name', 'Дневник сновидений') }}</title>
         @endif
+        
+        {{-- Структурированные данные (JSON-LD) --}}
+        @if(isset($structuredData) && !empty($structuredData))
+            @foreach($structuredData as $data)
+                <x-structured-data :data="$data" />
+            @endforeach
+        @endif
+        
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         <x-header-styles />
     </head>
@@ -140,6 +148,9 @@
                 
                 <!-- Центрально-правая панель -->
                 <main class="space-y-6 min-w-0">
+                    @if(isset($breadcrumbs) && !empty($breadcrumbs))
+                        <x-breadcrumbs :items="$breadcrumbs" />
+                    @endif
                     <!-- Заголовок -->
                     <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
                         <h2 class="text-2xl font-bold text-purple-600 dark:text-purple-400">Профиль: {{ $user->nickname }}</h2>

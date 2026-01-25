@@ -359,7 +359,10 @@ class DreamAnalyzerController extends Controller
             SeoHelper::getStructuredDataForOrganization()
         ];
 
-        return view('dream-analyzer.show', array_merge(compact('interpretation', 'request', 'similarInterpretations', 'structuredData'), $layoutData, compact('seo')));
+        // Breadcrumbs
+        $breadcrumbs = \App\Helpers\SeoHelper::getBreadcrumbsForDreamInterpretation($interpretation);
+        
+        return view('dream-analyzer.show', array_merge(compact('interpretation', 'request', 'similarInterpretations', 'structuredData', 'breadcrumbs'), $layoutData, compact('seo')));
     }
 
     /**

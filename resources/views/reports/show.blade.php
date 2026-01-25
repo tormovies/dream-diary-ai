@@ -122,6 +122,9 @@
                 
                 <!-- Центрально-правая панель -->
                 <main class="space-y-6 min-w-0">
+                    @if(isset($breadcrumbs) && !empty($breadcrumbs))
+                        <x-breadcrumbs :items="$breadcrumbs" />
+                    @endif
                     <!-- Заголовок и кнопки действий -->
                     <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
                         <div class="mb-4">

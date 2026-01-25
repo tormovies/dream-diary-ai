@@ -45,7 +45,19 @@ class UserController extends Controller
             $canViewDiary = $user->diary_privacy === 'public';
         }
 
-        return view('users.profile', compact('user', 'reportsCount', 'lastReport', 'canViewDiary'));
+        // SEO данные
+        $seo = SeoHelper::forProfile($user);
+        
+        // Структурированные данные (Person + Organization)
+        $structuredData = [
+            SeoHelper::getStructuredDataForPerson($user, $seo),
+            SeoHelper::getStructuredDataForOrganization()
+        ];
+
+        // Breadcrumbs
+        $breadcrumbs = SeoHelper::getBreadcrumbsForUserProfile($user);
+
+        return view('users.profile', compact('user', 'reportsCount', 'lastReport', 'canViewDiary', 'seo', 'structuredData', 'breadcrumbs'));
     }
 
     /**
@@ -174,6 +186,9 @@ class UserController extends Controller
 
         // SEO данные
         $seo = SeoHelper::get('users');
+        
+        // Примечание: разметка JSON-LD не добавляется, так как страница доступна только для авторизованных пользователей
+        // и поисковые системы не смогут её проиндексировать
 
         return view('users.search', compact('users', 'stats', 'globalStats', 'userStats', 'friendsOnline', 'popularTags', 'dreamDictionary', 'friends', 'incomingRequests', 'seo'));
     }

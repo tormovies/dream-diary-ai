@@ -33,8 +33,17 @@ class DiaryController extends Controller
 
         // SEO данные
         $seo = SeoHelper::forDiary($user);
+        
+        // Структурированные данные (Person + Organization)
+        $structuredData = [
+            SeoHelper::getStructuredDataForPerson($user, $seo),
+            SeoHelper::getStructuredDataForOrganization()
+        ];
 
-        return view('diary.public', compact('user', 'reports', 'seo'));
+        // Breadcrumbs
+        $breadcrumbs = SeoHelper::getBreadcrumbsForDiary($user);
+
+        return view('diary.public', compact('user', 'reports', 'seo', 'structuredData', 'breadcrumbs'));
     }
 
     /**
@@ -74,8 +83,17 @@ class DiaryController extends Controller
 
         // SEO данные
         $seo = SeoHelper::forDiary($user);
+        
+        // Структурированные данные (Person + Organization)
+        $structuredData = [
+            SeoHelper::getStructuredDataForPerson($user, $seo),
+            SeoHelper::getStructuredDataForOrganization()
+        ];
 
-        return view('diary.show', compact('user', 'reports', 'seo'));
+        // Breadcrumbs
+        $breadcrumbs = SeoHelper::getBreadcrumbsForDiary($user);
+
+        return view('diary.show', compact('user', 'reports', 'seo', 'structuredData', 'breadcrumbs'));
     }
 
     /**

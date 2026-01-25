@@ -933,11 +933,16 @@ class SeoHelper
             'url' => $baseUrl,
             'potentialAction' => [
                 '@type' => 'SearchAction',
+                // Используем EntryPoint для target (стандартный Schema.org формат)
                 'target' => [
                     '@type' => 'EntryPoint',
                     'urlTemplate' => $baseUrl . '/search?q={search_term_string}'
                 ],
-                'query-input' => 'required name=search_term_string'
+                'query-input' => [
+                    '@type' => 'PropertyValueSpecification',
+                    'valueRequired' => true,
+                    'valueName' => 'search_term_string'
+                ]
             ]
         ];
     }
@@ -1018,6 +1023,259 @@ class SeoHelper
             'mainEntityOfPage' => [
                 '@type' => 'WebPage',
                 '@id' => $pageUrl
+            ]
+        ];
+    }
+
+    /**
+     * Получить структурированные данные Person для профиля пользователя
+     * 
+     * @param \App\Models\User $user
+     * @param array $seo SEO данные страницы
+     * @return array
+     */
+    public static function getStructuredDataForPerson($user, array $seo = []): array
+    {
+        $baseUrl = rtrim(config('seo.base_url', config('app.url')), '/');
+        $profileUrl = $baseUrl . route('users.profile', $user, false);
+        
+        $personData = [
+            '@context' => 'https://schema.org',
+            '@type' => 'Person',
+            'name' => $user->nickname ?? $user->name,
+            'url' => $profileUrl,
+        ];
+        
+        // Добавляем описание, если есть
+        if (!empty($user->bio)) {
+            $personData['description'] = $user->bio;
+        }
+        
+        // Примечание: memberSince не является валидным свойством Person в Schema.org
+        // Дата регистрации не добавляется, так как нет стандартного свойства для этого
+        
+        return $personData;
+    }
+
+    /**
+     * Получить структурированные данные CollectionPage для списка статей/инструкций
+     * 
+     * @param string $title Заголовок страницы
+     * @param string $description Описание страницы
+     * @param string $routeName Имя маршрута
+     * @param array $seo SEO данные страницы
+     * @return array
+     */
+    public static function getStructuredDataForCollectionPage(string $title, string $description, string $routeName, array $seo = []): array
+    {
+        $baseUrl = rtrim(config('seo.base_url', config('app.url')), '/');
+        $pageUrl = $baseUrl . route($routeName, [], false);
+        
+        return [
+            '@context' => 'https://schema.org',
+            '@type' => 'CollectionPage',
+            'name' => $title,
+            'description' => $description,
+            'url' => $pageUrl,
+            'headline' => $seo['h1'] ?? $title,
+            'mainEntity' => [
+                '@type' => 'WebPage',
+                '@id' => $pageUrl
+            ]
+        ];
+    }
+
+    /**
+     * Получить breadcrumbs для статьи
+     * 
+     * @param \App\Models\Article $article
+     * @return array
+     */
+    public static function getBreadcrumbsForArticle($article): array
+    {
+        $baseUrl = rtrim(config('seo.base_url', config('app.url')), '/');
+        
+        return [
+            [
+                'name' => 'Главная',
+                'url' => $baseUrl . route('home', [], false)
+            ],
+            [
+                'name' => 'Статьи',
+                'url' => $baseUrl . route('articles.index', [], false)
+            ],
+            [
+                'name' => $article->title,
+                'url' => $baseUrl . route('articles.show', ['slug' => $article->slug], false)
+            ]
+        ];
+    }
+
+    /**
+     * Получить breadcrumbs для инструкции (guide)
+     * 
+     * @param \App\Models\Article $guide
+     * @return array
+     */
+    public static function getBreadcrumbsForGuide($guide): array
+    {
+        $baseUrl = rtrim(config('seo.base_url', config('app.url')), '/');
+        
+        return [
+            [
+                'name' => 'Главная',
+                'url' => $baseUrl . route('home', [], false)
+            ],
+            [
+                'name' => 'Инструкции',
+                'url' => $baseUrl . route('guide.index', [], false)
+            ],
+            [
+                'name' => $guide->title,
+                'url' => $baseUrl . route('guide.show', ['slug' => $guide->slug], false)
+            ]
+        ];
+    }
+
+    /**
+     * Получить breadcrumbs для профиля пользователя
+     * 
+     * @param \App\Models\User $user
+     * @return array
+     */
+    public static function getBreadcrumbsForUserProfile($user): array
+    {
+        $baseUrl = rtrim(config('seo.base_url', config('app.url')), '/');
+        $nickname = $user->nickname ?? $user->name;
+        
+        return [
+            [
+                'name' => 'Главная',
+                'url' => $baseUrl . route('home', [], false)
+            ],
+            [
+                'name' => 'Профиль ' . $nickname,
+                'url' => $baseUrl . route('users.profile', ['user' => $user->id], false)
+            ]
+        ];
+    }
+
+    /**
+     * Получить breadcrumbs для публичного дневника
+     * 
+     * @param \App\Models\User $user
+     * @return array
+     */
+    public static function getBreadcrumbsForDiary($user): array
+    {
+        $baseUrl = rtrim(config('seo.base_url', config('app.url')), '/');
+        $nickname = $user->nickname ?? $user->name;
+        
+        return [
+            [
+                'name' => 'Главная',
+                'url' => $baseUrl . route('home', [], false)
+            ],
+            [
+                'name' => 'Дневник ' . $nickname,
+                'url' => $baseUrl . route('diary.public', ['publicLink' => $user->public_link], false)
+            ]
+        ];
+    }
+
+    /**
+     * Получить breadcrumbs для публичного отчета
+     * 
+     * @param \App\Models\Report $report
+     * @return array
+     */
+    public static function getBreadcrumbsForReport($report): array
+    {
+        $baseUrl = rtrim(config('seo.base_url', config('app.url')), '/');
+        $user = $report->user;
+        $nickname = $user->nickname ?? $user->name;
+        $reportDate = $report->report_date->format('d.m.Y');
+        
+        return [
+            [
+                'name' => 'Главная',
+                'url' => $baseUrl . route('home', [], false)
+            ],
+            [
+                'name' => 'Дневник ' . $nickname,
+                'url' => $baseUrl . route('diary.public', ['publicLink' => $user->public_link], false)
+            ],
+            [
+                'name' => 'Отчет от ' . $reportDate,
+                'url' => $baseUrl . route('reports.show', ['report' => $report->id], false)
+            ]
+        ];
+    }
+
+    /**
+     * Получить breadcrumbs для анализа отчета
+     * 
+     * @param \App\Models\Report $report
+     * @return array
+     */
+    public static function getBreadcrumbsForReportAnalysis($report): array
+    {
+        $baseUrl = rtrim(config('seo.base_url', config('app.url')), '/');
+        $user = $report->user;
+        $nickname = $user->nickname ?? $user->name;
+        $reportDate = $report->report_date->format('d.m.Y');
+        
+        return [
+            [
+                'name' => 'Главная',
+                'url' => $baseUrl . route('home', [], false)
+            ],
+            [
+                'name' => 'Дневник ' . $nickname,
+                'url' => $baseUrl . route('diary.public', ['publicLink' => $user->public_link], false)
+            ],
+            [
+                'name' => 'Отчет от ' . $reportDate,
+                'url' => $baseUrl . route('reports.show', ['report' => $report->id], false)
+            ],
+            [
+                'name' => 'Анализ',
+                'url' => $baseUrl . route('reports.analysis', ['report' => $report->id], false)
+            ]
+        ];
+    }
+
+    /**
+     * Получить breadcrumbs для толкования сна
+     * 
+     * @param \App\Models\DreamInterpretation $interpretation
+     * @return array
+     */
+    public static function getBreadcrumbsForDreamInterpretation($interpretation): array
+    {
+        $baseUrl = rtrim(config('seo.base_url', config('app.url')), '/');
+        
+        // Получаем SEO данные для получения title
+        $seo = self::forDreamAnalyzerResult($interpretation);
+        $title = $seo['title'] ?? 'Толкование сна';
+        
+        // Обрезаем title до 40 символов, если длиннее
+        $shortTitle = mb_strlen($title) > 40 
+            ? mb_substr($title, 0, 40) . '...' 
+            : $title;
+        
+        return [
+            [
+                'name' => 'Главная',
+                'url' => $baseUrl . route('home', [], false)
+            ],
+            [
+                'name' => 'Толкование сна',
+                'url' => $baseUrl . route('dream-analyzer.create', [], false)
+            ],
+            [
+                'name' => $shortTitle,
+                'url' => $baseUrl . route('dream-analyzer.show', ['hash' => $interpretation->hash], false)
             ]
         ];
     }

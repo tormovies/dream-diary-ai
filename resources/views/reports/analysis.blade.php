@@ -83,6 +83,9 @@
                             $isSeries = $result ? ($result->type === 'series') : ($report->dreams->count() > 1);
                             $h1Text = $seo['h1'] ?? ($isSeries ? 'Расшифровка снов' : 'Расшифровка сна');
                         @endphp
+                        @if(isset($breadcrumbs) && !empty($breadcrumbs))
+                            <x-breadcrumbs :items="$breadcrumbs" />
+                        @endif
                         <h1 class="text-3xl font-bold text-purple-600 dark:text-purple-400 mb-2">{{ $h1Text }}</h1>
                         <div class="flex flex-row items-center justify-between mb-4">
                             <p class="text-gray-600 dark:text-gray-400 text-sm">

@@ -17,6 +17,14 @@
         @else
             <title>Инструкции - {{ config('app.name', 'Дневник сновидений') }}</title>
         @endif
+        
+        {{-- Структурированные данные (JSON-LD) --}}
+        @if(isset($structuredData) && !empty($structuredData))
+            @foreach($structuredData as $data)
+                <x-structured-data :data="$data" />
+            @endforeach
+        @endif
+        
         @vite(['resources/css/app.css', 'resources/css/articles.css', 'resources/js/app.js'])
         <x-header-styles />
     </head>

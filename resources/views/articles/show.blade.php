@@ -113,6 +113,9 @@
                     <!-- Заголовок и кнопки действий -->
                     <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
                         <div class="mb-4">
+                            @if(isset($breadcrumbs) && !empty($breadcrumbs))
+                                <x-breadcrumbs :items="$breadcrumbs" />
+                            @endif
                             <div class="mb-4">
                                 <h1 class="text-2xl font-bold text-purple-600 dark:text-purple-400">{{ $seo['h1'] ?? $article->title }}</h1>
                                 @if(isset($seo['h1_description']) && !empty($seo['h1_description']))

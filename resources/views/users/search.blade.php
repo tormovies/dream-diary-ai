@@ -21,6 +21,7 @@
         @else
             <title>Сообщество - {{ config('app.name', 'Дневник сновидений') }}</title>
         @endif
+        
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         <x-header-styles />
     </head>

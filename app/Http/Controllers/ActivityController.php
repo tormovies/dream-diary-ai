@@ -285,6 +285,11 @@ class ActivityController extends Controller
         // SEO данные
         $seo = SeoHelper::get('activity');
 
-        return view('activity.index', compact('activities', 'filter', 'stats', 'globalStats', 'userStats', 'friendsOnline', 'todayReportsCount', 'popularTags', 'dreamDictionary', 'seo'));
+        // Структурированные данные (Organization)
+        $structuredData = [
+            SeoHelper::getStructuredDataForOrganization()
+        ];
+
+        return view('activity.index', compact('activities', 'filter', 'stats', 'globalStats', 'userStats', 'friendsOnline', 'todayReportsCount', 'popularTags', 'dreamDictionary', 'seo', 'structuredData'));
     }
 }

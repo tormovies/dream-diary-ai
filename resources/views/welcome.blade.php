@@ -16,10 +16,6 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
         
-        <!-- Resource Hints для оптимизации загрузки -->
-        <link rel="preconnect" href="https://top-fwz1.mail.ru" crossorigin>
-        <link rel="dns-prefetch" href="https://top-fwz1.mail.ru">
-        
         <!-- Preload критических ресурсов -->
         <x-preload-assets />
         
@@ -29,7 +25,7 @@
             <title>{{ config('app.name', 'Дневник сновидений') }}</title>
         @endif
         
-        {{-- Структурированные данные (JSON-LD) --}}
+        {{-- Структурированные данные (JSON-LD) - должны быть сразу после SEO тегов, до скриптов --}}
         @if(isset($structuredData) && !empty($structuredData))
             @foreach($structuredData as $data)
                 <x-structured-data :data="$data" />
@@ -38,21 +34,7 @@
         
         @vite(['resources/css/app.css', 'resources/js/app.js'])
 
-            <!-- Top.Mail.Ru counter -->
-            <script type="text/javascript">
-            var _tmr = window._tmr || (window._tmr = []);
-            _tmr.push({id: "3733093", type: "pageView", start: (new Date()).getTime()});
-            (function (d, w, id) {
-              if (d.getElementById(id)) return;
-              var ts = d.createElement("script"); ts.type = "text/javascript"; ts.async = true; ts.id = id;
-              ts.src = "https://top-fwz1.mail.ru/js/code.js";
-              var f = function () {var s = d.getElementsByTagName("script")[0]; s.parentNode.insertBefore(ts, s);};
-              if (w.opera == "[object Opera]") { d.addEventListener("DOMContentLoaded", f, false); } else { f(); }
-            })(document, window, "tmr-code");
-            </script>
-            <noscript><div><img src="https://top-fwz1.mail.ru/counter?id=3733093;js=na" style="position:absolute;left:-9999px;" alt="Top.Mail.Ru" /></div></noscript>
-            <!-- /Top.Mail.Ru counter -->
-            <x-header-styles />
+        <x-header-styles />
             
             <x-yandex-metrika />
     </head>

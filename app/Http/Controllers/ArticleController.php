@@ -64,11 +64,23 @@ class ArticleController extends Controller
             ];
         }
 
+        // Структурированные данные (CollectionPage + Organization)
+        $structuredData = [
+            SeoHelper::getStructuredDataForCollectionPage(
+                $seo['h1'] ?? 'Инструкции',
+                $seo['description'] ?? 'Полезные инструкции и руководства по использованию платформы',
+                'guide.index',
+                $seo
+            ),
+            SeoHelper::getStructuredDataForOrganization()
+        ];
+
         return view('articles.guide.index', [
             'articles' => $articles,
             'seo' => $seo,
             'globalStats' => $globalStats,
             'userStats' => $userStats,
+            'structuredData' => $structuredData,
         ]);
     }
 
@@ -128,11 +140,23 @@ class ArticleController extends Controller
             ];
         }
 
+        // Структурированные данные (CollectionPage + Organization)
+        $structuredData = [
+            SeoHelper::getStructuredDataForCollectionPage(
+                $seo['h1'] ?? 'Статьи',
+                $seo['description'] ?? 'Интересные статьи о сновидениях, психологии сна и анализе снов',
+                'articles.index',
+                $seo
+            ),
+            SeoHelper::getStructuredDataForOrganization()
+        ];
+
         return view('articles.articles.index', [
             'articles' => $articles,
             'seo' => $seo,
             'globalStats' => $globalStats,
             'userStats' => $userStats,
+            'structuredData' => $structuredData,
         ]);
     }
 
@@ -220,12 +244,16 @@ class ArticleController extends Controller
         // Organization на всех страницах
         $structuredData[] = SeoHelper::getStructuredDataForOrganization();
 
+        // Breadcrumbs
+        $breadcrumbs = SeoHelper::getBreadcrumbsForGuide($article);
+
         return view('articles.show', [
             'article' => $article,
             'seo' => $seo,
             'globalStats' => $globalStats,
             'userStats' => $userStats,
             'structuredData' => $structuredData,
+            'breadcrumbs' => $breadcrumbs,
         ]);
     }
 
@@ -302,12 +330,16 @@ class ArticleController extends Controller
             SeoHelper::getStructuredDataForOrganization()
         ];
 
+        // Breadcrumbs
+        $breadcrumbs = SeoHelper::getBreadcrumbsForArticle($article);
+
         return view('articles.show', [
             'article' => $article,
             'seo' => $seo,
             'globalStats' => $globalStats,
             'userStats' => $userStats,
             'structuredData' => $structuredData,
+            'breadcrumbs' => $breadcrumbs,
         ]);
     }
 }

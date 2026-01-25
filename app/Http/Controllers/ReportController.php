@@ -372,8 +372,13 @@ class ReportController extends Controller
 
         // SEO данные
         $seo = SeoHelper::get('search');
+        
+        // Структурированные данные (Organization)
+        $structuredData = [
+            SeoHelper::getStructuredDataForOrganization()
+        ];
 
-        return view('search', compact('reports', 'allTags', 'dreamTypes', 'seo'));
+        return view('search', compact('reports', 'allTags', 'dreamTypes', 'seo', 'structuredData'));
     }
 
     /**
@@ -624,6 +629,12 @@ class ReportController extends Controller
         // Organization на всех страницах
         $structuredData[] = SeoHelper::getStructuredDataForOrganization();
 
+        // Breadcrumbs (только для публичных отчетов)
+        $breadcrumbs = null;
+        if ($report->access_level === 'all' && $report->user->diary_privacy === 'public') {
+            $breadcrumbs = SeoHelper::getBreadcrumbsForReport($report);
+        }
+
         return view('reports.show', compact(
             'report',
             'globalStats',
@@ -632,7 +643,8 @@ class ReportController extends Controller
             'popularTags',
             'dreamDictionary',
             'seo',
-            'structuredData'
+            'structuredData',
+            'breadcrumbs'
         ));
     }
 
@@ -1063,7 +1075,13 @@ class ReportController extends Controller
             \App\Helpers\SeoHelper::getStructuredDataForOrganization()
         ];
         
-        return view('reports.analysis', compact('report', 'interpretation', 'seo', 'userStats', 'todayReportsCount', 'stats', 'similarInterpretations', 'structuredData'));
+        // Breadcrumbs (только для публичных отчетов)
+        $breadcrumbs = null;
+        if ($report->access_level === 'all' && $report->user->diary_privacy === 'public') {
+            $breadcrumbs = \App\Helpers\SeoHelper::getBreadcrumbsForReportAnalysis($report);
+        }
+        
+        return view('reports.analysis', compact('report', 'interpretation', 'seo', 'userStats', 'todayReportsCount', 'stats', 'similarInterpretations', 'structuredData', 'breadcrumbs'));
     }
 
     /**
