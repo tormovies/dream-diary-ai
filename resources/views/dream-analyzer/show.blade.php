@@ -834,7 +834,7 @@
                     @endif
                     
                     <!-- Статистика проекта -->
-                    <x-project-statistics :stats="$stats" variant="grid" />
+                    <x-project-statistics :stats="$stats" />
                     
                     @auth
                         <!-- Быстрое меню -->

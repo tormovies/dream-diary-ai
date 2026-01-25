@@ -72,7 +72,7 @@
                     </div>
                     
                     <!-- Статистика проекта -->
-                    <x-project-statistics :stats="$globalStats" variant="list" />
+                    <x-project-statistics :stats="$globalStats" />
                     
                     <!-- Быстрые действия -->
                     <x-guest-quick-actions />

@@ -147,7 +147,7 @@
                 <aside class="space-y-6">
                     @guest
                         <!-- Статистика проекта (для неавторизованных) -->
-                        <x-project-statistics :stats="$stats" variant="grid" />
+                        <x-project-statistics :stats="$stats" />
                     @endguest
                     @auth
                         <!-- Приветственная карточка (для авторизованных) -->
@@ -166,44 +166,8 @@
                             </a>
                         </div>
                         
-                        <!-- Карточка пользователя (для авторизованных) -->
-                        <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
-                            <div class="text-center">
-                                <div class="flex justify-center">
-                                    <x-avatar :user="auth()->user()" size="lg" />
-                                </div>
-                                <div class="mt-4">
-                                    <div class="font-semibold text-lg text-gray-900 dark:text-white">{{ auth()->user()->nickname }}</div>
-                                    <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                                        @if($userStats)
-                                            {{ $userStats['reports'] }} {{ $userStats['reports'] == 1 ? 'запись' : ($userStats['reports'] < 5 ? 'записи' : 'записей') }}
-                                        @else
-                                            Пользователь
-                                        @endif
-                                    </div>
-                                </div>
-                                
-                                @if($userStats)
-                                <div class="flex justify-between mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                                    <div class="text-center flex-1">
-                                        <div class="text-xl font-bold text-purple-600 dark:text-purple-400">{{ $userStats['friends'] }}</div>
-                                        <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">друзей</div>
-                                    </div>
-                                    <div class="text-center flex-1">
-                                        <div class="text-xl font-bold text-purple-600 dark:text-purple-400">{{ $userStats['dreams'] }}</div>
-                                        <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">снов</div>
-                                    </div>
-                                    <div class="text-center flex-1">
-                                        <div class="text-xl font-bold text-purple-600 dark:text-purple-400">{{ $userStats['avg_per_month'] }}</div>
-                                        <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">снов/мес</div>
-                                    </div>
-                                </div>
-                                @endif
-                            </div>
-                        </div>
-                        
                         <!-- Статистика проекта (для авторизованных) -->
-                        <x-project-statistics :stats="$stats" variant="grid" />
+                        <x-project-statistics :stats="$stats" />
 
                         <!-- Быстрое меню -->
                         <x-auth-sidebar-menu />
