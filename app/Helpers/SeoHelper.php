@@ -644,11 +644,384 @@ class SeoHelper
         
         return $seoResult;
     }
+
+    /**
+     * Получить структурированные данные FAQPage для инструкции
+     * 
+     * @param \App\Models\Article $article
+     * @param array $seo SEO данные страницы
+     * @return array|null Массив для JSON-LD или null если нет вопросов
+     */
+    public static function getStructuredDataForFAQPage($article, array $seo = []): ?array
+    {
+        // Проверяем, что это инструкция (guide)
+        if ($article->type !== 'guide') {
+            return null;
+        }
+
+        // Парсим HTML контент для извлечения вопросов и ответов
+        $content = $article->content ?? '';
+        
+        // Используем регулярные выражения для парсинга (быстрее чем DOMDocument)
+        // Ищем все <details class="faq-spoiler"> блоки
+        $pattern = '/<details[^>]*class\s*=\s*["\']faq-spoiler["\'][^>]*>(.*?)<\/details>/is';
+        
+        if (!preg_match_all($pattern, $content, $matches, PREG_SET_ORDER)) {
+            // Если нет <details> с классом faq-spoiler, это не FAQ
+            return null;
+        }
+
+        $questions = [];
+        
+        foreach ($matches as $match) {
+            $detailsContent = $match[1];
+            
+            // Извлекаем вопрос из <summary class="faq-spoiler-header">
+            $summaryPattern = '/<summary[^>]*class\s*=\s*["\']faq-spoiler-header["\'][^>]*>(.*?)<\/summary>/is';
+            
+            if (!preg_match($summaryPattern, $detailsContent, $summaryMatch)) {
+                continue; // Пропускаем если нет summary
+            }
+            
+            $questionText = trim(strip_tags($summaryMatch[1]));
+            $questionText = html_entity_decode($questionText, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            
+            if (empty($questionText)) {
+                continue; // Пропускаем пустые вопросы
+            }
+            
+            // Извлекаем ответ (все что после </summary>)
+            $answerHtml = preg_replace($summaryPattern, '', $detailsContent);
+            $answerText = trim(strip_tags($answerHtml));
+            $answerText = html_entity_decode($answerText, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            $answerText = preg_replace('/\s+/', ' ', $answerText); // Убираем множественные пробелы
+            
+            if (empty($answerText)) {
+                continue; // Пропускаем пустые ответы
+            }
+            
+            $questions[] = [
+                '@type' => 'Question',
+                'name' => $questionText,
+                'acceptedAnswer' => [
+                    '@type' => 'Answer',
+                    'text' => $answerText
+                ]
+            ];
+        }
+        
+        // Если нет вопросов, возвращаем null
+        if (empty($questions)) {
+            return null;
+        }
+        
+        // Формируем базовый URL
+        $baseUrl = rtrim(config('seo.base_url', config('app.url')), '/');
+        $pageUrl = $baseUrl . route('guide.show', $article->slug, false);
+        
+        // Формируем заголовок
+        $headline = $seo['h1'] ?? $article->title ?? 'Инструкция';
+        
+        // Формируем даты
+        $datePublished = $article->created_at ? $article->created_at->toIso8601String() : now()->toIso8601String();
+        $dateModified = $article->updated_at ? $article->updated_at->toIso8601String() : $datePublished;
+        
+        return [
+            '@context' => 'https://schema.org',
+            '@type' => 'FAQPage',
+            'headline' => $headline,
+            'mainEntity' => $questions,
+            'datePublished' => $datePublished,
+            'dateModified' => $dateModified,
+            'mainEntityOfPage' => [
+                '@type' => 'WebPage',
+                '@id' => $pageUrl
+            ]
+        ];
+    }
+
+    /**
+     * Получить структурированные данные Organization
+     * 
+     * @return array
+     */
+    public static function getStructuredDataForOrganization(): array
+    {
+        $baseUrl = rtrim(config('seo.base_url', config('app.url')), '/');
+        $logoUrl = config('seo.logo_url', '/images/og-default.jpg');
+        
+        // Делаем логотип абсолютным URL
+        if (!Str::startsWith($logoUrl, ['http://', 'https://'])) {
+            $logoUrl = $baseUrl . '/' . ltrim($logoUrl, '/');
+        }
+        
+        return [
+            '@context' => 'https://schema.org',
+            '@type' => 'Organization',
+            'name' => config('seo.site_name', 'Сновидец.ру'),
+            'url' => $baseUrl,
+            'logo' => $logoUrl,
+            'description' => config('seo.site_description', 'Платформа для ведения дневника сновидений')
+        ];
+    }
+
+    /**
+     * Получить структурированные данные Article для статьи
+     * 
+     * @param \App\Models\Article $article
+     * @param array $seo SEO данные страницы
+     * @return array
+     */
+    public static function getStructuredDataForArticle($article, array $seo = []): array
+    {
+        $baseUrl = rtrim(config('seo.base_url', config('app.url')), '/');
+        $logoUrl = config('seo.logo_url', '/images/og-default.jpg');
+        
+        // Делаем логотип абсолютным URL
+        if (!Str::startsWith($logoUrl, ['http://', 'https://'])) {
+            $logoUrl = $baseUrl . '/' . ltrim($logoUrl, '/');
+        }
+        
+        // Формируем URL страницы
+        $routeName = $article->type === 'guide' ? 'guide.show' : 'articles.show';
+        $pageUrl = $baseUrl . route($routeName, $article->slug, false);
+        
+        // Формируем заголовок
+        $headline = $seo['h1'] ?? $article->title ?? 'Статья';
+        
+        // Формируем описание
+        $description = $seo['description'] ?? $article->excerpt ?? '';
+        
+        // Формируем даты
+        $datePublished = $article->created_at ? $article->created_at->toIso8601String() : now()->toIso8601String();
+        $dateModified = $article->updated_at ? $article->updated_at->toIso8601String() : $datePublished;
+        
+        return [
+            '@context' => 'https://schema.org',
+            '@type' => 'Article',
+            'headline' => $headline,
+            'description' => $description,
+            'author' => [
+                '@type' => 'Organization',
+                'name' => config('seo.site_name', 'Сновидец.ру')
+            ],
+            'publisher' => [
+                '@type' => 'Organization',
+                'name' => config('seo.site_name', 'Сновидец.ру'),
+                'logo' => [
+                    '@type' => 'ImageObject',
+                    'url' => $logoUrl
+                ]
+            ],
+            'datePublished' => $datePublished,
+            'dateModified' => $dateModified,
+            'mainEntityOfPage' => [
+                '@type' => 'WebPage',
+                '@id' => $pageUrl
+            ]
+        ];
+    }
+
+    /**
+     * Получить структурированные данные Article для толкования сна
+     * 
+     * @param \App\Models\DreamInterpretation $interpretation
+     * @param array $seo SEO данные страницы
+     * @return array
+     */
+    public static function getStructuredDataForDreamInterpretation($interpretation, array $seo = []): array
+    {
+        $baseUrl = rtrim(config('seo.base_url', config('app.url')), '/');
+        $logoUrl = config('seo.logo_url', '/images/og-default.jpg');
+        
+        // Делаем логотип абсолютным URL
+        if (!Str::startsWith($logoUrl, ['http://', 'https://'])) {
+            $logoUrl = $baseUrl . '/' . ltrim($logoUrl, '/');
+        }
+        
+        // Формируем URL страницы
+        $pageUrl = $baseUrl . route('dream-analyzer.show', $interpretation->hash, false);
+        
+        // Формируем заголовок
+        $headline = $seo['title'] ?? $seo['h1'] ?? 'Толкование сна';
+        
+        // Формируем описание
+        $description = $seo['description'] ?? '';
+        
+        // Формируем даты
+        $datePublished = $interpretation->created_at ? $interpretation->created_at->toIso8601String() : now()->toIso8601String();
+        
+        return [
+            '@context' => 'https://schema.org',
+            '@type' => 'Article',
+            'headline' => $headline,
+            'description' => $description,
+            'articleSection' => 'Толкование снов',
+            'author' => [
+                '@type' => 'Organization',
+                'name' => config('seo.site_name', 'Сновидец.ру')
+            ],
+            'datePublished' => $datePublished,
+            'mainEntityOfPage' => [
+                '@type' => 'WebPage',
+                '@id' => $pageUrl
+            ]
+        ];
+    }
+
+    /**
+     * Получить структурированные данные Article для анализа отчета
+     * 
+     * @param \App\Models\Report $report
+     * @param \App\Models\DreamInterpretation $interpretation
+     * @param array $seo SEO данные страницы
+     * @return array
+     */
+    public static function getStructuredDataForReportAnalysis($report, $interpretation, array $seo = []): array
+    {
+        $baseUrl = rtrim(config('seo.base_url', config('app.url')), '/');
+        $logoUrl = config('seo.logo_url', '/images/og-default.jpg');
+        
+        // Делаем логотип абсолютным URL
+        if (!Str::startsWith($logoUrl, ['http://', 'https://'])) {
+            $logoUrl = $baseUrl . '/' . ltrim($logoUrl, '/');
+        }
+        
+        // Формируем URL страницы
+        $pageUrl = $baseUrl . route('reports.analysis', $report->id, false);
+        
+        // Формируем заголовок
+        $headline = $seo['title'] ?? $seo['h1'] ?? 'Анализ отчета';
+        
+        // Формируем описание
+        $description = $seo['description'] ?? '';
+        
+        // Формируем даты
+        $datePublished = $interpretation->created_at ? $interpretation->created_at->toIso8601String() : now()->toIso8601String();
+        
+        return [
+            '@context' => 'https://schema.org',
+            '@type' => 'Article',
+            'headline' => $headline,
+            'description' => $description,
+            'articleSection' => 'Анализ сновидений',
+            'author' => [
+                '@type' => 'Organization',
+                'name' => config('seo.site_name', 'Сновидец.ру')
+            ],
+            'datePublished' => $datePublished,
+            'mainEntityOfPage' => [
+                '@type' => 'WebPage',
+                '@id' => $pageUrl
+            ]
+        ];
+    }
+
+    /**
+     * Получить структурированные данные WebSite для главной страницы
+     * 
+     * @return array
+     */
+    public static function getStructuredDataForWebSite(): array
+    {
+        $baseUrl = rtrim(config('seo.base_url', config('app.url')), '/');
+        
+        return [
+            '@context' => 'https://schema.org',
+            '@type' => 'WebSite',
+            'name' => config('seo.site_name', 'Сновидец.ру'),
+            'url' => $baseUrl,
+            'potentialAction' => [
+                '@type' => 'SearchAction',
+                'target' => [
+                    '@type' => 'EntryPoint',
+                    'urlTemplate' => $baseUrl . '/search?q={search_term_string}'
+                ],
+                'query-input' => 'required name=search_term_string'
+            ]
+        ];
+    }
+
+    /**
+     * Получить структурированные данные Article для публичного отчета
+     * 
+     * @param \App\Models\Report $report
+     * @param array $seo SEO данные страницы
+     * @return array|null Массив для JSON-LD или null если отчет не публичный
+     */
+    public static function getStructuredDataForReport($report, array $seo = []): ?array
+    {
+        // Проверяем, что отчет публичный (как в sitemap)
+        // Убеждаемся, что связь user загружена
+        if (!$report->relationLoaded('user')) {
+            $report->load('user');
+        }
+        
+        if ($report->status !== 'published' || 
+            $report->access_level !== 'all' || 
+            !$report->user || 
+            $report->user->diary_privacy !== 'public') {
+            return null;
+        }
+
+        $baseUrl = rtrim(config('seo.base_url', config('app.url')), '/');
+        $logoUrl = config('seo.logo_url', '/images/og-default.jpg');
+        
+        // Делаем логотип абсолютным URL
+        if (!Str::startsWith($logoUrl, ['http://', 'https://'])) {
+            $logoUrl = $baseUrl . '/' . ltrim($logoUrl, '/');
+        }
+        
+        // Формируем URL страницы
+        $pageUrl = $baseUrl . route('reports.show', $report->id, false);
+        
+        // Формируем заголовок
+        $headline = $seo['title'] ?? $seo['h1'] ?? 'Отчет о сновидениях';
+        
+        // Формируем описание
+        $description = $seo['description'] ?? '';
+        
+        // Если нет описания, берем из первого сна
+        if (empty($description) && $report->dreams->isNotEmpty()) {
+            $firstDream = $report->dreams->first();
+            $description = strip_tags($firstDream->description ?? '');
+            $description = Str::limit($description, 160, '...');
+        }
+        
+        // Формируем даты
+        $datePublished = $report->created_at ? $report->created_at->toIso8601String() : now()->toIso8601String();
+        $dateModified = $report->updated_at ? $report->updated_at->toIso8601String() : $datePublished;
+        
+        // Автор
+        $authorName = $report->user->nickname ?? $report->user->name ?? 'Пользователь';
+        
+        return [
+            '@context' => 'https://schema.org',
+            '@type' => 'Article',
+            'headline' => $headline,
+            'description' => $description,
+            'articleSection' => 'Дневник сновидений',
+            'author' => [
+                '@type' => 'Person',
+                'name' => $authorName
+            ],
+            'publisher' => [
+                '@type' => 'Organization',
+                'name' => config('seo.site_name', 'Сновидец.ру'),
+                'logo' => [
+                    '@type' => 'ImageObject',
+                    'url' => $logoUrl
+                ]
+            ],
+            'datePublished' => $datePublished,
+            'dateModified' => $dateModified,
+            'mainEntityOfPage' => [
+                '@type' => 'WebPage',
+                '@id' => $pageUrl
+            ]
+        ];
+    }
 }
-
-
-
-
 
 
 

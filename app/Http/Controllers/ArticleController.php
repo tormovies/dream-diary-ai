@@ -203,11 +203,29 @@ class ArticleController extends Controller
             ];
         }
 
+        // Структурированные данные для SEO
+        $structuredData = [];
+        
+        // FAQPage для инструкций (guide)
+        if ($article->type === 'guide') {
+            $faqData = SeoHelper::getStructuredDataForFAQPage($article, $seo);
+            if ($faqData) {
+                $structuredData[] = $faqData;
+            }
+        } else {
+            // Article для обычных статей
+            $structuredData[] = SeoHelper::getStructuredDataForArticle($article, $seo);
+        }
+        
+        // Organization на всех страницах
+        $structuredData[] = SeoHelper::getStructuredDataForOrganization();
+
         return view('articles.show', [
             'article' => $article,
             'seo' => $seo,
             'globalStats' => $globalStats,
             'userStats' => $userStats,
+            'structuredData' => $structuredData,
         ]);
     }
 
@@ -278,11 +296,18 @@ class ArticleController extends Controller
             ];
         }
 
+        // Структурированные данные для SEO (Article + Organization)
+        $structuredData = [
+            SeoHelper::getStructuredDataForArticle($article, $seo),
+            SeoHelper::getStructuredDataForOrganization()
+        ];
+
         return view('articles.show', [
             'article' => $article,
             'seo' => $seo,
             'globalStats' => $globalStats,
             'userStats' => $userStats,
+            'structuredData' => $structuredData,
         ]);
     }
 }

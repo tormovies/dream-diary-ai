@@ -612,6 +612,18 @@ class ReportController extends Controller
         // SEO данные
         $seo = SeoHelper::forReport($report);
 
+        // Структурированные данные для SEO (Article для публичных отчетов + Organization)
+        $structuredData = [];
+        
+        // Article для публичных отчетов
+        $reportData = SeoHelper::getStructuredDataForReport($report, $seo);
+        if ($reportData) {
+            $structuredData[] = $reportData;
+        }
+        
+        // Organization на всех страницах
+        $structuredData[] = SeoHelper::getStructuredDataForOrganization();
+
         return view('reports.show', compact(
             'report',
             'globalStats',
@@ -619,7 +631,8 @@ class ReportController extends Controller
             'friendsOnline',
             'popularTags',
             'dreamDictionary',
-            'seo'
+            'seo',
+            'structuredData'
         ));
     }
 
@@ -1044,7 +1057,13 @@ class ReportController extends Controller
         // Получаем похожие толкования для перелинковки (лимит из настроек)
         $similarInterpretations = \App\Helpers\InterpretationLinkHelper::getSimilarInterpretations($interpretation);
         
-        return view('reports.analysis', compact('report', 'interpretation', 'seo', 'userStats', 'todayReportsCount', 'stats', 'similarInterpretations'));
+        // Структурированные данные для SEO (Article + Organization)
+        $structuredData = [
+            \App\Helpers\SeoHelper::getStructuredDataForReportAnalysis($report, $interpretation, $seo),
+            \App\Helpers\SeoHelper::getStructuredDataForOrganization()
+        ];
+        
+        return view('reports.analysis', compact('report', 'interpretation', 'seo', 'userStats', 'todayReportsCount', 'stats', 'similarInterpretations', 'structuredData'));
     }
 
     /**

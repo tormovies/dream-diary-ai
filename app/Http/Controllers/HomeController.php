@@ -180,7 +180,13 @@ class HomeController extends Controller
             'today_reports' => $todayReportsCount,
         ]);
 
-        return view('welcome', compact('stats', 'globalStats', 'reports', 'userStats', 'friendsOnline', 'todayReportsCount', 'popularTags', 'dreamDictionary', 'seo', 'latestInterpretations'));
+        // Структурированные данные для SEO (WebSite + Organization)
+        $structuredData = [
+            SeoHelper::getStructuredDataForWebSite(),
+            SeoHelper::getStructuredDataForOrganization()
+        ];
+
+        return view('welcome', compact('stats', 'globalStats', 'reports', 'userStats', 'friendsOnline', 'todayReportsCount', 'popularTags', 'dreamDictionary', 'seo', 'latestInterpretations', 'structuredData'));
     }
 }
 

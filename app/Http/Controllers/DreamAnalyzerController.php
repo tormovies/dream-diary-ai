@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\SeoHelper;
 use App\Helpers\TraditionHelper;
 use App\Models\Comment;
 use App\Models\DreamInterpretation;
@@ -352,7 +353,13 @@ class DreamAnalyzerController extends Controller
         // Получаем похожие толкования для перелинковки (лимит из настроек)
         $similarInterpretations = \App\Helpers\InterpretationLinkHelper::getSimilarInterpretations($interpretation);
 
-        return view('dream-analyzer.show', array_merge(compact('interpretation', 'request', 'similarInterpretations'), $layoutData, compact('seo')));
+        // Структурированные данные для SEO (Article + Organization)
+        $structuredData = [
+            SeoHelper::getStructuredDataForDreamInterpretation($interpretation, $seo),
+            SeoHelper::getStructuredDataForOrganization()
+        ];
+
+        return view('dream-analyzer.show', array_merge(compact('interpretation', 'request', 'similarInterpretations', 'structuredData'), $layoutData, compact('seo')));
     }
 
     /**
