@@ -128,7 +128,7 @@
 
                     <!-- Содержимое статьи -->
                     <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
-                        <div class="prose dark:prose-invert max-w-none">
+                        <div class="prose dark:prose-invert max-w-none" style="min-height: 200px;">
                             {!! $article->content !!}
                         </div>
                     </div>

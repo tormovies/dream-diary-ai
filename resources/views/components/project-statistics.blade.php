@@ -10,7 +10,7 @@
     ], $stats ?? []);
 @endphp
 
-<div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
+<div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700 statistics-card">
     <h3 class="text-lg font-semibold mb-4 text-purple-600 dark:text-purple-400 flex items-center gap-2">
         <i class="fas fa-chart-bar"></i> Статистика проекта
     </h3>

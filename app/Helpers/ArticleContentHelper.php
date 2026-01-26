@@ -254,6 +254,22 @@ class ArticleContentHelper
             }
         }
 
+        // Специальная обработка для изображений - добавляем loading="lazy" и decoding="async" для оптимизации
+        if ($tagName === 'img') {
+            // Добавляем loading="lazy" если его нет
+            if (!$node->hasAttribute('loading')) {
+                $node->setAttribute('loading', 'lazy');
+            }
+            // Добавляем decoding="async" если его нет
+            if (!$node->hasAttribute('decoding')) {
+                $node->setAttribute('decoding', 'async');
+            }
+            // Если нет alt, добавляем пустой alt (для декоративных изображений)
+            if (!$node->hasAttribute('alt')) {
+                $node->setAttribute('alt', '');
+            }
+        }
+
         // Удаляем неразрешенные атрибуты
         $attributesToRemove = [];
         foreach ($node->attributes as $attr) {

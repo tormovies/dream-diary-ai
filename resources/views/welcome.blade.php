@@ -155,7 +155,7 @@
                 <aside class="space-y-6">
                     @if($userStats && $friendsOnline->count() > 0)
                     <!-- Друзья онлайн -->
-                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700" style="min-height: 150px;">
                         <h3 class="text-lg font-semibold mb-4 text-purple-600 dark:text-purple-400 flex items-center gap-2">
                             <i class="fas fa-user-friends"></i> Друзья онлайн
                         </h3>
@@ -185,7 +185,7 @@
                     
                     <!-- Последние толкования -->
                     @if(isset($latestInterpretations) && $latestInterpretations->count() > 0)
-                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700" style="min-height: 200px;">
                         <h3 class="text-lg font-semibold mb-4 text-purple-600 dark:text-purple-400 flex items-center gap-2">
                             <i class="fas fa-link"></i> Последние толкования
                         </h3>
@@ -254,7 +254,7 @@
                     
                     @if($popularTags->count() > 0)
                     <!-- Тренды недели -->
-                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700" style="min-height: 150px;">
                         <h3 class="text-lg font-semibold mb-4 text-purple-600 dark:text-purple-400 flex items-center gap-2">
                             <i class="fas fa-fire"></i> Популярные теги
                         </h3>

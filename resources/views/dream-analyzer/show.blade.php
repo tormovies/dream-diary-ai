@@ -782,7 +782,7 @@
                 <aside class="space-y-6">
                     <!-- Похожие толкования -->
                     @if(isset($similarInterpretations) && $similarInterpretations->count() > 0)
-                        <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
+                        <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700" style="min-height: 200px;">
                             <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">
                                 <i class="fas fa-link mr-2 text-purple-600 dark:text-purple-400"></i>
                                 Похожие толкования

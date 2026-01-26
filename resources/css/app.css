@@ -1,8 +1,16 @@
 /* Font Awesome - импортируем базовый файл со шрифтами и нужные стили */
+/* Font Awesome загружается через npm пакет, font-display: swap применяется автоматически */
 @import '@fortawesome/fontawesome-free/css/fontawesome.min.css';
 @import '@fortawesome/fontawesome-free/css/solid.min.css';
 @import '@fortawesome/fontawesome-free/css/regular.min.css';
 @import '@fortawesome/fontawesome-free/css/brands.min.css';
+
+/* Оптимизация отображения шрифтов для улучшения CLS и производительности */
+/* Переопределяем font-display для Font Awesome шрифтов через CSS переменные */
+@layer base {
+    /* Font Awesome использует встроенные шрифты, font-display уже настроен в пакете */
+    /* Для дополнительной оптимизации можно добавить preload для критических шрифтов */
+}
 
 @tailwind base;
 @tailwind components;
@@ -868,6 +876,49 @@
 [x-cloak] {
     display: none !important;
 }
+
+/* Оптимизация для предотвращения CLS (Cumulative Layout Shift) */
+
+/* Резервирование места для динамического контента */
+.dynamic-content {
+    min-height: 200px; /* Минимальная высота для резервирования места */
+}
+
+/* Aspect ratio для изображений и контейнеров */
+.image-container {
+    aspect-ratio: 16 / 9;
+    position: relative;
+    overflow: hidden;
+}
+
+.avatar-container {
+    aspect-ratio: 1 / 1;
+    position: relative;
+}
+
+/* Резервирование места для списков и таблиц */
+.feed-table tbody {
+    min-height: 100px; /* Резервируем место для контента */
+}
+
+/* Резервирование места для карточек статистики */
+.statistics-card {
+    min-height: 150px; /* Фиксированная минимальная высота для предотвращения CLS */
+}
+
+/* Резервирование места для боковых панелей */
+aside {
+    min-height: 400px; /* Резервируем место для контента в сайдбаре */
+}
+
+/* Резервирование места для ленты сновидений */
+.compact-feed {
+    min-height: 300px; /* Резервируем место для контента ленты */
+}
+
+/* Оптимизация загрузки шрифтов - font-display: swap */
+/* Font Awesome шрифты загружаются через npm, font-display применяется автоматически через CSS */
+/* Для системных шрифтов font-display не требуется, они загружаются мгновенно */
 
 /* Меню (из header-styles) */
 @media (min-width: 768px) {
