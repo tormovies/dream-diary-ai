@@ -76,11 +76,13 @@
                                             $commentsCount = $report->comments->where('parent_id', null)->count();
                                             $whatHappened = 'Добавлен отчет';
                                             $whatHappenedShort = 'Отчёт';
+                                            $whatHappenedMobile = 'О';
                                             $badgeClass = 'report';
                                             $whatHappenedLink = route('reports.show', $report);
                                             if($commentsCount > 0) {
                                                 $whatHappened = 'Новый комментарий';
                                                 $whatHappenedShort = 'Коммент';
+                                                $whatHappenedMobile = 'К';
                                                 $badgeClass = 'comment';
                                                 $whatHappenedLink = route('reports.show', $report) . '#comments';
                                             }
@@ -100,7 +102,7 @@
                                                         <span class="text-gray-600 dark:text-gray-400">|</span>
                                                         <a href="{{ $whatHappenedLink }}" class="flex-shrink-0">
                                                             <span class="action-text-full text-purple-600 dark:text-purple-400 hover:underline">{{ $whatHappened }}</span>
-                                                            <span class="action-badge {{ $badgeClass }}">{{ $whatHappenedShort }}</span>
+                                                            <span class="action-badge {{ $badgeClass }}"><span class="md:hidden">{{ $whatHappenedMobile }}</span><span class="hidden md:inline">{{ $whatHappenedShort }}</span></span>
                                                         </a>
                                                         <span class="text-gray-600 dark:text-gray-400">|</span>
                                                         <div class="diary-author flex-shrink-0">
@@ -320,11 +322,13 @@
                                             $commentsCount = $report->comments->where('parent_id', null)->count();
                                             $whatHappened = 'Добавлен отчет';
                                             $whatHappenedShort = 'Отчёт';
+                                            $whatHappenedMobile = 'О';
                                             $badgeClass = 'report';
                                             $whatHappenedLink = route('reports.show', $report);
                                             if($commentsCount > 0) {
                                                 $whatHappened = 'Новый комментарий';
                                                 $whatHappenedShort = 'Коммент';
+                                                $whatHappenedMobile = 'К';
                                                 $badgeClass = 'comment';
                                                 $whatHappenedLink = route('reports.show', $report) . '#comments';
                                             }
@@ -344,7 +348,7 @@
                                                         <span class="text-gray-600 dark:text-gray-400">|</span>
                                                         <a href="{{ $whatHappenedLink }}" class="flex-shrink-0">
                                                             <span class="action-text-full text-purple-600 dark:text-purple-400 hover:underline">{{ $whatHappened }}</span>
-                                                            <span class="action-badge {{ $badgeClass }}">{{ $whatHappenedShort }}</span>
+                                                            <span class="action-badge {{ $badgeClass }}"><span class="md:hidden">{{ $whatHappenedMobile }}</span><span class="hidden md:inline">{{ $whatHappenedShort }}</span></span>
                                                         </a>
                                                         <span class="text-gray-600 dark:text-gray-400">|</span>
                                                         <div class="diary-author flex-shrink-0">
