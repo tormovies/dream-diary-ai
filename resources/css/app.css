@@ -48,22 +48,6 @@
     grid-template-columns: 1fr;
     gap: 1.5rem;
     width: 100%;
-    min-height: 1200px; /* Резервируем место для предотвращения CLS - увеличен для мобильных */
-    contain: layout; /* Предотвращаем layout shift */
-}
-
-/* Резервируем место для main-grid заранее - применяется к контейнеру с классом main-content */
-.main-content-container {
-    position: relative;
-}
-
-/* Резервируем место для main-grid через невидимый элемент */
-.main-grid-reserved-space {
-    height: 1200px;
-    visibility: hidden;
-    pointer-events: none;
-    margin: 0;
-    padding: 0;
 }
 
 @media (min-width: 1024px) {
@@ -912,25 +896,7 @@
     position: relative;
 }
 
-/* Резервирование места для списков и таблиц */
-.feed-table tbody {
-    min-height: 100px; /* Резервируем место для контента */
-}
-
-/* Резервирование места для карточек статистики */
-.statistics-card {
-    min-height: 150px; /* Фиксированная минимальная высота для предотвращения CLS */
-}
-
-/* Резервирование места для боковых панелей */
-aside {
-    min-height: 400px; /* Резервируем место для контента в сайдбаре */
-}
-
-/* Резервирование места для ленты сновидений */
-.compact-feed {
-    min-height: 300px; /* Резервируем место для контента ленты */
-}
+/* Убраны агрессивные min-height (CLS) — вызывали огромные пробелы между блоками */
 
 /* Оптимизация загрузки шрифтов - font-display: swap */
 /* Font Awesome шрифты загружаются через npm, font-display применяется автоматически через CSS */

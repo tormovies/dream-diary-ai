@@ -2,16 +2,14 @@
 
 @section('content')
     <!-- Основной контент -->
-    <div class="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 main-content-container" style="min-height: 1400px; contain: layout;">
-        <!-- Резервируем место для main-grid заранее (всегда в DOM, независимо от @auth) -->
-        <div class="main-grid-reserved-space" style="height: 1200px; visibility: hidden; pointer-events: none;" aria-hidden="true"></div>
+    <div class="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 main-content-container">
             @auth
             <!-- Для авторизованных: трехколоночный layout -->
-            <div class="main-grid w-full" style="min-height: 1200px;">
+            <div class="main-grid w-full">
                 <!-- Левая панель -->
                 <aside class="space-y-6">
                     <!-- Приветственная карточка -->
-                    <div class="gradient-primary rounded-2xl p-6 text-white card-shadow" style="min-height: 180px;">
+                    <div class="gradient-primary rounded-2xl p-6 text-white card-shadow">
                         <h3 class="text-xl font-bold mb-2">Добро пожаловать, {{ auth()->user()->nickname }}!</h3>
                         <p class="text-purple-100 mb-4 text-sm">
                             @if($todayReportsCount > 0)
@@ -33,7 +31,7 @@
                 <!-- Центральная панель -->
                 <main class="space-y-6 min-w-0">
                     <!-- Заголовок ленты -->
-                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700" style="min-height: 150px;">
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
                         <h2 class="text-2xl font-bold mb-2 text-purple-600 dark:text-purple-400">Лента сновидений</h2>
                         <p class="text-gray-600 dark:text-gray-400 mb-4">Самые интересные сны от пользователей</p>
                         
@@ -157,7 +155,7 @@
                 <aside class="space-y-6">
                     @if($userStats && $friendsOnline->count() > 0)
                     <!-- Друзья онлайн -->
-                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700" style="min-height: 150px;">
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
                         <h3 class="text-lg font-semibold mb-4 text-purple-600 dark:text-purple-400 flex items-center gap-2">
                             <i class="fas fa-user-friends"></i> Друзья онлайн
                         </h3>
@@ -187,7 +185,7 @@
                     
                     <!-- Последние толкования -->
                     @if(isset($latestInterpretations) && $latestInterpretations->count() > 0)
-                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700" style="min-height: 200px;">
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
                         <h3 class="text-lg font-semibold mb-4 text-purple-600 dark:text-purple-400 flex items-center gap-2">
                             <i class="fas fa-link"></i> Последние толкования
                         </h3>
@@ -237,26 +235,9 @@
                     </div>
                     @endif
                     
-                    @if(false)
-                    <!-- Сонник дня (скрыт) -->
-                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
-                        <h3 class="text-lg font-semibold mb-4 text-purple-600 dark:text-purple-400 flex items-center gap-2">
-                            <i class="fas fa-book-open"></i> Сонник дня
-                        </h3>
-                        <div class="space-y-4">
-                            @foreach($dreamDictionary as $item)
-                                <div class="pb-4 border-b border-gray-200 dark:border-gray-700 last:border-0 last:pb-0">
-                                    <div class="font-semibold text-gray-900 dark:text-white mb-1">{{ $item['symbol'] }}</div>
-                                    <div class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{{ $item['meaning'] }}</div>
-                                </div>
-                            @endforeach
-                        </div>
-                    </div>
-                    @endif
-                    
                     @if($popularTags->count() > 0)
                     <!-- Тренды недели -->
-                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700" style="min-height: 150px;">
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
                         <h3 class="text-lg font-semibold mb-4 text-purple-600 dark:text-purple-400 flex items-center gap-2">
                             <i class="fas fa-fire"></i> Популярные теги
                         </h3>
@@ -271,13 +252,14 @@
                     @endif
                 </aside>
             </div>
-            @else
+            @endauth
+            @guest
             <!-- Для неавторизованных: трехколоночный layout -->
-            <div class="main-grid w-full" style="min-height: 1200px;">
+            <div class="main-grid w-full">
                 <!-- Левая панель -->
                 <aside class="space-y-6">
                     <!-- Приветственная карточка -->
-                    <div class="gradient-primary rounded-2xl p-6 text-white card-shadow" style="min-height: 180px;">
+                    <div class="gradient-primary rounded-2xl p-6 text-white card-shadow">
                         <h3 class="text-xl font-bold mb-2">Добро пожаловать!</h3>
                         <p class="text-purple-100 mb-4 text-sm">
                             Присоединяйтесь к сообществу людей, которые записывают и анализируют свои сновидения.
@@ -294,7 +276,7 @@
                 <!-- Центральная панель -->
                 <main class="space-y-6 min-w-0">
                     <!-- Заголовок ленты -->
-                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700" style="min-height: 150px;">
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
                         <h2 class="text-2xl font-bold mb-2 text-purple-600 dark:text-purple-400">Лента сновидений</h2>
                         <p class="text-gray-600 dark:text-gray-400 mb-4">Самые интересные сны от пользователей</p>
                         
@@ -465,23 +447,6 @@
                     </div>
                     @endif
                     
-                    @if(false)
-                    <!-- Сонник дня (скрыт) -->
-                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
-                        <h3 class="text-lg font-semibold mb-4 text-purple-600 dark:text-purple-400 flex items-center gap-2">
-                            <i class="fas fa-book-open"></i> Сонник дня
-                        </h3>
-                        <div class="space-y-4">
-                            @foreach($dreamDictionary as $item)
-                                <div class="pb-4 border-b border-gray-200 dark:border-gray-700 last:border-0 last:pb-0">
-                                    <div class="font-semibold text-gray-900 dark:text-white mb-1">{{ $item['symbol'] }}</div>
-                                    <div class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{{ $item['meaning'] }}</div>
-                                </div>
-                            @endforeach
-                        </div>
-                    </div>
-                    @endif
-                    
                     @if($popularTags->count() > 0)
                     <!-- Популярные теги -->
                     <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
@@ -499,7 +464,7 @@
                     @endif
                 </aside>
             </div>
-            @endauth
+            @endguest
         </div>
 
         @auth
