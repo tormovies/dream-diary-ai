@@ -19,10 +19,20 @@
    - `ArticleContentHelper`: `loading="lazy"`, `decoding="async"`, `alt` где нужно.
 
 4. **Шрифты**  
-   - Font Awesome через npm, font-display учтён.
+   - Font Awesome через npm. **font-display: swap** (переопределение в app.css) — снижение CLS от шрифтов, ~100 ms.
 
 5. **Мобильная лента**  
    - Бейджи «О» / «К» вместо «ОТЧЁТ» / «КОММЕНТ» — больше места для имён.
+
+6. **Оптимизация JS**  
+   - Удалён **tinymce-init** из Vite (не используется: админ — статический TinyMCE из `public/js/tinymce`).  
+   - Главная больше не тянет **vendor** (~1.28 MB): только app + axios + alpine (~79 KB). Сборка быстрее.
+
+7. **Cache-Control**  
+   - В `.htaccess` заданы Cache-Control и Expires для CSS, JS, шрифтов, изображений (в т.ч. `/build/`). Проверено.
+
+8. **CLS**  
+   - Убраны min-height/contain у main-content-container (Lighthouse помечал их как источник сдвига).
 
 ---
 
@@ -40,8 +50,8 @@
 | Задача | Ожидаемый эффект | Статус |
 |--------|-------------------|--------|
 | **PurgeCSS** — удалить неиспользуемый CSS (~30 KiB) | +1–2 балла Performance | ⬜ Не сделано |
-| **Code splitting / оптимизация JS** (~44 KiB) | +1–2 балла Performance | ⬜ Не сделано |
-| **Cache-Control** для статики (~77 KiB) | +1 балл Performance | ⬜ Не сделано |
+| **Code splitting / оптимизация JS** | +1–2 балла Performance | ✅ Сделано (tinymce-init выкинут, vendor не на главной) |
+| **Cache-Control** для статики | +1 балл Performance | ✅ Проверено, настроено в .htaccess |
 
 ### 3. Приоритет 2 (желательно)
 
@@ -59,4 +69,4 @@
 
 ---
 
-**Итого:** сначала **перепроверить PageSpeed** и зафиксировать результаты, затем по приоритету браться за PurgeCSS, JS и кеширование.
+**Итого:** **перепроверить PageSpeed** после деплоя. Дальше по желанию — PurgeCSS (неиспользуемый CSS).

@@ -7,17 +7,6 @@
     "file": "assets/axios-Dos3PyFQ.js",
     "name": "axios"
   },
-  "_vendor-4R8KVYkj.js": {
-    "file": "assets/vendor-4R8KVYkj.js",
-    "name": "vendor",
-    "css": [
-      "assets/vendor-DJUpsM5K.css"
-    ]
-  },
-  "_vendor-DJUpsM5K.css": {
-    "file": "assets/vendor-DJUpsM5K.css",
-    "src": "_vendor-DJUpsM5K.css"
-  },
   "node_modules/@fortawesome/fontawesome-free/webfonts/fa-brands-400.ttf": {
     "file": "assets/fa-brands-400-D1LuMI3I.ttf",
     "src": "node_modules/@fortawesome/fontawesome-free/webfonts/fa-brands-400.ttf"
@@ -68,15 +57,6 @@
     "imports": [
       "_axios-Dos3PyFQ.js",
       "_alpine-BLrUkf4X.js"
-    ]
-  },
-  "resources/js/tinymce-init.js": {
-    "file": "assets/tinymce-init-BNK0BVg3.js",
-    "name": "tinymce-init",
-    "src": "resources/js/tinymce-init.js",
-    "isEntry": true,
-    "imports": [
-      "_vendor-4R8KVYkj.js"
     ]
   }
 }
