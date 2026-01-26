@@ -2,10 +2,10 @@
 
 @section('content')
     <!-- Основной контент -->
-    <div class="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6" style="min-height: 800px;">
+    <div class="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6" style="min-height: 1200px; contain: layout;">
             @auth
             <!-- Для авторизованных: трехколоночный layout -->
-            <div class="main-grid w-full">
+            <div class="main-grid w-full" style="min-height: 1000px;">
                 <!-- Левая панель -->
                 <aside class="space-y-6">
                     <!-- Приветственная карточка -->
@@ -271,7 +271,7 @@
             </div>
             @else
             <!-- Для неавторизованных: трехколоночный layout -->
-            <div class="main-grid w-full">
+            <div class="main-grid w-full" style="min-height: 1000px;">
                 <!-- Левая панель -->
                 <aside class="space-y-6">
                     <!-- Приветственная карточка -->

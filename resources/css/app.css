@@ -48,7 +48,8 @@
     grid-template-columns: 1fr;
     gap: 1.5rem;
     width: 100%;
-    min-height: 600px; /* Резервируем место для предотвращения CLS */
+    min-height: 800px; /* Резервируем место для предотвращения CLS */
+    contain: layout; /* Предотвращаем layout shift */
 }
 
 @media (min-width: 1024px) {
