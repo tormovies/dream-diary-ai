@@ -70,7 +70,7 @@
                                     <p class="mt-1 mb-3 text-sm text-gray-500 dark:text-gray-400">
                                         Выберите одну или несколько традиций интерпретации. Если ничего не выбрано, будет использован комплексный анализ.
                                     </p>
-                                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                    <div class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3">
                                         @php
                                             $oldTraditions = old('traditions', []);
                                         @endphp
@@ -82,9 +82,12 @@
                                                        value="{{ $key }}"
                                                        id="tradition_{{ $key }}"
                                                        {{ in_array($key, $oldTraditions) ? 'checked' : '' }}
-                                                       class="tradition-checkbox rounded border-gray-300 text-purple-600 shadow-sm focus:ring-purple-500"
+                                                       class="tradition-checkbox flex-shrink-0 rounded border-gray-300 text-purple-600 shadow-sm focus:ring-purple-500"
                                                        onchange="updateAnalysisTypeVisibility()">
-                                                <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">{{ $tradition['name_full'] }}</span>
+                                                <span class="ml-2 text-sm text-gray-700 dark:text-gray-300 min-w-0">
+                                                    <span class="tradition-short">{{ $tradition['name_short'] }}</span>
+                                                    <span class="tradition-full">{{ $tradition['name_full'] }}</span>
+                                                </span>
                                             </label>
                                             @endif
                                         @endforeach
