@@ -2,14 +2,14 @@
 
 @section('content')
     <!-- Основной контент -->
-    <div class="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div class="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6" style="min-height: 800px;">
             @auth
             <!-- Для авторизованных: трехколоночный layout -->
             <div class="main-grid w-full">
                 <!-- Левая панель -->
                 <aside class="space-y-6">
                     <!-- Приветственная карточка -->
-                    <div class="gradient-primary rounded-2xl p-6 text-white card-shadow">
+                    <div class="gradient-primary rounded-2xl p-6 text-white card-shadow" style="min-height: 180px;">
                         <h3 class="text-xl font-bold mb-2">Добро пожаловать, {{ auth()->user()->nickname }}!</h3>
                         <p class="text-purple-100 mb-4 text-sm">
                             @if($todayReportsCount > 0)
@@ -31,7 +31,7 @@
                 <!-- Центральная панель -->
                 <main class="space-y-6 min-w-0">
                     <!-- Заголовок ленты -->
-                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700" style="min-height: 150px;">
                         <h2 class="text-2xl font-bold mb-2 text-purple-600 dark:text-purple-400">Лента сновидений</h2>
                         <p class="text-gray-600 dark:text-gray-400 mb-4">Самые интересные сны от пользователей</p>
                         
@@ -275,7 +275,7 @@
                 <!-- Левая панель -->
                 <aside class="space-y-6">
                     <!-- Приветственная карточка -->
-                    <div class="gradient-primary rounded-2xl p-6 text-white card-shadow">
+                    <div class="gradient-primary rounded-2xl p-6 text-white card-shadow" style="min-height: 180px;">
                         <h3 class="text-xl font-bold mb-2">Добро пожаловать!</h3>
                         <p class="text-purple-100 mb-4 text-sm">
                             Присоединяйтесь к сообществу людей, которые записывают и анализируют свои сновидения.
@@ -292,7 +292,7 @@
                 <!-- Центральная панель -->
                 <main class="space-y-6 min-w-0">
                     <!-- Заголовок ленты -->
-                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700" style="min-height: 150px;">
                         <h2 class="text-2xl font-bold mb-2 text-purple-600 dark:text-purple-400">Лента сновидений</h2>
                         <p class="text-gray-600 dark:text-gray-400 mb-4">Самые интересные сны от пользователей</p>
                         
