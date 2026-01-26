@@ -2,7 +2,9 @@
 
 @section('content')
     <!-- Основной контент -->
-    <div class="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6" style="min-height: 1400px; contain: layout;">
+    <div class="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 main-content-container" style="min-height: 1400px; contain: layout;">
+        <!-- Резервируем место для main-grid заранее (всегда в DOM, независимо от @auth) -->
+        <div class="main-grid-reserved-space" style="height: 1200px; visibility: hidden; pointer-events: none;" aria-hidden="true"></div>
             @auth
             <!-- Для авторизованных: трехколоночный layout -->
             <div class="main-grid w-full" style="min-height: 1200px;">

@@ -52,6 +52,20 @@
     contain: layout; /* Предотвращаем layout shift */
 }
 
+/* Резервируем место для main-grid заранее - применяется к контейнеру с классом main-content */
+.main-content-container {
+    position: relative;
+}
+
+/* Резервируем место для main-grid через невидимый элемент */
+.main-grid-reserved-space {
+    height: 1200px;
+    visibility: hidden;
+    pointer-events: none;
+    margin: 0;
+    padding: 0;
+}
+
 @media (min-width: 1024px) {
     .main-grid {
         grid-template-columns: 280px 1fr 320px;
