@@ -2,7 +2,7 @@
 
 @section('content')
     <!-- Основной контент -->
-    <div class="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 main-content-container" style="min-height: 480px; contain: layout;">
+    <div class="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 main-content-container">
             @auth
             <!-- Для авторизованных: трехколоночный layout -->
             <div class="main-grid w-full">
