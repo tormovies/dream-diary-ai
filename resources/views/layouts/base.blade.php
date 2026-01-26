@@ -55,6 +55,9 @@
         {{-- Контент страницы --}}
         @yield('content')
         
+        {{-- Footer --}}
+        <x-footer />
+        
         {{-- Дополнительные скрипты --}}
         @stack('scripts')
     </body>
