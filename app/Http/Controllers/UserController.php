@@ -176,13 +176,8 @@ class UserController extends Controller
             ->limit(6)
             ->get();
 
-        // Сонник (статичные данные)
-        $dreamDictionary = [
-            ['symbol' => 'Летать', 'meaning' => 'Символизирует свободу, стремление к независимости, преодоление препятствий. Часто снится в периоды важных жизненных изменений.'],
-            ['symbol' => 'Вода', 'meaning' => 'Олицетворяет эмоции, подсознание, очищение и перерождение. Чистая вода — к душевному покою, мутная — к внутренним конфликтам.'],
-            ['symbol' => 'Дом', 'meaning' => 'Отражение вашего внутреннего мира. Исследование дома во сне означает самопознание и внутренний рост.'],
-            ['symbol' => 'Потеряться', 'meaning' => 'Указывает на чувство растерянности в реальной жизни, поиск своего пути или необходимость принятия важного решения.'],
-        ];
+        // Последние толкования (как на главной)
+        $latestInterpretations = \App\Helpers\InterpretationLinkHelper::getLatestInterpretations(0);
 
         // SEO данные
         $seo = SeoHelper::get('users');
@@ -190,6 +185,6 @@ class UserController extends Controller
         // Примечание: разметка JSON-LD не добавляется, так как страница доступна только для авторизованных пользователей
         // и поисковые системы не смогут её проиндексировать
 
-        return view('users.search', compact('users', 'stats', 'globalStats', 'userStats', 'friendsOnline', 'popularTags', 'dreamDictionary', 'friends', 'incomingRequests', 'seo'));
+        return view('users.search', compact('users', 'stats', 'globalStats', 'userStats', 'friendsOnline', 'popularTags', 'latestInterpretations', 'friends', 'incomingRequests', 'seo'));
     }
 }

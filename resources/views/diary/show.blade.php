@@ -1,45 +1,5 @@
 @extends('layouts.base')
 
-@push('styles')
-    <style>
-        .gradient-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-        .card-shadow {
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
-        }
-        .dark .card-shadow {
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
-        }
-        .profile-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 1.5rem;
-            width: 100%;
-        }
-        @media (min-width: 1024px) {
-            .profile-grid {
-                grid-template-columns: 280px 1fr;
-                gap: 2rem;
-            }
-        }
-        @media (min-width: 1400px) {
-            .profile-grid {
-                grid-template-columns: 320px 1fr;
-                gap: 2.5rem;
-            }
-        }
-        .sidebar-menu {
-            display: none;
-        }
-        @media (min-width: 1024px) {
-            .sidebar-menu {
-                display: block;
-            }
-        }
-    </style>
-@endpush
-
 @section('content')
     <!-- Основной контент -->
     <div class="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">

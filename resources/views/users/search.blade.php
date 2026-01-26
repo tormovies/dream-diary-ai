@@ -85,24 +85,24 @@
                                 <h3 class="text-lg font-semibold mb-4 text-purple-600 dark:text-purple-400">Входящие запросы в друзья</h3>
                                 <div class="space-y-4">
                                     @foreach($incomingRequests as $request)
-                                        <div class="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                                            <div class="flex items-center gap-4">
+                                        <div class="flex flex-wrap items-center gap-3 p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                            <div class="flex items-center gap-4 min-w-0 flex-1">
                                                 <x-avatar :user="$request->user" size="md" />
-                                                <div>
-                                                    <p class="font-semibold text-gray-900 dark:text-white">{{ $request->user->nickname }}</p>
-                                                    <p class="text-sm text-gray-600 dark:text-gray-400">{{ $request->user->name }}</p>
+                                                <div class="min-w-0 flex-1">
+                                                    <p class="font-semibold text-gray-900 dark:text-white truncate" title="{{ $request->user->nickname }}">{{ $request->user->nickname }}</p>
+                                                    <p class="text-sm text-gray-600 dark:text-gray-400 truncate" title="{{ $request->user->name }}">{{ $request->user->name }}</p>
                                                 </div>
                                             </div>
-                                            <div class="flex gap-2">
+                                            <div class="flex flex-shrink-0 gap-2">
                                                 <form action="{{ route('friends.accept', $request) }}" method="POST">
                                                     @csrf
-                                                    <button type="submit" class="px-4 py-2 bg-green-500 hover:bg-green-700 text-white font-medium rounded-lg transition-colors">
+                                                    <button type="submit" class="px-4 py-2 bg-green-500 hover:bg-green-700 text-white font-medium rounded-lg transition-colors whitespace-nowrap">
                                                         <i class="fas fa-check mr-1"></i>Принять
                                                     </button>
                                                 </form>
                                                 <form action="{{ route('friends.reject', $request) }}" method="POST">
                                                     @csrf
-                                                    <button type="submit" class="px-4 py-2 bg-red-500 hover:bg-red-700 text-white font-medium rounded-lg transition-colors">
+                                                    <button type="submit" class="px-4 py-2 bg-red-500 hover:bg-red-700 text-white font-medium rounded-lg transition-colors whitespace-nowrap">
                                                         <i class="fas fa-times mr-1"></i>Отклонить
                                                     </button>
                                                 </form>
@@ -130,12 +130,12 @@
                                             })->where('status', 'accepted')->first();
                                         @endphp
                                         
-                                        <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all">
-                                            <div class="flex items-center gap-4 mb-4">
+                                        <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all overflow-hidden min-w-0">
+                                            <div class="flex items-center gap-4 mb-4 min-w-0">
                                                 <x-avatar :user="$friend" size="lg" />
-                                                <div class="flex-1">
-                                                    <h3 class="font-semibold text-lg text-gray-900 dark:text-white">{{ $friend->nickname }}</h3>
-                                                    <p class="text-sm text-gray-600 dark:text-gray-400">{{ $friend->name }}</p>
+                                                <div class="flex-1 min-w-0">
+                                                    <h3 class="font-semibold text-lg text-gray-900 dark:text-white truncate" title="{{ $friend->nickname }}">{{ $friend->nickname }}</h3>
+                                                    <p class="text-sm text-gray-600 dark:text-gray-400 truncate" title="{{ $friend->name }}">{{ $friend->name }}</p>
                                                 </div>
                                             </div>
 
@@ -143,17 +143,17 @@
                                                 <p class="text-sm text-gray-700 dark:text-gray-300 mb-4 line-clamp-2">{{ $friend->bio }}</p>
                                             @endif
 
-                                            <div class="flex items-stretch gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+                                            <div class="flex flex-wrap items-center gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
                                                 <a href="{{ route('users.profile', $friend) }}" 
-                                                   class="flex-1 inline-flex items-center justify-center px-2 py-1.5 gradient-primary text-white rounded text-xs font-medium hover:shadow-md transition-all min-h-[32px]">
+                                                   class="flex-shrink-0 inline-flex items-center justify-center px-3 py-1.5 gradient-primary text-white rounded text-xs font-medium hover:shadow-md transition-all min-h-[32px]">
                                                     Профиль
                                                 </a>
                                                 <form action="{{ route('friends.destroy', $friendship) }}" method="POST" 
                                                       onsubmit="return confirm('Вы уверены, что хотите удалить этого пользователя из друзей?');"
-                                                      class="flex-1">
+                                                      class="flex-shrink-0">
                                                     @csrf
                                                     @method('DELETE')
-                                                    <button type="submit" class="w-full h-full inline-flex items-center justify-center px-2 py-1.5 bg-red-500 hover:bg-red-700 text-white rounded text-xs font-medium transition-colors min-h-[32px]">
+                                                    <button type="submit" class="inline-flex items-center justify-center px-3 py-1.5 bg-red-500 hover:bg-red-700 text-white rounded text-xs font-medium transition-colors min-h-[32px] whitespace-nowrap">
                                                         Удалить
                                                     </button>
                                                 </form>
@@ -173,13 +173,13 @@
                     <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
                         <h2 class="text-2xl font-bold mb-4 text-purple-600 dark:text-purple-400">Найти друзей</h2>
                         
-                        <form method="GET" action="{{ route('users.search') }}" class="flex gap-2 mb-6">
+                        <form method="GET" action="{{ route('users.search') }}" class="flex flex-wrap gap-2 mb-6">
                             <input type="text" 
                                    name="q" 
                                    value="{{ request('q') }}"
                                    placeholder="Поиск по никнейму или имени..." 
-                                   class="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-l-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500">
-                            <button type="submit" class="gradient-primary text-white px-6 py-3 rounded-r-lg hover:shadow-lg transition-all">
+                                   class="flex-1 min-w-[200px] px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg md:rounded-r-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            <button type="submit" class="flex-shrink-0 gradient-primary text-white px-6 py-3 rounded-lg md:rounded-l-none hover:shadow-lg transition-all">
                                 <i class="fas fa-search"></i>
                             </button>
                         </form>
@@ -190,7 +190,7 @@
                         @if($users->count() > 0)
                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 @foreach($users as $user)
-                                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all {{ $user->is_banned ? 'border-red-300 dark:border-red-700' : '' }} relative">
+                                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all overflow-hidden min-w-0 {{ $user->is_banned ? 'border-red-300 dark:border-red-700' : '' }} relative">
                                         @if($user->is_banned && auth()->check() && auth()->user()->isAdmin())
                                             <div class="absolute top-4 right-4">
                                                 <span class="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold bg-red-500 text-white rounded-md shadow-sm">
@@ -199,11 +199,11 @@
                                                 </span>
                                             </div>
                                         @endif
-                                        <div class="flex items-center gap-4 mb-4">
+                                        <div class="flex items-center gap-4 mb-4 min-w-0">
                                             <x-avatar :user="$user" size="lg" />
-                                            <div class="flex-1">
-                                                <h3 class="font-semibold text-lg text-gray-900 dark:text-white">{{ $user->nickname }}</h3>
-                                                <p class="text-sm text-gray-600 dark:text-gray-400">{{ $user->name }}</p>
+                                            <div class="flex-1 min-w-0">
+                                                <h3 class="font-semibold text-lg text-gray-900 dark:text-white truncate" title="{{ $user->nickname }}">{{ $user->nickname }}</h3>
+                                                <p class="text-sm text-gray-600 dark:text-gray-400 truncate" title="{{ $user->name }}">{{ $user->name }}</p>
                                             </div>
                                         </div>
 
@@ -211,12 +211,12 @@
                                             <p class="text-sm text-gray-700 dark:text-gray-300 mb-4 line-clamp-2">{{ $user->bio }}</p>
                                         @endif
 
-                                        <div class="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+                                        <div class="flex flex-wrap items-center gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
                                             <a href="{{ route('users.profile', $user) }}" 
-                                               class="text-xs px-3 py-1 gradient-primary text-white rounded font-medium hover:shadow-md transition-all">
+                                               class="flex-shrink-0 text-xs px-3 py-1.5 gradient-primary text-white rounded font-medium hover:shadow-md transition-all">
                                                 Профиль
                                             </a>
-                                            <span class="text-xs px-3 py-1 rounded 
+                                            <span class="flex-shrink-0 text-xs px-3 py-1 rounded 
                                                 @if($user->diary_privacy === 'public') bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200
                                                 @elseif($user->diary_privacy === 'friends') bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200
                                                 @else bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200
@@ -280,20 +280,50 @@
                     </div>
                     @endif
                     
-                    <!-- Сонник дня -->
+                    <!-- Последние толкования -->
+                    @if(isset($latestInterpretations) && $latestInterpretations->count() > 0)
                     <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
                         <h3 class="text-lg font-semibold mb-4 text-purple-600 dark:text-purple-400 flex items-center gap-2">
-                            <i class="fas fa-book-open"></i> Сонник дня
+                            <i class="fas fa-link"></i> Последние толкования
                         </h3>
-                        <div class="space-y-4">
-                            @foreach($dreamDictionary as $item)
-                                <div class="pb-4 border-b border-gray-200 dark:border-gray-700 last:border-0 last:pb-0">
-                                    <div class="font-semibold text-gray-900 dark:text-white mb-1">{{ $item['symbol'] }}</div>
-                                    <div class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{{ $item['meaning'] }}</div>
-                                </div>
+                        <ul class="space-y-3">
+                            @foreach($latestInterpretations as $interpretation)
+                                @php
+                                    if ($interpretation->report_id && !$interpretation->relationLoaded('report')) {
+                                        $interpretation->load('report');
+                                    }
+                                    if ($interpretation->report_id && $interpretation->report) {
+                                        $interpretationSeo = \App\Helpers\SeoHelper::forReportAnalysis($interpretation->report, $interpretation);
+                                        $linkUrl = route('reports.analysis', $interpretation->report->id);
+                                    } else {
+                                        $interpretationSeo = \App\Helpers\SeoHelper::forDreamAnalyzerResult($interpretation);
+                                        $linkUrl = route('dream-analyzer.show', ['hash' => $interpretation->hash]);
+                                    }
+                                    $linkTitle = $interpretationSeo['title'] ?? 'Толкование сна';
+                                    if (mb_strlen($linkTitle) > 70) {
+                                        $linkTitle = mb_substr($linkTitle, 0, 67) . '...';
+                                    }
+                                @endphp
+                                <li>
+                                    <a href="{{ $linkUrl }}" 
+                                       class="block p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-purple-500 dark:hover:border-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all group">
+                                        <div class="text-sm font-medium text-gray-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 line-clamp-2">
+                                            {{ $linkTitle }}
+                                        </div>
+                                        @if(!empty($interpretationSeo['description']))
+                                            <div class="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
+                                                {{ mb_substr($interpretationSeo['description'], 0, 80) }}{{ mb_strlen($interpretationSeo['description']) > 80 ? '...' : '' }}
+                                            </div>
+                                        @endif
+                                        <div class="text-xs text-gray-400 dark:text-gray-500 mt-2">
+                                            {{ $interpretation->created_at->format('d.m.Y') }}
+                                        </div>
+                                    </a>
+                                </li>
                             @endforeach
-                        </div>
+                        </ul>
                     </div>
+                    @endif
                     
                     @if($popularTags->count() > 0)
                     <!-- Популярные теги -->
@@ -338,13 +368,13 @@
                     <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
                         <h2 class="text-2xl font-bold mb-4 text-purple-600 dark:text-purple-400">Поиск пользователей</h2>
                         
-                        <form method="GET" action="{{ route('users.search') }}" class="flex gap-2 mb-6">
+                        <form method="GET" action="{{ route('users.search') }}" class="flex flex-wrap gap-2 mb-6">
                             <input type="text" 
                                    name="q" 
                                    value="{{ request('q') }}"
                                    placeholder="Поиск по никнейму или имени..." 
-                                   class="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-l-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500">
-                            <button type="submit" class="gradient-primary text-white px-6 py-3 rounded-r-lg hover:shadow-lg transition-all">
+                                   class="flex-1 min-w-[200px] px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg md:rounded-r-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            <button type="submit" class="flex-shrink-0 gradient-primary text-white px-6 py-3 rounded-lg md:rounded-l-none hover:shadow-lg transition-all">
                                 <i class="fas fa-search"></i>
                             </button>
                         </form>
@@ -355,7 +385,7 @@
                         @if($users->count() > 0)
                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 @foreach($users as $user)
-                                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all {{ $user->is_banned ? 'border-red-300 dark:border-red-700' : '' }} relative">
+                                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all overflow-hidden min-w-0 {{ $user->is_banned ? 'border-red-300 dark:border-red-700' : '' }} relative">
                                         @if($user->is_banned && auth()->check() && auth()->user()->isAdmin())
                                             <div class="absolute top-4 right-4">
                                                 <span class="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold bg-red-500 text-white rounded-md shadow-sm">
@@ -364,11 +394,11 @@
                                                 </span>
                                             </div>
                                         @endif
-                                        <div class="flex items-center gap-4 mb-4">
+                                        <div class="flex items-center gap-4 mb-4 min-w-0">
                                             <x-avatar :user="$user" size="lg" />
-                                            <div class="flex-1">
-                                                <h3 class="font-semibold text-lg text-gray-900 dark:text-white">{{ $user->nickname }}</h3>
-                                                <p class="text-sm text-gray-600 dark:text-gray-400">{{ $user->name }}</p>
+                                            <div class="flex-1 min-w-0">
+                                                <h3 class="font-semibold text-lg text-gray-900 dark:text-white truncate" title="{{ $user->nickname }}">{{ $user->nickname }}</h3>
+                                                <p class="text-sm text-gray-600 dark:text-gray-400 truncate" title="{{ $user->name }}">{{ $user->name }}</p>
                                             </div>
                                         </div>
 
@@ -376,12 +406,12 @@
                                             <p class="text-sm text-gray-700 dark:text-gray-300 mb-4 line-clamp-2">{{ $user->bio }}</p>
                                         @endif
 
-                                        <div class="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+                                        <div class="flex flex-wrap items-center gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
                                             <a href="{{ route('users.profile', $user) }}" 
-                                               class="text-xs px-3 py-1 gradient-primary text-white rounded font-medium hover:shadow-md transition-all">
+                                               class="flex-shrink-0 text-xs px-3 py-1.5 gradient-primary text-white rounded font-medium hover:shadow-md transition-all">
                                                 Профиль
                                             </a>
-                                            <span class="text-xs px-3 py-1 rounded 
+                                            <span class="flex-shrink-0 text-xs px-3 py-1 rounded 
                                                 @if($user->diary_privacy === 'public') bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200
                                                 @elseif($user->diary_privacy === 'friends') bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200
                                                 @else bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200

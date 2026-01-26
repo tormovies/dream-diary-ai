@@ -1,14 +1,5 @@
 @extends('layouts.base')
 
-@push('styles')
-    <style>
-        #toast.show {
-            transform: translateY(0);
-            opacity: 1;
-        }
-    </style>
-@endpush
-
 @section('content')
     <!-- Основной контент -->
     <div class="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">

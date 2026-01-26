@@ -1,6 +1,6 @@
 <!-- Навигация -->
 <header x-data="{ mobileMenuOpen: false }" class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50 card-shadow">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
         <nav class="flex justify-between items-center py-4">
             <div class="flex items-center gap-6">
                 <a href="{{ route('home') }}" class="text-2xl font-bold text-purple-600 dark:text-purple-400 flex items-center gap-2">
@@ -65,6 +65,9 @@
                 <a href="{{ route('dream-analyzer.create') }}" class="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors">
                     <i class="fas fa-magic mr-2"></i>Толкование снов
                 </a>
+                <a href="{{ route('guide.index') }}" class="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors">
+                    <i class="fas fa-list mr-2"></i>Инструкции
+                </a>
                 <a href="{{ route('reports.search') }}" class="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors">
                     <i class="fas fa-search mr-2"></i>Поиск
                 </a>
@@ -111,6 +114,9 @@
                 @endauth
                 <a href="{{ route('dream-analyzer.create') }}" class="block px-3 py-2 text-base font-medium text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors">
                     <i class="fas fa-magic mr-2"></i>Толкование снов
+                </a>
+                <a href="{{ route('guide.index') }}" class="block px-3 py-2 text-base font-medium text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors">
+                    <i class="fas fa-list mr-2"></i>Инструкции
                 </a>
                 <a href="{{ route('reports.search') }}" class="block px-3 py-2 text-base font-medium text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors">
                     <i class="fas fa-search mr-2"></i>Поиск
