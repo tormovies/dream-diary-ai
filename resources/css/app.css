@@ -1,15 +1,33 @@
 /* Font Awesome - импортируем базовый файл со шрифтами и нужные стили */
-/* Font Awesome загружается через npm пакет, font-display: swap применяется автоматически */
 @import '@fortawesome/fontawesome-free/css/fontawesome.min.css';
 @import '@fortawesome/fontawesome-free/css/solid.min.css';
 @import '@fortawesome/fontawesome-free/css/regular.min.css';
 @import '@fortawesome/fontawesome-free/css/brands.min.css';
 
-/* Оптимизация отображения шрифтов для улучшения CLS и производительности */
-/* Переопределяем font-display для Font Awesome шрифтов через CSS переменные */
-@layer base {
-    /* Font Awesome использует встроенные шрифты, font-display уже настроен в пакете */
-    /* Для дополнительной оптимизации можно добавить preload для критических шрифтов */
+/* PageSpeed: переопределяем font-display block -> swap (снижает CLS, ~100 ms) */
+@font-face {
+    font-family: "Font Awesome 6 Free";
+    font-style: normal;
+    font-weight: 900;
+    font-display: swap;
+    src: url("../../node_modules/@fortawesome/fontawesome-free/webfonts/fa-solid-900.woff2") format("woff2"),
+         url("../../node_modules/@fortawesome/fontawesome-free/webfonts/fa-solid-900.ttf") format("truetype");
+}
+@font-face {
+    font-family: "Font Awesome 6 Free";
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url("../../node_modules/@fortawesome/fontawesome-free/webfonts/fa-regular-400.woff2") format("woff2"),
+         url("../../node_modules/@fortawesome/fontawesome-free/webfonts/fa-regular-400.ttf") format("truetype");
+}
+@font-face {
+    font-family: "Font Awesome 6 Brands";
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url("../../node_modules/@fortawesome/fontawesome-free/webfonts/fa-brands-400.woff2") format("woff2"),
+         url("../../node_modules/@fortawesome/fontawesome-free/webfonts/fa-brands-400.ttf") format("truetype");
 }
 
 @tailwind base;
