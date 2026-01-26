@@ -23,7 +23,7 @@
         @if(isset($seo))
             <x-seo-head :seo="$seo" />
         @else
-            <title>{{ $title ?? config('app.name', 'Дневник сновидений') }}</title>
+            <title>@yield('title', $title ?? config('app.name', 'Дневник сновидений'))</title>
             
             {{-- Favicon --}}
             <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
