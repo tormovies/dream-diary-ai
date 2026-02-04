@@ -206,6 +206,20 @@
                         </div>
                     @endforeach
 
+                    @if(!empty(trim($report->user_context ?? '')))
+                        <div class="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden card-shadow border border-gray-200 dark:border-gray-700">
+                            <div class="p-6">
+                                <div class="flex justify-between items-start mb-4">
+                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Контекст</h3>
+                                    <span class="text-xs bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-300 px-2 py-1 rounded whitespace-nowrap flex-shrink-0">
+                                        Ваши мысли по поводу сна
+                                    </span>
+                                </div>
+                                <p class="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{{ $report->user_context }}</p>
+                            </div>
+                        </div>
+                    @endif
+
                     <!-- Комментарии -->
                     <div id="comments" class="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden card-shadow border border-gray-200 dark:border-gray-700">
                         <div class="p-6">
@@ -400,6 +414,19 @@
                                         @endif
                                     @endforeach
                                 </div>
+                            </div>
+
+                            <div class="mb-6">
+                                <label class="flex items-center p-3 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                                    <input type="checkbox"
+                                           name="include_context"
+                                           value="1"
+                                           class="rounded border-gray-300 text-purple-600 shadow-sm focus:ring-purple-500">
+                                    <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                                        Учитывать контекст (ваши мысли и контекст из предыдущего отчёта)
+                                    </span>
+                                </label>
+                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">По умолчанию выключено. Если включить, в анализ попадёт ваш контекст из этого отчёта и контекст предыстории из предыдущего по дате отчёта.</p>
                             </div>
 
                             <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 mt-6">

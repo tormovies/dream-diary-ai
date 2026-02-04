@@ -8,6 +8,9 @@
                 <a href="{{ route('admin.seo.sitemap') }}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
                     <i class="fas fa-sitemap mr-2"></i>Управление Sitemap
                 </a>
+                <a href="{{ route('admin.seo.redirects.index') }}" class="inline-block bg-blue-600 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded no-underline" style="background-color:#2563eb;color:#fff;">
+                    <i class="fas fa-exchange-alt mr-2"></i>301 редиректы
+                </a>
                 <a href="{{ route('admin.seo.create') }}" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
                     Создать
                 </a>

@@ -125,7 +125,15 @@ Route::middleware('auth')->group(function () {
         Route::get('/seo/sitemap', [\App\Http\Controllers\Admin\SeoController::class, 'sitemap'])->name('seo.sitemap');
         Route::post('/seo/sitemap/settings', [\App\Http\Controllers\Admin\SeoController::class, 'updateSitemapSettings'])->name('seo.sitemap.settings');
         Route::post('/seo/sitemap/clear-cache', [\App\Http\Controllers\Admin\SeoController::class, 'clearSitemapCache'])->name('seo.sitemap.clear-cache');
-        
+
+        // 301 редиректы (из БД)
+        Route::get('seo/redirects', [\App\Http\Controllers\Admin\RedirectController::class, 'index'])->name('seo.redirects.index');
+        Route::get('seo/redirects/create', [\App\Http\Controllers\Admin\RedirectController::class, 'create'])->name('seo.redirects.create');
+        Route::post('seo/redirects', [\App\Http\Controllers\Admin\RedirectController::class, 'store'])->name('seo.redirects.store');
+        Route::get('seo/redirects/{redirect}/edit', [\App\Http\Controllers\Admin\RedirectController::class, 'edit'])->name('seo.redirects.edit');
+        Route::put('seo/redirects/{redirect}', [\App\Http\Controllers\Admin\RedirectController::class, 'update'])->name('seo.redirects.update');
+        Route::delete('seo/redirects/{redirect}', [\App\Http\Controllers\Admin\RedirectController::class, 'destroy'])->name('seo.redirects.destroy');
+
         // Управление статьями
         Route::resource('articles', \App\Http\Controllers\Admin\ArticleController::class);
         Route::post('/articles/{article}/publish', [\App\Http\Controllers\Admin\ArticleController::class, 'publish'])->name('articles.publish');

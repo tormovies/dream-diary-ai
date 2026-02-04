@@ -396,8 +396,9 @@ class ReportController extends Controller
             'Глюк',
             'Транс / Гипноз'
         ];
+        $blockTypes = array_merge($dreamTypes, [Report::BLOCK_TYPE_CONTEXT]);
 
-        return view('reports.create', compact('dreamTypes'));
+        return view('reports.create', compact('dreamTypes', 'blockTypes'));
     }
 
     /**
@@ -407,6 +408,8 @@ class ReportController extends Controller
     {
         try {
             DB::transaction(function () use ($request) {
+                $userContext = null;
+
                 $report = Report::create([
                     'user_id' => auth()->id(),
                     'report_date' => $request->report_date,
@@ -414,12 +417,12 @@ class ReportController extends Controller
                     'status' => $request->input('status', 'draft'), // По умолчанию черновик
                 ]);
 
-                // Создаем сны
+                // Создаем сны и извлекаем контекст пользователя из блока типа «Контекст»
                 if ($request->has('dreams') && is_array($request->dreams)) {
-                    // Получаем данные снов из формы
+                    // Получаем данные блоков из формы (сны + возможный блок «Контекст»)
                     $dreamsData = $request->dreams;
                     
-                    // Обрабатываем каждое окно сна - проверяем на серию
+                    // Обрабатываем каждое окно - проверяем тип: Контекст или сон
                     $processedDreams = [];
                     $seriesCount = 0;
                     
@@ -428,9 +431,15 @@ class ReportController extends Controller
                             continue;
                         }
                         
-                        $description = $dreamData['description'];
+                        $description = trim($dreamData['description']);
                         $dreamType = $dreamData['dream_type'];
                         $title = isset($dreamData['title']) ? trim($dreamData['title']) : '';
+
+                        // Блок «Контекст» — сохраняем в user_context (один на отчёт)
+                        if ($dreamType === Report::BLOCK_TYPE_CONTEXT) {
+                            $userContext = $description !== '' ? $description : null;
+                            continue;
+                        }
                         
                         // Проверяем, является ли это серией снов
                         if ($this->isDreamSeries($description)) {
@@ -455,6 +464,12 @@ class ReportController extends Controller
                         }
                     }
                     
+                    if (empty($processedDreams)) {
+                        throw \Illuminate\Validation\ValidationException::withMessages([
+                            'dreams' => ['В отчёте должен быть хотя бы один сон (блок с типом сна).'],
+                        ]);
+                    }
+
                     // Проверяем, есть ли хотя бы одно название
                     $hasAnyTitle = false;
                     foreach ($processedDreams as $dreamData) {
@@ -500,6 +515,10 @@ class ReportController extends Controller
                     }
                     if ($autoTitleCreated) {
                         session()->flash('info', 'Для первого сна автоматически создано название, так как ни у одного сна не было указано название.');
+                    }
+
+                    if ($userContext !== null) {
+                        $report->update(['user_context' => $userContext]);
                     }
                 }
 
@@ -667,8 +686,9 @@ class ReportController extends Controller
             'Глюк',
             'Транс / Гипноз'
         ];
+        $blockTypes = array_merge($dreamTypes, [Report::BLOCK_TYPE_CONTEXT]);
 
-        return view('reports.edit', compact('report', 'dreamTypes'));
+        return view('reports.edit', compact('report', 'dreamTypes', 'blockTypes'));
     }
 
     /**
@@ -679,6 +699,8 @@ class ReportController extends Controller
         $this->authorize('update', $report);
 
         DB::transaction(function () use ($request, $report) {
+            $userContext = null;
+
             $report->update([
                 'report_date' => $request->report_date,
                 'access_level' => $request->access_level,
@@ -688,8 +710,8 @@ class ReportController extends Controller
             // Удаляем старые сны
             $report->dreams()->delete();
 
-            // Получаем данные снов
-            $dreamsData = $request->dreams;
+            // Получаем данные блоков (сны + возможный блок «Контекст»)
+            $dreamsData = $request->dreams ?? [];
             
             // Проверяем, есть ли хотя бы одно название
             $hasAnyTitle = false;
@@ -720,9 +742,15 @@ class ReportController extends Controller
                     continue;
                 }
                 
-                $description = $dreamData['description'];
+                $description = trim($dreamData['description']);
                 $dreamType = $dreamData['dream_type'];
                 $title = isset($dreamData['title']) ? trim($dreamData['title']) : '';
+
+                // Блок «Контекст» — сохраняем в user_context (один на отчёт)
+                if ($dreamType === Report::BLOCK_TYPE_CONTEXT) {
+                    $userContext = $description !== '' ? $description : null;
+                    continue;
+                }
                 
                 // Проверяем, является ли это серией снов
                 if ($this->isDreamSeries($description)) {
@@ -746,6 +774,14 @@ class ReportController extends Controller
                     ];
                 }
             }
+
+            if (empty($processedDreams)) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'dreams' => ['В отчёте должен быть хотя бы один сон (блок с типом сна).'],
+                ]);
+            }
+
+            $report->update(['user_context' => $userContext]);
             
             // Создаем новые сны
             foreach ($processedDreams as $index => $dreamData) {
@@ -866,17 +902,42 @@ class ReportController extends Controller
                 ->with('info', 'У этого отчёта уже есть анализ');
         }
 
-        // Валидация традиций
+        // Валидация традиций и галочки контекста
         $validated = $request->validate([
             'traditions' => 'nullable|array',
             'traditions.*' => 'in:' . TraditionHelper::validationKeys(),
+            'include_context' => 'nullable|boolean',
         ]);
 
         // Если традиции не выбраны, используем комплексный анализ
         $traditions = $validated['traditions'] ?? ['eclectic'];
+        $includeContext = $request->boolean('include_context');
 
         // Загружаем сны отчёта
         $report->load('dreams');
+
+        // --- Передача контекста в DeepSeek (шаг 1/2) ---
+        // Собираем объединённый контекст: блок «контекст пользователя» (из отчёта) + «контекст предыстории» (summary_text из предыдущего отчёта по дате).
+        // Результат сохраняется в interpretation.context и попадёт в промпт в processAnalysisAsync → DeepSeekService::buildPrompt().
+        $combinedContext = null;
+        if ($includeContext) {
+            $parts = [];
+            if (!empty(trim($report->user_context ?? ''))) {
+                $parts[] = 'контекст пользователя - ' . trim($report->user_context);
+            }
+            $previousReport = $report->getPreviousReportByDate();
+            if ($previousReport && !empty(trim($previousReport->current_context ?? ''))) {
+                $prevContext = trim($previousReport->current_context);
+                $decoded = json_decode($prevContext, true);
+                $prevText = is_array($decoded) && !empty($decoded['summary_text'])
+                    ? trim($decoded['summary_text'])
+                    : $prevContext;
+                if ($prevText !== '') {
+                    $parts[] = 'контекст предыстории - ' . $prevText;
+                }
+            }
+            $combinedContext = !empty($parts) ? implode("\n\n", $parts) : null;
+        }
 
         // Определяем тип анализа: серия или одиночный
         $dreamsCount = $report->dreams->count();
@@ -939,13 +1000,13 @@ class ReportController extends Controller
             // Генерируем уникальный хеш
             $hash = DreamInterpretation::generateHash();
             
-            // Создаём запись анализа со статусом pending
+            // Контекст (объединённый текст) сохраняем в interpretation.context — его возьмёт processAnalysisAsync и передаст в DeepSeek.
             $interpretation = DreamInterpretation::create([
                 'hash' => $hash,
                 'user_id' => auth()->id(),
                 'ip_address' => request()->ip(),
                 'dream_description' => $dreamDescriptionFull,
-                'context' => null,
+                'context' => $combinedContext,
                 'traditions' => $traditions,
                 'analysis_type' => $analysisType,
                 'processing_status' => 'pending',
@@ -1208,9 +1269,12 @@ class ReportController extends Controller
         set_time_limit($phpTimeout);
             $deepSeekService = new \App\Services\DeepSeekService();
             
+            // --- Передача контекста в DeepSeek (шаг 2/2) ---
+            // Второй аргумент — interpretation.context (объединённый «контекст пользователя» + «контекст предыстории»).
+            // В DeepSeekService::buildPrompt() он подставляется в промпт как строка "Контекст пользователя: ..." / "[...]".
             $result = $deepSeekService->analyzeDream(
                 $dreamDescriptionFull,
-                null, // context
+                $interpretation->context,
                 $interpretation->traditions ?? [],
                 $interpretation->analysis_type,
                 $isSeries ? $dreamDescriptions : null
@@ -1225,6 +1289,18 @@ class ReportController extends Controller
                 'api_error' => $result['error'] ?? null,
                 'processing_status' => $isCompleted ? 'completed' : 'failed',
             ]);
+
+            // Сохраняем в отчёт полный JSON context_for_next_analysis (вложенная структура: key_themes, recurring_symbols и т.д.) для будущих запросов к DeepSeek.
+            $ctxNext = $result['analysis_data']['context_for_next_analysis'] ?? null;
+            if (is_array($ctxNext) && !empty($ctxNext)) {
+                $report->update(['current_context' => json_encode($ctxNext, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)]);
+                \Log::info('Report current_context saved from DeepSeek', ['report_id' => $report->id]);
+            } else {
+                \Log::info('Report current_context not saved: no context_for_next_analysis in response', [
+                    'report_id' => $report->id,
+                    'has_ctx_key' => isset($result['analysis_data']['context_for_next_analysis']),
+                ]);
+            }
             
             // Очищаем кеш статистики, если толкование завершено
             if ($isCompleted) {

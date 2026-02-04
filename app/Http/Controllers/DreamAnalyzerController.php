@@ -143,7 +143,20 @@ class DreamAnalyzerController extends Controller
         // Если это серия снов, используем старую систему (пока не реализовано в новой)
         if ($isSeries) {
             $analysisType = 'series_integrated';
-            
+            $traditionsForHash = $validated['traditions'] ?? [];
+            $contentHash = DreamInterpretation::computeContentHash($dreamDescription, $traditionsForHash);
+            $existing = DreamInterpretation::findDuplicateForDedup($contentHash, auth()->id(), $request->ip());
+            if ($existing) {
+                $message = match ($existing->processing_status) {
+                    'completed' => 'Толкование этого сна уже существует',
+                    'failed' => 'Предыдущее толкование завершилось с ошибкой. На этой странице вы можете повторить попытку.',
+                    default => 'Толкование уже начато, дождитесь его окончания',
+                };
+                return redirect()->route('dream-analyzer.show', $existing->hash)
+                    ->with('info', $message)
+                    ->setStatusCode(301);
+            }
+
             // Старая система для серий (пока оставляем как есть)
             $hash = DreamInterpretation::generateHash();
             $interpretation = DreamInterpretation::create([
@@ -151,8 +164,9 @@ class DreamAnalyzerController extends Controller
                 'user_id' => auth()->id(),
                 'ip_address' => $request->ip(),
                 'dream_description' => $dreamDescription,
+                'content_hash' => $contentHash,
                 'context' => $context,
-                'traditions' => $validated['traditions'] ?? [],
+                'traditions' => $traditionsForHash,
                 'analysis_type' => $analysisType,
             ]);
 
@@ -198,6 +212,19 @@ class DreamAnalyzerController extends Controller
             $analysisMode = $validated['analysis_type'] ?? 'integrated'; // comparative | parallel | integrated
         }
 
+        $contentHash = DreamInterpretation::computeContentHash($dreamDescription, $traditions);
+        $existing = DreamInterpretation::findDuplicateForDedup($contentHash, auth()->id(), $request->ip());
+        if ($existing) {
+            $message = match ($existing->processing_status) {
+                'completed' => 'Толкование этого сна уже существует',
+                'failed' => 'Предыдущее толкование завершилось с ошибкой. На этой странице вы можете повторить попытку.',
+                default => 'Толкование уже начато, дождитесь его окончания',
+            };
+            return redirect()->route('dream-analyzer.show', $existing->hash)
+                ->with('info', $message)
+                ->setStatusCode(301);
+        }
+
         // Генерируем уникальный хеш
         $hash = DreamInterpretation::generateHash();
 
@@ -207,6 +234,7 @@ class DreamAnalyzerController extends Controller
             'user_id' => auth()->id(),
             'ip_address' => $request->ip(),
             'dream_description' => $dreamDescription,
+            'content_hash' => $contentHash,
             'context' => $context,
             'traditions' => $traditions,
             'analysis_type' => $analysisMode,

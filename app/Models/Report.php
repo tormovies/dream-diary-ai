@@ -9,11 +9,16 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Report extends Model
 {
+    /** Тип блока «Контекст» в форме отчёта (не тип сна) */
+    public const BLOCK_TYPE_CONTEXT = 'Контекст';
+
     protected $fillable = [
         'user_id',
         'report_date',
         'access_level',
         'status',
+        'user_context',
+        'current_context',
         'analysis_id',
         'analyzed_at',
     ];
@@ -64,6 +69,18 @@ class Report extends Model
     public function analysis(): BelongsTo
     {
         return $this->belongsTo(DreamInterpretation::class, 'analysis_id');
+    }
+
+    /**
+     * Предыдущий отчёт пользователя по дате (для контекста предыстории)
+     */
+    public function getPreviousReportByDate(): ?self
+    {
+        return static::query()
+            ->where('user_id', $this->user_id)
+            ->where('report_date', '<', $this->report_date)
+            ->orderByDesc('report_date')
+            ->first();
     }
 
     /**

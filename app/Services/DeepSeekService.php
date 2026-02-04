@@ -324,6 +324,17 @@ class DeepSeekService
         $prompt .= "    \"meta_description\": \"SEO описание для страницы (150-160 символов, краткое описание содержания анализа, привлекающее пользователей)\",\n";
         $prompt .= "    \"h1\": \"Заголовок H1 для страницы анализа (главный заголовок страницы, отражающий суть толкования)\",\n";
         $prompt .= "    \"intro_text\": \"Вступительный текст под H1 (100-200 слов, краткое введение к анализу, подготавливающее читателя к основному содержанию)\"\n";
+        $prompt .= "  },\n";
+        $prompt .= "  \"context_for_next_analysis\": {\n";
+        $prompt .= "    \"format_version\": \"1.0\",\n";
+        $prompt .= "    \"key_themes\": [\"тема1\", \"тема2\"],\n";
+        $prompt .= "    \"recurring_symbols\": [\n";
+        $prompt .= "      {\"symbol\": \"символ\", \"appearances\": 2, \"interpretations\": [\"значение1\"]}\n";
+        $prompt .= "    ],\n";
+        $prompt .= "    \"emotional_pattern\": \"описание паттерна\",\n";
+        $prompt .= "    \"unresolved_questions\": [\"вопрос1\", \"вопрос2\"],\n";
+        $prompt .= "    \"recommended_focus\": \"на что обращать внимание\",\n";
+        $prompt .= "    \"summary_text\": \"Краткий текст для следующего запроса\"\n";
         $prompt .= "  }\n";
         $prompt .= "}";
 
@@ -478,6 +489,17 @@ class DeepSeekService
         $prompt .= "    \"meta_description\": \"SEO описание для страницы (150-160 символов, краткое описание содержания анализа, привлекающее пользователей)\",\n";
         $prompt .= "    \"h1\": \"Заголовок H1 для страницы анализа (главный заголовок страницы, отражающий суть толкования)\",\n";
         $prompt .= "    \"intro_text\": \"Вступительный текст под H1 (100-200 слов, краткое введение к анализу, подготавливающее читателя к основному содержанию)\"\n";
+        $prompt .= "  },\n";
+        $prompt .= "  \"context_for_next_analysis\": {\n";
+        $prompt .= "    \"format_version\": \"1.0\",\n";
+        $prompt .= "    \"key_themes\": [\"тема1\", \"тема2\"],\n";
+        $prompt .= "    \"recurring_symbols\": [\n";
+        $prompt .= "      {\"symbol\": \"символ\", \"appearances\": 2, \"interpretations\": [\"значение1\"]}\n";
+        $prompt .= "    ],\n";
+        $prompt .= "    \"emotional_pattern\": \"описание паттерна\",\n";
+        $prompt .= "    \"unresolved_questions\": [\"вопрос1\", \"вопрос2\"],\n";
+        $prompt .= "    \"recommended_focus\": \"на что обращать внимание\",\n";
+        $prompt .= "    \"summary_text\": \"Краткий текст для следующего запроса\"\n";
         $prompt .= "  }\n";
         $prompt .= "}\n\n";
         

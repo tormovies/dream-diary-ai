@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Report;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateReportRequest extends FormRequest
@@ -27,8 +28,8 @@ class UpdateReportRequest extends FormRequest
             'status' => ['nullable', 'in:draft,published'],
             'dreams' => ['required', 'array', 'min:1'],
             'dreams.*.title' => ['nullable', 'string', 'max:255'],
-            'dreams.*.description' => ['required', 'string'],
-            'dreams.*.dream_type' => ['required', 'in:Яркий сон,Бледный сон,Пограничное состояние,Паралич,ВТО,Осознанное сновидение,Глюк,Транс / Гипноз'],
+            'dreams.*.description' => ['nullable', 'string'],
+            'dreams.*.dream_type' => ['required', 'in:Яркий сон,Бледный сон,Пограничное состояние,Паралич,ВТО,Осознанное сновидение,Глюк,Транс / Гипноз,' . Report::BLOCK_TYPE_CONTEXT],
             'tags' => ['nullable'],
         ];
     }

@@ -14,6 +14,7 @@ class DreamInterpretation extends Model
         'report_id',
         'ip_address',
         'dream_description',
+        'content_hash',
         'context',
         'traditions',
         'analysis_type',
@@ -30,6 +31,49 @@ class DreamInterpretation extends Model
         'analysis_data' => 'array',
         'processing_started_at' => 'datetime',
     ];
+
+    /** Количество дней, в пределах которых ищем дубликат по content_hash */
+    public const DEDUP_DAYS = 30;
+
+    /**
+     * Вычисление хеша для дедупликации: нормализованное описание + канонические традиции.
+     * Один и тот же текст с теми же традициями даёт один хеш.
+     */
+    public static function computeContentHash(string $dreamDescription, array $traditions): string
+    {
+        $normalized = trim(preg_replace('/\s++/u', ' ', $dreamDescription));
+        $canonicalTraditions = $traditions;
+        sort($canonicalTraditions);
+        $traditionsString = implode(',', $canonicalTraditions);
+        return hash('sha256', $normalized . "\n" . $traditionsString);
+    }
+
+    /**
+     * Поиск существующего толкования с тем же content_hash (тот же пользователь или IP) за последние N дней.
+     * Если есть завершённое — возвращаем его (любое, например последнее).
+     * Если нет завершённого — возвращаем самое первое по созданию (чтобы пользователь ждал именно его).
+     */
+    public static function findDuplicateForDedup(string $contentHash, ?int $userId, ?string $ipAddress, int $withinDays = self::DEDUP_DAYS): ?self
+    {
+        $base = static::query()
+            ->where('content_hash', $contentHash)
+            ->where('created_at', '>=', now()->subDays($withinDays));
+
+        if ($userId !== null) {
+            $base->where('user_id', $userId);
+        } else {
+            $base->whereNull('user_id')->where('ip_address', $ipAddress);
+        }
+
+        // Сначала ищем любое завершённое (последнее по дате)
+        $completed = (clone $base)->where('processing_status', 'completed')->orderByDesc('created_at')->first();
+        if ($completed !== null) {
+            return $completed;
+        }
+
+        // Нет завершённого — возвращаем самое первое (старое), чтобы ждали именно его
+        return $base->orderBy('created_at')->first();
+    }
 
     /**
      * Генерация уникального хеша

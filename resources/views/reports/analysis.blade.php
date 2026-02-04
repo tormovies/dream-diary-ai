@@ -23,7 +23,7 @@
                             </p>
                         </div>
                         
-                        @if(isset($seo['h1_description']) && !empty($seo['h1_description']))
+                        @if(isset($seo['h1_description']) && !empty($seo['h1_description']) && !$isSeries)
                             <div class="border-l-4 border-purple-500 dark:border-purple-400 pl-4 py-2 my-4 bg-purple-50 dark:bg-purple-900/20 rounded-r-lg">
                                 <p class="text-gray-700 dark:text-gray-300 text-base italic leading-relaxed">{{ $seo['h1_description'] }}</p>
                             </div>
@@ -386,6 +386,23 @@
                                             <p class="text-sm">
                                                 <i class="fas fa-exclamation-triangle mr-2"></i>
                                                 <strong>JSON ответ не сохранен</strong> (поле raw_api_response пусто)
+                                            </p>
+                                        </div>
+                                    @endif
+
+                                    @if(!empty($report->current_context))
+                                        <div>
+                                            <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-2">Контекст от DeepSeek (сохранён в отчёт для следующих запросов):</h4>
+                                            <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">Поле <code>report.current_context</code> — полный JSON <code>context_for_next_analysis</code>, будет отправляться в DeepSeek при следующем анализе.</p>
+                                            <details class="cursor-pointer" open>
+                                                <summary class="text-purple-600 dark:text-purple-400 hover:underline mb-2">Показать/скрыть JSON</summary>
+                                                <pre class="bg-gray-800 dark:bg-gray-950 text-amber-300 p-4 rounded-lg overflow-auto text-xs pre-scrollable">{{ $formatJson($report->current_context) }}</pre>
+                                            </details>
+                                        </div>
+                                    @else
+                                        <div class="bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3">
+                                            <p class="text-sm text-gray-600 dark:text-gray-400">
+                                                <strong>Контекст от DeepSeek:</strong> не сохранён (в ответе API не было <code>context_for_next_analysis</code> или анализ ещё не завершён).
                                             </p>
                                         </div>
                                     @endif

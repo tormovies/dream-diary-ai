@@ -103,6 +103,15 @@
                     </div>
                 @endif
 
+                @if(session('info'))
+                    <div class="bg-blue-100 dark:bg-blue-900 border border-blue-400 dark:border-blue-700 text-blue-700 dark:text-blue-300 px-6 py-4 rounded-lg mb-4">
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-info-circle"></i>
+                            <p>{{ session('info') }}</p>
+                        </div>
+                    </div>
+                @endif
+
                 @if($processingStatus === 'failed' || $interpretation->api_error)
                     <!-- Ошибка API -->
                     <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-400 dark:border-yellow-700 text-yellow-800 dark:text-yellow-200 px-6 py-6 rounded-lg">

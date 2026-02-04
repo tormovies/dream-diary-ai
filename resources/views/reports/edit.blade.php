@@ -82,21 +82,21 @@
                             <x-input-error :messages="$errors->get('status')" class="mt-2" />
                         </div>
 
-                        <!-- Сны -->
+                        <!-- Блоки: сны и контекст -->
                         <div class="form-group">
                             <div class="flex justify-between items-center">
                                 <label class="form-label">
-                                    <i class="fas fa-moon"></i> Сны
+                                    <i class="fas fa-moon"></i> Блоки
                                 </label>
                                 <button type="button" 
                                         onclick="addDream()" 
                                         class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
-                                    <i class="fas fa-plus mr-2"></i>Добавить сон
+                                    <i class="fas fa-plus mr-2"></i>Добавить блок
                                 </button>
                             </div>
-                            
+                            <div class="form-hint mb-2">Добавляйте сны и при необходимости один блок «Контекст» — ваши мысли по поводу сна.</div>
                             <div id="dreams-container">
-                                <!-- Сны будут добавляться динамически -->
+                                <!-- Блоки добавляются динамически -->
                             </div>
                             
                             <x-input-error :messages="$errors->get('dreams')" class="mt-2" />
@@ -136,7 +136,40 @@
         <script>
             let dreamIndex = 0;
             const dreamTypes = @json($dreamTypes);
+            const blockTypes = @json($blockTypes);
+            const BLOCK_TYPE_CONTEXT = @json(\App\Models\Report::BLOCK_TYPE_CONTEXT);
             const existingDreams = @json($report->dreams);
+            const existingUserContext = @json($report->user_context ?? '');
+
+            function getContextBlockCount() {
+                let count = 0;
+                document.querySelectorAll('.dream-item select.block-type-select').forEach(sel => {
+                    if (sel.value === BLOCK_TYPE_CONTEXT) count++;
+                });
+                return count;
+            }
+
+            function buildBlockTypeOptions(selectedType) {
+                const hasContext = getContextBlockCount() > 0;
+                return blockTypes.map(type => {
+                    if (type === BLOCK_TYPE_CONTEXT && hasContext) return '';
+                    return `<option value="${type}" ${type === (selectedType || 'Бледный сон') ? 'selected' : ''}>${type}</option>`;
+                }).filter(Boolean).join('');
+            }
+
+            function toggleBlockFields(blockEl, isContext) {
+                const titleRow = blockEl.querySelector('.block-title-row');
+                const descLabel = blockEl.querySelector('.block-description-label');
+                const descInput = blockEl.querySelector('textarea[name^="dreams["]');
+                const seriesHint = blockEl.querySelector('.dream-series-hint');
+                if (titleRow) titleRow.style.display = isContext ? 'none' : '';
+                if (descLabel) {
+                    descLabel.textContent = isContext ? 'Контекст (ваши мысли, идеи по поводу сна)' : 'Описание';
+                    descLabel.classList.toggle('required', !isContext);
+                }
+                if (descInput) descInput.required = !isContext;
+                if (seriesHint) seriesHint.style.display = isContext ? 'none' : '';
+            }
 
             function addDream(dreamData = null) {
                 const container = document.getElementById('dreams-container');
@@ -144,22 +177,18 @@
                 dreamDiv.className = 'dream-item mb-4 p-4 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700';
                 dreamDiv.dataset.index = dreamIndex;
 
-                // Обрабатываем title: если null, undefined или строка "null" - используем пустую строку
                 let title = '';
                 if (dreamData && dreamData.title !== null && dreamData.title !== undefined) {
                     title = String(dreamData.title).trim();
-                    // Если это строка "null", очищаем
-                    if (title.toLowerCase() === 'null') {
-                        title = '';
-                    }
+                    if (title.toLowerCase() === 'null') title = '';
                 }
-                const description = dreamData ? dreamData.description : '';
-                // По умолчанию для новых снов используем "Бледный сон"
-                const dreamType = dreamData ? dreamData.dream_type : 'Бледный сон';
+                const description = dreamData ? (dreamData.description || '') : '';
+                const dreamType = dreamData ? (dreamData.dream_type || 'Бледный сон') : 'Бледный сон';
+                const isContext = dreamType === BLOCK_TYPE_CONTEXT;
 
                 dreamDiv.innerHTML = `
                     <div class="flex justify-between items-center mb-4">
-                        <h4 class="font-semibold text-gray-900 dark:text-white">Сон #${dreamIndex + 1}</h4>
+                        <h4 class="block-header font-semibold text-gray-900 dark:text-white">Блок #${dreamIndex + 1}</h4>
                         <button type="button" 
                                 onclick="removeDream(this)" 
                                 class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-3 rounded-lg text-sm transition-colors">
@@ -167,58 +196,93 @@
                         </button>
                     </div>
                     
-                    <div class="form-group mb-3">
+                    <div class="form-group mb-3 block-title-row" style="${isContext ? 'display:none' : ''}">
                         <label class="form-label">Название <span class="text-gray-400 text-xs">(необязательно)</span></label>
                         <input type="text" 
                                name="dreams[${dreamIndex}][title]" 
-                               value="${title}"
+                               value="${(title || '').replace(/"/g, '&quot;')}"
                                class="form-input"
                                placeholder="Оставьте пустым, если не придумать" />
                         <div class="form-hint">Хотя бы у одного сна в отчете должно быть название</div>
                     </div>
                     
                     <div class="form-group mb-3">
-                        <label class="form-label required">Описание</label>
+                        <label class="form-label block-description-label ${isContext ? '' : 'required'}">${isContext ? 'Контекст (ваши мысли, идеи по поводу сна)' : 'Описание'}</label>
                         <textarea name="dreams[${dreamIndex}][description]" 
                                   rows="4"
                                   class="form-textarea dream-description"
                                   data-dream-index="${dreamIndex}"
                                   oninput="checkDreamSeries(this)"
-                                  required>${description}</textarea>
-                        <div class="form-hint">Если хотите написать несколько снов в одно окно - используйте разделитель три и более тире (-----)</div>
+                                  ${isContext ? '' : 'required'}>${(description || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</textarea>
+                        <div class="form-hint dream-series-hint" style="${isContext ? 'display:none' : ''}">Если хотите написать несколько снов в одно окно - используйте разделитель три и более тире (-----)</div>
                         <div id="dream-count-${dreamIndex}" class="mt-2 text-sm font-semibold" x-cloak></div>
                     </div>
                     
                     <div class="form-group">
-                        <label class="form-label required">Тип сна</label>
+                        <label class="form-label required">Тип блока</label>
                         <select name="dreams[${dreamIndex}][dream_type]" 
-                                class="form-select"
+                                class="form-select block-type-select"
+                                data-block-index="${dreamIndex}"
                                 required>
-                            ${dreamTypes.map(type => 
-                                `<option value="${type}" ${type === dreamType ? 'selected' : ''}>${type}</option>`
-                            ).join('')}
+                            ${buildBlockTypeOptions(dreamType)}
                         </select>
                     </div>
                 `;
 
                 container.appendChild(dreamDiv);
                 dreamIndex++;
+
+                container.querySelectorAll('.block-type-select').forEach(sel => {
+                    sel.removeEventListener('change', onBlockTypeChange);
+                    sel.addEventListener('change', onBlockTypeChange);
+                });
+            }
+
+            function onBlockTypeChange(e) {
+                const select = e.target;
+                const blockEl = select.closest('.dream-item');
+                const isContext = select.value === BLOCK_TYPE_CONTEXT;
+                toggleBlockFields(blockEl, isContext);
+                updateBlockTypeOptions();
+            }
+
+            function updateBlockTypeOptions() {
+                document.querySelectorAll('.dream-item').forEach(blockEl => {
+                    const select = blockEl.querySelector('select.block-type-select');
+                    if (!select) return;
+                    const currentVal = select.value;
+                    const hasContext = getContextBlockCount() > (currentVal === BLOCK_TYPE_CONTEXT ? 1 : 0);
+                    const options = blockTypes.map(type => {
+                        if (type === BLOCK_TYPE_CONTEXT && hasContext) return null;
+                        return `<option value="${type}" ${type === currentVal ? 'selected' : ''}>${type}</option>`;
+                    }).filter(Boolean).join('');
+                    select.innerHTML = options;
+                });
             }
 
             function removeDream(button) {
                 const dreamItem = button.closest('.dream-item');
                 dreamItem.remove();
-                updateDreamNumbers();
+                reindexDreams();
             }
 
-            function updateDreamNumbers() {
+            function reindexDreams() {
                 const items = document.querySelectorAll('.dream-item');
-                items.forEach((item, index) => {
-                    const header = item.querySelector('h4');
-                    if (header) {
-                        header.textContent = `Сон #${index + 1}`;
+                items.forEach((item, newIndex) => {
+                    item.dataset.index = newIndex;
+                    const titleInput = item.querySelector(`input[name^="dreams["]`);
+                    const descriptionInput = item.querySelector(`textarea[name^="dreams["]`);
+                    const typeSelect = item.querySelector(`select.block-type-select`);
+                    const header = item.querySelector('.block-header');
+                    if (titleInput) titleInput.name = `dreams[${newIndex}][title]`;
+                    if (descriptionInput) descriptionInput.name = `dreams[${newIndex}][description]`;
+                    if (typeSelect) {
+                        typeSelect.name = `dreams[${newIndex}][dream_type]`;
+                        typeSelect.dataset.blockIndex = newIndex;
                     }
+                    if (header) header.textContent = `Блок #${newIndex + 1}`;
                 });
+                updateBlockTypeOptions();
             }
 
             // Автодополнение тегов
@@ -320,18 +384,55 @@
                 tagsHidden.value = JSON.stringify(selectedTags);
             }
 
-            // Обработка формы для тегов
+            // Обработка формы для тегов и проверка блоков
             document.getElementById('reportForm').addEventListener('submit', function(e) {
                 tagsHidden.value = JSON.stringify(selectedTags);
+                const blocks = document.querySelectorAll('.dream-item');
+                if (blocks.length === 0) {
+                    e.preventDefault();
+                    alert('Пожалуйста, добавьте хотя бы один блок');
+                    return false;
+                }
+                let dreamCount = 0;
+                let hasErrors = false;
+                let hasAnyTitle = false;
+                blocks.forEach((block) => {
+                    const typeSelect = block.querySelector('select.block-type-select');
+                    const isContext = typeSelect && typeSelect.value === BLOCK_TYPE_CONTEXT;
+                    const title = block.querySelector(`input[name^="dreams["]`);
+                    const description = block.querySelector(`textarea[name^="dreams["]`);
+                    if (!isContext) {
+                        dreamCount++;
+                        if (title && title.value.trim()) hasAnyTitle = true;
+                        if (!description || !description.value.trim()) {
+                            hasErrors = true;
+                            description?.classList.add('border-red-500');
+                        } else {
+                            description?.classList.remove('border-red-500');
+                        }
+                    } else {
+                        description?.classList.remove('border-red-500');
+                    }
+                });
+                if (dreamCount === 0) {
+                    e.preventDefault();
+                    alert('Добавьте хотя бы один сон (блок с типом сна, не только «Контекст»)');
+                    return false;
+                }
+                if (hasErrors) {
+                    e.preventDefault();
+                    alert('Пожалуйста, заполните описание для всех снов');
+                    return false;
+                }
             });
 
-            // Загружаем существующие сны при загрузке страницы
+            // Загружаем существующие блоки при загрузке страницы (сны + контекст)
             window.addEventListener('DOMContentLoaded', function() {
-                if (existingDreams.length > 0) {
-                    existingDreams.forEach(dream => {
-                        addDream(dream);
-                    });
-                } else {
+                existingDreams.forEach(dream => addDream(dream));
+                if (existingUserContext) {
+                    addDream({ dream_type: BLOCK_TYPE_CONTEXT, description: existingUserContext, title: '' });
+                }
+                if (existingDreams.length === 0 && !existingUserContext) {
                     addDream();
                 }
                 initTags();

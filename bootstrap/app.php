@@ -16,7 +16,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
         ]);
-        
+
+        // 301 редиректы из БД — до маршрутизации
+        $middleware->prepend(\App\Http\Middleware\RedirectFromDatabase::class);
+
         // Проверка бана для всех авторизованных пользователей
         $middleware->web(append: [
             \App\Http\Middleware\CheckBanned::class,
