@@ -22,7 +22,7 @@ class MigrateDreamInterpretations extends Command
      *
      * @var string
      */
-    protected $description = 'Мигрировать существующие данные анализа снов в нормализованную структуру';
+    protected $description = 'Мигрировать существующие данные анализа снов в нормализованную структуру (одноразовая миграция, обычно уже выполнена)';
 
     /**
      * Execute the console command.
@@ -38,8 +38,7 @@ class MigrateDreamInterpretations extends Command
             $query->doesntHave('result');
         }
 
-        $interpretations = $query->get();
-        $total = $interpretations->count();
+        $total = $query->count();
 
         if ($total === 0) {
             $this->info('Нет записей для миграции.');
@@ -54,17 +53,20 @@ class MigrateDreamInterpretations extends Command
         $success = 0;
         $errors = 0;
 
-        foreach ($interpretations as $interpretation) {
-            try {
-                $this->migrateInterpretation($interpretation);
-                $success++;
-            } catch (\Exception $e) {
-                $errors++;
-                $this->newLine();
-                $this->error("Ошибка при миграции ID {$interpretation->id}: {$e->getMessage()}");
+        // Обрабатываем чанками, чтобы не грузить все записи в память
+        $query->chunk(100, function ($interpretations) use (&$success, &$errors, $bar) {
+            foreach ($interpretations as $interpretation) {
+                try {
+                    $this->migrateInterpretation($interpretation);
+                    $success++;
+                } catch (\Exception $e) {
+                    $errors++;
+                    $this->newLine();
+                    $this->error("Ошибка при миграции ID {$interpretation->id}: {$e->getMessage()}");
+                }
+                $bar->advance();
             }
-            $bar->advance();
-        }
+        });
 
         $bar->finish();
         $this->newLine(2);

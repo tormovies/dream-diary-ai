@@ -38,7 +38,7 @@
                                     @if(isset($interpretations))
                                         @foreach($interpretations as $interpretation)
                                             <option value="{{ $interpretation->id }}" data-hash="{{ $interpretation->hash }}" {{ old('page_id', $seo->page_id) == $interpretation->id ? 'selected' : '' }}>
-                                                ID: {{ $interpretation->id }} | Hash: {{ $interpretation->hash }} | {{ Str::limit(strip_tags($interpretation->dream_description), 50) }} | {{ $interpretation->created_at->format('d.m.Y') }}
+                                                ID: {{ $interpretation->id }} | Hash: {{ $interpretation->hash }} | {{ Str::limit($interpretation->result?->dream_title ?? $interpretation->result?->series_title ?? '—', 50) }} | {{ $interpretation->created_at->format('d.m.Y') }}
                                             </option>
                                         @endforeach
                                     @endif

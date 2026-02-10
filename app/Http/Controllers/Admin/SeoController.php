@@ -182,7 +182,9 @@ class SeoController extends Controller
         $users = User::latest()->limit(50)->get(['id', 'nickname', 'name']);
         $interpretations = DreamInterpretation::latest()
             ->limit(50)
-            ->get(['id', 'hash', 'dream_description', 'created_at']);
+            ->select('id', 'hash', 'created_at')
+            ->with('result:id,dream_interpretation_id,dream_title,series_title')
+            ->get();
 
         return view('admin.seo.create', compact('pageTypes', 'reports', 'users', 'interpretations'));
     }
@@ -261,7 +263,9 @@ class SeoController extends Controller
         $users = User::latest()->limit(50)->get(['id', 'nickname', 'name']);
         $interpretations = DreamInterpretation::latest()
             ->limit(50)
-            ->get(['id', 'hash', 'dream_description', 'created_at']);
+            ->select('id', 'hash', 'created_at')
+            ->with('result:id,dream_interpretation_id,dream_title,series_title')
+            ->get();
 
         return view('admin.seo.edit', compact('seo', 'pageTypes', 'reports', 'users', 'interpretations'));
     }

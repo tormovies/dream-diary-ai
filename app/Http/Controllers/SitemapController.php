@@ -288,11 +288,13 @@ class SitemapController extends Controller
             $limit = $this->getPaginationLimit();
             $offset = ($page - 1) * $limit;
             
+            // Только лёгкие поля + result для проверки title (без dream_description, analysis_data, raw_api_*)
             $interpretations = DreamInterpretation::where('processing_status', 'completed')
                 ->whereNull('api_error')
                 ->whereHas('result')
                 ->where('created_at', '>=', $minDate)
-                ->with('result')
+                ->select('id', 'hash', 'updated_at', 'created_at')
+                ->with('result.seriesDreams')
                 ->orderBy('created_at', 'desc')
                 ->offset($offset)
                 ->limit($limit)

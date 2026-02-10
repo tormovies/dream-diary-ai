@@ -90,8 +90,10 @@ class InterpretationLinkHelper
             $query->where('id', '!=', $excludeId);
         }
         
+        // Только лёгкие поля + result/report (без dream_description, analysis_data, raw_api_*)
         $interpretations = $query
-            ->with(['result', 'report']) // Загружаем связь report для анализов отчетов
+            ->select('id', 'hash', 'report_id', 'created_at', 'traditions')
+            ->with(['result', 'report'])
             ->orderBy('created_at', 'desc')
             ->limit($limit * 3) // Берем больше, чтобы отфильтровать по SEO и дубликатам
             ->get()
@@ -199,15 +201,16 @@ class InterpretationLinkHelper
         
         $minDate = \Carbon\Carbon::create(2026, 1, 16, 0, 0, 0);
         
-        // Получаем все готовые толкования
+        // Только лёгкие поля + result/report (без тяжёлых JSON из interpretations)
         $interpretations = DreamInterpretation::where('processing_status', 'completed')
             ->whereNull('api_error')
             ->whereHas('result')
             ->where('created_at', '>=', $minDate)
             ->where('id', '!=', $excludeId)
-            ->with(['result', 'report']) // Загружаем связь report для анализов отчетов
+            ->select('id', 'hash', 'report_id', 'created_at', 'traditions')
+            ->with(['result', 'report'])
             ->orderBy('created_at', 'desc')
-            ->limit(100) // Ограничиваем для производительности
+            ->limit(100)
             ->get()
             ->filter(function($interpretation) {
                 // Исключаем толкования, у которых report_id есть, но report удален

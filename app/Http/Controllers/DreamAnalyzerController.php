@@ -688,7 +688,9 @@ class DreamAnalyzerController extends Controller
      */
     public function retry(Request $request, string $hash): RedirectResponse
     {
-        $interpretation = DreamInterpretation::where('hash', $hash)->firstOrFail();
+        $interpretation = DreamInterpretation::where('hash', $hash)
+            ->select('id', 'hash', 'user_id', 'processing_status')
+            ->firstOrFail();
         
         // Проверяем права доступа
         if ($interpretation->user_id !== null) {

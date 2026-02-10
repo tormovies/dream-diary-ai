@@ -32,6 +32,12 @@ class DreamInterpretation extends Model
         'processing_started_at' => 'datetime',
     ];
 
+    protected static function booted(): void
+    {
+        static::created(fn (DreamInterpretation $i) => DreamInterpretationStat::syncFromInterpretation($i));
+        static::updated(fn (DreamInterpretation $i) => DreamInterpretationStat::syncFromInterpretation($i));
+    }
+
     /** Количество дней, в пределах которых ищем дубликат по content_hash */
     public const DEDUP_DAYS = 30;
 
@@ -66,13 +72,17 @@ class DreamInterpretation extends Model
         }
 
         // Сначала ищем любое завершённое (последнее по дате)
-        $completed = (clone $base)->where('processing_status', 'completed')->orderByDesc('created_at')->first();
+        $completed = (clone $base)
+            ->select('id', 'hash', 'processing_status')
+            ->where('processing_status', 'completed')
+            ->orderByDesc('created_at')
+            ->first();
         if ($completed !== null) {
             return $completed;
         }
 
         // Нет завершённого — возвращаем самое первое (старое), чтобы ждали именно его
-        return $base->orderBy('created_at')->first();
+        return $base->select('id', 'hash', 'processing_status')->orderBy('created_at')->first();
     }
 
     /**

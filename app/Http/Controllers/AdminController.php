@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Comment;
 use App\Models\DreamInterpretation;
+use App\Models\DreamInterpretationStat;
 use App\Models\Report;
 use App\Models\Setting;
 use App\Models\User;
@@ -306,9 +307,13 @@ class AdminController extends Controller
      */
     public function interpretations(Request $request): View
     {
-        // Получаем часовой пояс из настроек
-        $timezone = Setting::getValue('timezone', 'UTC');
-        
+        // Получаем часовой пояс из настроек (валидная строка, иначе UTC)
+        $timezoneRaw = Setting::getValue('timezone', 'UTC');
+        $timezone = is_string($timezoneRaw) && $timezoneRaw !== '' ? $timezoneRaw : 'UTC';
+        if (!@timezone_open($timezone)) {
+            $timezone = 'UTC';
+        }
+
         // Создаем Carbon экземпляры с учетом часового пояса
         $now = \Carbon\Carbon::now($timezone);
         
@@ -331,38 +336,33 @@ class AdminController extends Controller
             ->setTimezone('UTC')
             ->format('Y-m-d H:i:s');
 
-        // Общая статистика
-        $totalCreated = DreamInterpretation::count();
-        $totalCompleted = DreamInterpretation::where('processing_status', 'completed')->count();
-        $totalPending = DreamInterpretation::where('processing_status', 'pending')->count();
-        $totalFailed = DreamInterpretation::where('processing_status', 'failed')->count();
-        
-        // Статистика за период (используем UTC даты для запросов к БД)
-        $periodCreated = DreamInterpretation::whereBetween('created_at', [$startDateUtc, $endDateUtc])->count();
-        $periodCompleted = DreamInterpretation::whereBetween('created_at', [$startDateUtc, $endDateUtc])
+        // Общая статистика и за период — из лёгкой таблицы dream_interpretation_stats
+        $totalCreated = DreamInterpretationStat::count();
+        $totalCompleted = DreamInterpretationStat::where('processing_status', 'completed')->count();
+        $totalPending = DreamInterpretationStat::where('processing_status', 'pending')->count();
+        $totalFailed = DreamInterpretationStat::where('processing_status', 'failed')->count();
+
+        $periodCreated = DreamInterpretationStat::whereBetween('interpretation_created_at', [$startDateUtc, $endDateUtc])->count();
+        $periodCompleted = DreamInterpretationStat::whereBetween('interpretation_created_at', [$startDateUtc, $endDateUtc])
             ->where('processing_status', 'completed')->count();
-        $periodPending = DreamInterpretation::whereBetween('created_at', [$startDateUtc, $endDateUtc])
+        $periodPending = DreamInterpretationStat::whereBetween('interpretation_created_at', [$startDateUtc, $endDateUtc])
             ->where('processing_status', 'pending')->count();
-        $periodFailed = DreamInterpretation::whereBetween('created_at', [$startDateUtc, $endDateUtc])
+        $periodFailed = DreamInterpretationStat::whereBetween('interpretation_created_at', [$startDateUtc, $endDateUtc])
             ->where('processing_status', 'failed')->count();
 
-        // Статистика по традициям за период
-        $traditionsStats = DreamInterpretation::whereBetween('created_at', [$startDateUtc, $endDateUtc])
+        // Статистика по традициям за период — из stats (лёгкая таблица)
+        $traditionsStats = DreamInterpretationStat::whereBetween('interpretation_created_at', [$startDateUtc, $endDateUtc])
             ->whereNotNull('traditions')
-            ->get()
-            ->flatMap(function ($interpretation) {
-                $traditions = $interpretation->traditions ?? [];
+            ->get(['traditions'])
+            ->flatMap(function ($stat) {
+                $traditions = $stat->traditions ?? [];
                 if (empty($traditions)) {
                     return [['tradition' => 'eclectic', 'count' => 1]];
                 }
-                return array_map(function ($tradition) {
-                    return ['tradition' => $tradition, 'count' => 1];
-                }, $traditions);
+                return array_map(fn ($t) => ['tradition' => $t, 'count' => 1], $traditions);
             })
             ->groupBy('tradition')
-            ->map(function ($group) {
-                return $group->sum('count');
-            })
+            ->map(fn ($group) => $group->sum('count'))
             ->sortDesc();
 
         // Фильтры
@@ -370,31 +370,17 @@ class AdminController extends Controller
         $traditionFilter = $request->filled('tradition') ? $request->tradition : null;
         $searchFilter = $request->filled('search') ? $request->search : null;
 
-        // Статистика по дням за период с фильтрами (используем UTC даты)
-        $dailyStatsQuery = DreamInterpretation::whereBetween('created_at', [$startDateUtc, $endDateUtc]);
-
-        // Применяем фильтры к запросу статистики по дням
+        // Статистика по дням за период — из stats, группировка в PHP по дате в локальном времени
+        $dailyStatsQuery = DreamInterpretationStat::whereBetween('interpretation_created_at', [$startDateUtc, $endDateUtc]);
         if ($statusFilter) {
             $dailyStatsQuery->where('processing_status', $statusFilter);
         }
-
         if ($traditionFilter) {
             $dailyStatsQuery->whereJsonContains('traditions', $traditionFilter);
         }
-
-        if ($searchFilter) {
-            $dailyStatsQuery->where('dream_description', 'like', '%' . $searchFilter . '%');
-        }
-
-        // Получаем статистику по дням с конвертацией в локальный часовой пояс
-        // Получаем все записи и группируем в PHP с учетом часового пояса
-        // Это более надежно, так как CONVERT_TZ может не работать на всех серверах
-        $allInterpretations = $dailyStatsQuery->get();
-        $dailyStats = $allInterpretations->groupBy(function ($interpretation) use ($timezone) {
-            // Конвертируем created_at из UTC в локальный часовой пояс и берем дату
-            return \Carbon\Carbon::parse($interpretation->created_at)
-                ->setTimezone($timezone)
-                ->format('Y-m-d');
+        $allStats = $dailyStatsQuery->get(['interpretation_created_at', 'processing_status']);
+        $dailyStats = $allStats->groupBy(function ($stat) use ($timezone) {
+            return \Carbon\Carbon::parse($stat->interpretation_created_at)->setTimezone($timezone)->format('Y-m-d');
         })->map(function ($group, $date) {
             return (object)[
                 'date' => $date,
@@ -422,39 +408,44 @@ class AdminController extends Controller
             
             $dayQuery = DreamInterpretation::whereBetween('created_at', [$selectedDateStart, $selectedDateEnd]);
 
-            // Применяем фильтры к детализации по дате
             if ($statusFilter) {
                 $dayQuery->where('processing_status', $statusFilter);
             }
-
             if ($traditionFilter) {
                 $dayQuery->whereJsonContains('traditions', $traditionFilter);
             }
-
             if ($searchFilter) {
                 $dayQuery->where('dream_description', 'like', '%' . $searchFilter . '%');
             }
 
             $dayInterpretations = $dayQuery
-                ->with('report')
+                ->select('id', 'hash', 'created_at', 'processing_status', 'traditions', 'report_id', 'ip_address')
+                ->with('report:id')
                 ->orderBy('created_at', 'desc')
                 ->paginate(50)
                 ->withQueryString();
         }
 
-        // Список всех толкований с фильтрами (если не выбрана дата)
+        // Список толкований за период (без выбора даты)
         if (!$selectedDate) {
             $query = DreamInterpretation::whereBetween('created_at', [$startDateUtc, $endDateUtc]);
 
             if ($statusFilter) {
                 $query->where('processing_status', $statusFilter);
             }
-
             if ($traditionFilter) {
                 $query->whereJsonContains('traditions', $traditionFilter);
             }
+            if ($searchFilter) {
+                $query->where('dream_description', 'like', '%' . $searchFilter . '%');
+            }
 
-            $interpretations = $query->orderBy('created_at', 'desc')->paginate(50)->withQueryString();
+            $interpretations = $query
+                ->select('id', 'hash', 'created_at', 'processing_status', 'traditions', 'report_id', 'ip_address')
+                ->with('report:id')
+                ->orderBy('created_at', 'desc')
+                ->paginate(50)
+                ->withQueryString();
         } else {
             $interpretations = null;
         }
