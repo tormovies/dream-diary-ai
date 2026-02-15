@@ -72,17 +72,13 @@ class DreamInterpretation extends Model
         }
 
         // Сначала ищем любое завершённое (последнее по дате)
-        $completed = (clone $base)
-            ->select('id', 'hash', 'processing_status')
-            ->where('processing_status', 'completed')
-            ->orderByDesc('created_at')
-            ->first();
+        $completed = (clone $base)->where('processing_status', 'completed')->orderByDesc('created_at')->first();
         if ($completed !== null) {
             return $completed;
         }
 
         // Нет завершённого — возвращаем самое первое (старое), чтобы ждали именно его
-        return $base->select('id', 'hash', 'processing_status')->orderBy('created_at')->first();
+        return $base->orderBy('created_at')->first();
     }
 
     /**

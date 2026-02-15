@@ -28,16 +28,27 @@ class DreamInterpretationStat extends Model
 
     /**
      * Синхронизировать одну запись из DreamInterpretation в stats.
+     * Учитывает «обрезанные» выборки (например в retry только id, hash, user_id, processing_status):
+     * interpretation_created_at и traditions при необходимости подгружаются из БД.
      */
     public static function syncFromInterpretation(DreamInterpretation $interpretation): void
     {
         $status = $interpretation->processing_status ?? 'pending';
-        $traditions = $interpretation->traditions ?? null;
+
+        $createdAt = $interpretation->created_at;
+        if ($createdAt === null) {
+            $createdAt = DreamInterpretation::where('id', $interpretation->id)->value('created_at') ?? now();
+        }
+
+        $traditions = $interpretation->traditions;
+        if ($traditions === null) {
+            $traditions = DreamInterpretation::where('id', $interpretation->id)->value('traditions');
+        }
 
         static::updateOrCreate(
             ['dream_interpretation_id' => $interpretation->id],
             [
-                'interpretation_created_at' => $interpretation->created_at,
+                'interpretation_created_at' => $createdAt,
                 'processing_status' => $status,
                 'traditions' => $traditions,
             ]

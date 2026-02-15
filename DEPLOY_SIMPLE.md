@@ -33,6 +33,12 @@ php8.3 /home/a/adminfeg/.local/bin/composer install --no-dev --optimize-autoload
 php8.3 artisan migrate --force
 ```
 
+### Шаг 6.1: Обратное заполнение dream_interpretation_stats (только если в этом релизе была миграция этой таблицы)
+```bash
+php8.3 artisan interpretations:backfill-stats
+```
+*(Один раз после первой миграции таблицы; для ~2500 толкований можно оставить чанк по умолчанию 500 или задать `--chunk=200`.)*
+
 ### Шаг 7: Очистка кэша
 ```bash
 php8.3 artisan view:clear
@@ -52,8 +58,9 @@ php8.3 artisan optimize
 ## Быстрая команда (одной строкой)
 
 ```bash
-cd ~/snovidec.ru/laravel && git pull origin main && npm install && npm run build && php8.3 /home/a/adminfeg/.local/bin/composer install --no-dev --optimize-autoloader && php8.3 artisan migrate --force && php8.3 artisan view:clear && php8.3 artisan cache:clear && php8.3 artisan config:clear && php8.3 artisan route:clear && php8.3 artisan config:cache && php8.3 artisan route:cache && php8.3 artisan view:cache && php8.3 artisan optimize
+cd ~/snovidec.ru/laravel && git pull origin main && npm install && npm run build && php8.3 /home/a/adminfeg/.local/bin/composer install --no-dev --optimize-autoloader && php8.3 artisan migrate --force && php8.3 artisan interpretations:backfill-stats && php8.3 artisan view:clear && php8.3 artisan cache:clear && php8.3 artisan config:clear && php8.3 artisan route:clear && php8.3 artisan config:cache && php8.3 artisan route:cache && php8.3 artisan view:cache && php8.3 artisan optimize
 ```
+*(Команду `interpretations:backfill-stats` можно убрать из однострочника после первого деплоя с этой миграцией — повторный запуск безопасен, но не обязателен.)*
 
 ## Преимущества
 
