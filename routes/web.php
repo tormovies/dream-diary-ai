@@ -117,6 +117,9 @@ Route::middleware('auth')->group(function () {
         Route::delete('/comments/{comment}', [\App\Http\Controllers\AdminController::class, 'deleteComment'])->name('comments.destroy');
         Route::get('/interpretations', [\App\Http\Controllers\AdminController::class, 'interpretations'])->name('interpretations');
         Route::delete('/interpretations/{interpretation}', [\App\Http\Controllers\AdminController::class, 'deleteInterpretation'])->name('interpretations.delete');
+        Route::get('/entities', [\App\Http\Controllers\AdminController::class, 'entities'])->name('entities');
+        Route::get('/entities/compare', [\App\Http\Controllers\AdminController::class, 'entitiesCompare'])->name('entities.compare');
+        Route::get('/entities/dynamics', [\App\Http\Controllers\AdminController::class, 'entitiesDynamics'])->name('entities.dynamics');
         Route::get('/settings', [\App\Http\Controllers\AdminController::class, 'settings'])->name('settings');
         Route::patch('/settings', [\App\Http\Controllers\AdminController::class, 'updateSettings'])->name('settings.update');
         

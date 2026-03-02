@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -7,6 +8,12 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
+    ->withSchedule(function (Schedule $schedule): void {
+        // Индексация новых толкований по символам/локациям/тегам (раз в день)
+        $schedule->command('interpretations:index-entities', ['--only-new' => true])->daily();
+        // Агрегация сущностей по дням в dream_entity_daily (для статистики за день и сравнений)
+        $schedule->command('interpretations:aggregate-entity-daily', ['--yesterday' => true])->dailyAt('01:00');
+    })
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
         commands: __DIR__.'/../routes/console.php',

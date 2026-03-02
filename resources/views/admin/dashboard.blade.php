@@ -52,6 +52,9 @@
                         <a href="{{ route('admin.interpretations') }}" style="background-color: #f97316;" class="hover:bg-orange-700 text-white font-bold py-2 px-4 rounded text-center flex-1 min-w-[120px]">
                             Толкования
                         </a>
+                        <a href="{{ route('admin.entities') }}" class="bg-teal-500 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded text-center flex-1 min-w-[120px]">
+                            Сущности
+                        </a>
                         <a href="{{ route('admin.seo.index') }}" class="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded text-center flex-1 min-w-[120px]">
                             SEO
                         </a>

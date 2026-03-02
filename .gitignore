@@ -42,6 +42,7 @@ backup/
 *.swo
 *~
 view_interpretation.php
+set_admin_password.php
 
 # IDE specific
 /.cursor

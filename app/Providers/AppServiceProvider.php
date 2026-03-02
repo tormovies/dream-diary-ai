@@ -2,7 +2,9 @@
 
 namespace App\Providers;
 
+use App\Console\Commands\AggregateDreamEntityDaily;
 use App\Console\Commands\BackfillDreamInterpretationStats;
+use App\Console\Commands\IndexDreamInterpretationEntities;
 use App\Console\Commands\ImportRedirectsFromFile;
 use Illuminate\Support\ServiceProvider;
 
@@ -24,6 +26,8 @@ class AppServiceProvider extends ServiceProvider
         $this->commands([
             ImportRedirectsFromFile::class,
             BackfillDreamInterpretationStats::class,
+            IndexDreamInterpretationEntities::class,
+            AggregateDreamEntityDaily::class,
         ]);
     }
 }

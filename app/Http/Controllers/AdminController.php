@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Comment;
 use App\Models\DreamInterpretation;
+use App\Models\DreamEntityDaily;
+use App\Models\DreamInterpretationEntity;
 use App\Models\DreamInterpretationStat;
 use App\Models\Report;
 use App\Models\Setting;
@@ -473,6 +475,137 @@ class AdminController extends Controller
             'traditionFilter',
             'traditionsConfig',
             'timezone'
+        ));
+    }
+
+    /**
+     * Сущности толкований (символы, локации, теги). Опционально — топ за выбранную дату.
+     */
+    public function entities(Request $request): View
+    {
+        $totalRows = DreamInterpretationEntity::count();
+        $countByType = DreamInterpretationEntity::selectRaw('type, count(*) as cnt')
+            ->groupBy('type')
+            ->pluck('cnt', 'type')
+            ->toArray();
+
+        $limit = 100;
+        $date = $request->filled('date') ? $request->date : null;
+
+        if ($date) {
+            $symbols = DreamEntityDaily::topForDate(DreamInterpretationEntity::TYPE_SYMBOL, $date, $limit);
+            $locations = DreamEntityDaily::topForDate(DreamInterpretationEntity::TYPE_LOCATION, $date, $limit);
+            $tags = DreamEntityDaily::topForDate(DreamInterpretationEntity::TYPE_TAG, $date, $limit);
+        } else {
+            $symbols = DreamInterpretationEntity::uniqueWithCounts(DreamInterpretationEntity::TYPE_SYMBOL, $limit);
+            $locations = DreamInterpretationEntity::uniqueWithCounts(DreamInterpretationEntity::TYPE_LOCATION, $limit);
+            $tags = DreamInterpretationEntity::uniqueWithCounts(DreamInterpretationEntity::TYPE_TAG, $limit);
+        }
+
+        return view('admin.entities', compact(
+            'totalRows',
+            'countByType',
+            'symbols',
+            'locations',
+            'tags',
+            'date'
+        ));
+    }
+
+    /**
+     * Сравнение сущностей за два дня (динамика).
+     */
+    public function entitiesCompare(Request $request): View
+    {
+        $date1 = $request->get('date1', now()->subDays(2)->format('Y-m-d'));
+        $date2 = $request->get('date2', now()->subDay()->format('Y-m-d'));
+        $limit = 80;
+
+        $merge = function (array $day1, array $day2) use ($limit): array {
+            $key = fn ($r) => $r['slug'] ?? $r['name'] ?? '';
+            $bySlug1 = collect($day1)->keyBy($key);
+            $bySlug2 = collect($day2)->keyBy($key);
+            $slugs = $bySlug1->keys()->merge($bySlug2->keys())->unique()->filter();
+            return $slugs->map(function ($slug) use ($bySlug1, $bySlug2) {
+                $r1 = $bySlug1->get($slug);
+                $r2 = $bySlug2->get($slug);
+                $name = $r1['name'] ?? $r2['name'] ?? $slug;
+                $m1 = (int) ($r1['mentions'] ?? 0);
+                $m2 = (int) ($r2['mentions'] ?? 0);
+                return ['name' => $name, 'mentions1' => $m1, 'mentions2' => $m2, 'diff' => $m2 - $m1];
+            })->sortByDesc(fn ($r) => max($r['mentions1'], $r['mentions2']))->values()->take($limit)->toArray();
+        };
+
+        $symbolsDay1 = DreamEntityDaily::topForDate(DreamInterpretationEntity::TYPE_SYMBOL, $date1, $limit);
+        $symbolsDay2 = DreamEntityDaily::topForDate(DreamInterpretationEntity::TYPE_SYMBOL, $date2, $limit);
+        $locationsDay1 = DreamEntityDaily::topForDate(DreamInterpretationEntity::TYPE_LOCATION, $date1, $limit);
+        $locationsDay2 = DreamEntityDaily::topForDate(DreamInterpretationEntity::TYPE_LOCATION, $date2, $limit);
+        $tagsDay1 = DreamEntityDaily::topForDate(DreamInterpretationEntity::TYPE_TAG, $date1, $limit);
+        $tagsDay2 = DreamEntityDaily::topForDate(DreamInterpretationEntity::TYPE_TAG, $date2, $limit);
+
+        $symbols = $merge($symbolsDay1, $symbolsDay2);
+        $locations = $merge($locationsDay1, $locationsDay2);
+        $tags = $merge($tagsDay1, $tagsDay2);
+
+        return view('admin.entities-compare', compact(
+            'date1',
+            'date2',
+            'symbols',
+            'locations',
+            'tags'
+        ));
+    }
+
+    /**
+     * Динамика по одной сущности: как менялось число упоминаний по дням за период.
+     */
+    public function entitiesDynamics(Request $request): View
+    {
+        $type = $request->get('type', 'symbol');
+        $slug = $request->get('slug', '');
+        $to = $request->get('to', now()->format('Y-m-d'));
+        $from = $request->get('from', now()->subDays(30)->format('Y-m-d'));
+
+        if ($slug === '') {
+            return view('admin.entities-dynamics', [
+                'type' => $type,
+                'slug' => '',
+                'entityName' => null,
+                'from' => $from,
+                'to' => $to,
+                'daily' => [],
+            ]);
+        }
+
+        $daily = DreamEntityDaily::mentionsOverPeriod($type, $slug, $from, $to);
+
+        if (empty($daily)) {
+            $start = $from . ' 00:00:00';
+            $end = $to . ' 23:59:59';
+            $rows = DreamInterpretationEntity::where('type', $type)
+                ->where('slug', $slug)
+                ->whereBetween('interpretation_created_at', [$start, $end])
+                ->selectRaw('DATE(interpretation_created_at) as date, COUNT(*) as mentions')
+                ->groupByRaw('DATE(interpretation_created_at)')
+                ->orderBy('date')
+                ->get();
+            $daily = $rows->map(fn ($r) => [
+                'date' => \Carbon\Carbon::parse($r->date)->format('Y-m-d'),
+                'mentions' => (int) $r->mentions,
+            ])->toArray();
+        }
+
+        $entityName = DreamEntityDaily::nameFor($type, $slug)
+            ?? DreamInterpretationEntity::where('type', $type)->where('slug', $slug)->value('name')
+            ?? $slug;
+
+        return view('admin.entities-dynamics', compact(
+            'type',
+            'slug',
+            'entityName',
+            'from',
+            'to',
+            'daily'
         ));
     }
 

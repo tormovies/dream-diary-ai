@@ -110,6 +110,14 @@ class DreamInterpretation extends Model
     }
 
     /**
+     * Проиндексированные сущности (символы, локации, теги) для этого толкования
+     */
+    public function entities()
+    {
+        return $this->hasMany(DreamInterpretationEntity::class, 'dream_interpretation_id');
+    }
+
+    /**
      * Отчет (если анализ связан с отчетом)
      */
     public function report(): BelongsTo
