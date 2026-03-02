@@ -39,26 +39,26 @@
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6">
-                        <div class="text-2xl font-bold text-gray-900">{{ number_format($totalRows) }}</div>
-                        <div class="text-sm text-gray-600">Всего записей</div>
+                        <div class="text-2xl font-bold text-gray-900">{{ number_format($totalRows) }}/{{ number_format($totalUnique ?? 0) }}</div>
+                        <div class="text-sm text-gray-600">Всего записей / уникальных</div>
                     </div>
                 </div>
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6">
-                        <div class="text-2xl font-bold text-blue-600">{{ number_format($countByType['symbol'] ?? 0) }}</div>
-                        <div class="text-sm text-gray-600">Упоминаний символов</div>
+                        <div class="text-2xl font-bold text-blue-600">{{ number_format($countByType['symbol'] ?? 0) }}/{{ number_format($uniqueByType['symbol'] ?? 0) }}</div>
+                        <div class="text-sm text-gray-600">Символов: всего / уникальных</div>
                     </div>
                 </div>
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6">
-                        <div class="text-2xl font-bold text-green-600">{{ number_format($countByType['location'] ?? 0) }}</div>
-                        <div class="text-sm text-gray-600">Упоминаний локаций</div>
+                        <div class="text-2xl font-bold text-green-600">{{ number_format($countByType['location'] ?? 0) }}/{{ number_format($uniqueByType['location'] ?? 0) }}</div>
+                        <div class="text-sm text-gray-600">Локаций: всего / уникальных</div>
                     </div>
                 </div>
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6">
-                        <div class="text-2xl font-bold text-purple-600">{{ number_format($countByType['tag'] ?? 0) }}</div>
-                        <div class="text-sm text-gray-600">Упоминаний тегов</div>
+                        <div class="text-2xl font-bold text-purple-600">{{ number_format($countByType['tag'] ?? 0) }}/{{ number_format($uniqueByType['tag'] ?? 0) }}</div>
+                        <div class="text-sm text-gray-600">Тегов: всего / уникальных</div>
                     </div>
                 </div>
             </div>

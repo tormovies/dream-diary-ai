@@ -489,6 +489,14 @@ class AdminController extends Controller
             ->pluck('cnt', 'type')
             ->toArray();
 
+        // Уникальные сущности по типу (разные slug) и всего (разные пары type+slug)
+        $uniqueByType = [
+            'symbol' => (int) DreamInterpretationEntity::where('type', 'symbol')->selectRaw('COUNT(DISTINCT slug) as c')->value('c'),
+            'location' => (int) DreamInterpretationEntity::where('type', 'location')->selectRaw('COUNT(DISTINCT slug) as c')->value('c'),
+            'tag' => (int) DreamInterpretationEntity::where('type', 'tag')->selectRaw('COUNT(DISTINCT slug) as c')->value('c'),
+        ];
+        $totalUnique = $uniqueByType['symbol'] + $uniqueByType['location'] + $uniqueByType['tag'];
+
         $limit = 100;
         $date = $request->filled('date') ? $request->date : null;
 
@@ -505,6 +513,8 @@ class AdminController extends Controller
         return view('admin.entities', compact(
             'totalRows',
             'countByType',
+            'uniqueByType',
+            'totalUnique',
             'symbols',
             'locations',
             'tags',
