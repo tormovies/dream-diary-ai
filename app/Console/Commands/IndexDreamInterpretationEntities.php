@@ -132,11 +132,12 @@ class IndexDreamInterpretationEntities extends Command
             }
             $slug = DreamInterpretationEntity::nameToSlug($name);
             $meaning = is_array($item) && isset($item['meaning']) ? $item['meaning'] : null;
+            $canonicalName = mb_substr(mb_strtolower($name, 'UTF-8'), 0, 500);
             $rows[] = [
                 'dream_interpretation_id' => $interpretationId,
                 'type' => DreamInterpretationEntity::TYPE_SYMBOL,
                 'slug' => $slug,
-                'name' => mb_substr($name, 0, 500),
+                'name' => $canonicalName,
                 'meaning' => $meaning ? mb_substr($meaning, 0, 65535) : null,
                 'source' => $source,
                 'source_id' => $sourceId,
@@ -152,11 +153,12 @@ class IndexDreamInterpretationEntities extends Command
                 continue;
             }
             $slug = DreamInterpretationEntity::nameToSlug($name);
+            $canonicalName = mb_substr(mb_strtolower($name, 'UTF-8'), 0, 500);
             $rows[] = [
                 'dream_interpretation_id' => $interpretationId,
                 'type' => DreamInterpretationEntity::TYPE_LOCATION,
                 'slug' => $slug,
-                'name' => mb_substr($name, 0, 500),
+                'name' => $canonicalName,
                 'meaning' => null,
                 'source' => $source,
                 'source_id' => $sourceId,
@@ -172,11 +174,12 @@ class IndexDreamInterpretationEntities extends Command
                 continue;
             }
             $slug = DreamInterpretationEntity::nameToSlug($name);
+            $canonicalName = mb_substr(mb_strtolower($name, 'UTF-8'), 0, 500);
             $rows[] = [
                 'dream_interpretation_id' => $interpretationId,
                 'type' => DreamInterpretationEntity::TYPE_TAG,
                 'slug' => $slug,
-                'name' => mb_substr($name, 0, 500),
+                'name' => $canonicalName,
                 'meaning' => null,
                 'source' => $source,
                 'source_id' => $sourceId,

@@ -38,7 +38,7 @@ class DreamInterpretationEntity extends Model
     }
 
     /**
-     * Нормализовать название в slug (без перевода кириллицы, только безопасные символы).
+     * Нормализовать название в slug. Регистронезависимо: «Дом» и «дом» дают один slug.
      */
     public static function nameToSlug(string $name): string
     {
@@ -47,6 +47,7 @@ class DreamInterpretationEntity extends Model
         if ($name === '') {
             return 'n-a';
         }
+        $name = mb_strtolower($name, 'UTF-8');
         $slug = Str::slug($name, '-', 'ru');
         return $slug !== '' ? $slug : 'e-' . substr(md5($name), 0, 8);
     }
@@ -63,8 +64,8 @@ class DreamInterpretationEntity extends Model
         return static::query()
             ->where('type', $type)
             ->whereBetween('interpretation_created_at', [$start, $end])
-            ->selectRaw('slug, name, count(*) as mentions')
-            ->groupBy('slug', 'name')
+            ->selectRaw('slug, MAX(name) as name, count(*) as mentions')
+            ->groupBy('slug')
             ->orderByDesc('mentions')
             ->limit($limit)
             ->get()
@@ -78,8 +79,8 @@ class DreamInterpretationEntity extends Model
     {
         return static::query()
             ->where('type', $type)
-            ->selectRaw('slug, name, count(*) as mentions')
-            ->groupBy('slug', 'name')
+            ->selectRaw('slug, MAX(name) as name, count(*) as mentions')
+            ->groupBy('slug')
             ->orderByDesc('mentions')
             ->limit($limit)
             ->get()
