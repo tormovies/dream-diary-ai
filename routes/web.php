@@ -120,6 +120,17 @@ Route::middleware('auth')->group(function () {
         Route::get('/entities', [\App\Http\Controllers\AdminController::class, 'entities'])->name('entities');
         Route::get('/entities/compare', [\App\Http\Controllers\AdminController::class, 'entitiesCompare'])->name('entities.compare');
         Route::get('/entities/dynamics', [\App\Http\Controllers\AdminController::class, 'entitiesDynamics'])->name('entities.dynamics');
+        Route::get('/entities/export', [\App\Http\Controllers\AdminController::class, 'entitiesExport'])->name('entities.export');
+        Route::get('/entities/groups', [\App\Http\Controllers\AdminController::class, 'entityGroupsIndex'])->name('entities.groups.index');
+        Route::get('/entities/groups/export', [\App\Http\Controllers\AdminController::class, 'entityGroupsExport'])->name('entities.groups.export');
+        Route::post('/entities/groups', [\App\Http\Controllers\AdminController::class, 'entityGroupsStore'])->name('entities.groups.store');
+        Route::get('/entities/groups/{entity_group}', [\App\Http\Controllers\AdminController::class, 'entityGroupEdit'])->name('entities.groups.edit');
+        Route::patch('/entities/groups/{entity_group}', [\App\Http\Controllers\AdminController::class, 'entityGroupUpdate'])->name('entities.groups.update');
+        Route::delete('/entities/groups/{entity_group}', [\App\Http\Controllers\AdminController::class, 'entityGroupDestroy'])->name('entities.groups.destroy');
+        Route::post('/entities/groups/{entity_group}/mappings', [\App\Http\Controllers\AdminController::class, 'entityGroupAddMapping'])->name('entities.groups.mappings.store');
+        Route::delete('/entities/groups/mappings/{mapping}', [\App\Http\Controllers\AdminController::class, 'entityGroupRemoveMapping'])->name('entities.groups.mappings.destroy');
+        Route::post('/entities/add-to-group', [\App\Http\Controllers\AdminController::class, 'entitiesAddToGroup'])->name('entities.add-to-group');
+        Route::post('/entities/create-group-from-entity', [\App\Http\Controllers\AdminController::class, 'entitiesCreateGroupFromEntity'])->name('entities.create-group-from-entity');
         Route::get('/settings', [\App\Http\Controllers\AdminController::class, 'settings'])->name('settings');
         Route::patch('/settings', [\App\Http\Controllers\AdminController::class, 'updateSettings'])->name('settings.update');
         

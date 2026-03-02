@@ -7,12 +7,15 @@ use App\Models\DreamInterpretation;
 use App\Models\DreamEntityDaily;
 use App\Models\DreamInterpretationEntity;
 use App\Models\DreamInterpretationStat;
+use App\Models\EntityGroup;
+use App\Models\EntityGroupMapping;
 use App\Models\Report;
 use App\Models\Setting;
 use App\Models\User;
 use App\Rules\NoSpam;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
@@ -499,8 +502,13 @@ class AdminController extends Controller
 
         $limit = 100;
         $date = $request->filled('date') ? $request->date : null;
+        $search = $request->filled('search') ? trim($request->get('search')) : null;
 
-        if ($date) {
+        if ($search !== null && $search !== '') {
+            $symbols = DreamInterpretationEntity::uniqueWithCounts(DreamInterpretationEntity::TYPE_SYMBOL, $limit, $search);
+            $locations = DreamInterpretationEntity::uniqueWithCounts(DreamInterpretationEntity::TYPE_LOCATION, $limit, $search);
+            $tags = DreamInterpretationEntity::uniqueWithCounts(DreamInterpretationEntity::TYPE_TAG, $limit, $search);
+        } elseif ($date) {
             $symbols = DreamEntityDaily::topForDate(DreamInterpretationEntity::TYPE_SYMBOL, $date, $limit);
             $locations = DreamEntityDaily::topForDate(DreamInterpretationEntity::TYPE_LOCATION, $date, $limit);
             $tags = DreamEntityDaily::topForDate(DreamInterpretationEntity::TYPE_TAG, $date, $limit);
@@ -510,6 +518,10 @@ class AdminController extends Controller
             $tags = DreamInterpretationEntity::uniqueWithCounts(DreamInterpretationEntity::TYPE_TAG, $limit);
         }
 
+        $slugs = collect($symbols)->pluck('slug')->merge(collect($locations)->pluck('slug'))->merge(collect($tags)->pluck('slug'))->unique()->filter()->values()->toArray();
+        $slugToGroup = EntityGroupMapping::slugsToGroups($slugs);
+        $entityGroups = EntityGroup::orderBy('name')->get(['id', 'name']);
+
         return view('admin.entities', compact(
             'totalRows',
             'countByType',
@@ -518,8 +530,249 @@ class AdminController extends Controller
             'symbols',
             'locations',
             'tags',
-            'date'
+            'date',
+            'search',
+            'slugToGroup',
+            'entityGroups'
         ));
+    }
+
+    /**
+     * Скачать список уникальных сущностей выбранного типа (символы, локации, теги) в виде .txt для анализа.
+     */
+    public function entitiesExport(Request $request): Response
+    {
+        $type = $request->get('type', '');
+        $allowed = [DreamInterpretationEntity::TYPE_SYMBOL, DreamInterpretationEntity::TYPE_LOCATION, DreamInterpretationEntity::TYPE_TAG];
+        if (!in_array($type, $allowed, true)) {
+            abort(400, 'Недопустимый тип');
+        }
+
+        $names = DreamInterpretationEntity::where('type', $type)
+            ->selectRaw('MAX(name) as name')
+            ->groupBy('slug')
+            ->orderBy('name')
+            ->pluck('name')
+            ->filter()
+            ->values();
+
+        $content = $names->implode("\n");
+        $labels = [
+            DreamInterpretationEntity::TYPE_SYMBOL => 'symbols',
+            DreamInterpretationEntity::TYPE_LOCATION => 'locations',
+            DreamInterpretationEntity::TYPE_TAG => 'tags',
+        ];
+        $filename = 'entities-' . $labels[$type] . '.txt';
+
+        return response($content, 200, [
+            'Content-Type' => 'text/plain; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
+    }
+
+    /**
+     * Список групп сущностей и форма добавления (textarea).
+     */
+    public function entityGroupsIndex(Request $request): View
+    {
+        $sort = $request->get('sort', 'name');
+        $order = strtolower($request->get('order', 'asc')) === 'desc' ? 'desc' : 'asc';
+        if (!in_array($sort, ['name', 'count'], true)) {
+            $sort = 'name';
+        }
+
+        $query = EntityGroup::withCount('mappings')->with('mappings');
+        if ($sort === 'name') {
+            $query->orderBy('name', $order);
+        } else {
+            $query->orderBy('mappings_count', $order);
+        }
+        $groups = $query->get();
+
+        return view('admin.entity-groups-index', compact('groups', 'sort', 'order'));
+    }
+
+    /**
+     * Экспорт групп в .txt в формате для импорта (одна строка = одна группа: «Название, сущность1, сущность2»).
+     */
+    public function entityGroupsExport(): Response
+    {
+        $groups = EntityGroup::with('mappings')->orderBy('name')->get();
+        $lines = [];
+        foreach ($groups as $group) {
+            $parts = [$group->name];
+            foreach ($group->mappings as $m) {
+                $parts[] = $m->entity_name ?? $m->entity_slug;
+            }
+            $lines[] = implode(', ', $parts);
+        }
+        $content = implode("\n", $lines);
+
+        return response($content, 200, [
+            'Content-Type' => 'text/plain; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="entity-groups-export.txt"',
+        ]);
+    }
+
+    /**
+     * Сохранить группы из textarea: одна строка = одна группа, "Название, сущность2, сущность3".
+     */
+    public function entityGroupsStore(Request $request): RedirectResponse
+    {
+        $request->validate(['lines' => 'required|string|max:50000']);
+        $lines = array_filter(preg_split('/\r\n|\r|\n/', $request->input('lines')));
+        $created = 0;
+        foreach ($lines as $line) {
+            $parts = array_map(function ($p) {
+                return mb_strtolower(trim($p), 'UTF-8');
+            }, explode(',', $line));
+            $parts = array_unique(array_filter($parts));
+            if (count($parts) === 0) {
+                continue;
+            }
+            $groupName = $parts[0];
+            $slugToName = [];
+            foreach ($parts as $part) {
+                $slug = DreamInterpretationEntity::nameToSlug($part);
+                if ($slug !== 'n-a') {
+                    $slugToName[$slug] = $part;
+                }
+            }
+            if (empty($slugToName)) {
+                continue;
+            }
+            $groupSlug = EntityGroup::nameToSlug($groupName);
+            $group = EntityGroup::firstOrCreate(
+                ['slug' => $groupSlug],
+                ['name' => $groupName]
+            );
+            if (!$group->wasRecentlyCreated) {
+                $group->update(['name' => $groupName]);
+            }
+            foreach ($slugToName as $slug => $name) {
+                EntityGroupMapping::where('entity_slug', $slug)->delete();
+                EntityGroupMapping::create([
+                    'entity_group_id' => $group->id,
+                    'entity_slug' => $slug,
+                    'entity_name' => $name,
+                ]);
+            }
+            $created++;
+        }
+        return redirect()->route('admin.entities.groups.index')->with('success', "Обработано групп: {$created}.");
+    }
+
+    /**
+     * Редактирование группы: название и список сущностей.
+     */
+    public function entityGroupEdit(EntityGroup $entity_group): View
+    {
+        $entity_group->load('mappings');
+        $groups = EntityGroup::orderBy('name')->get(['id', 'name']);
+        $slugs = $entity_group->mappings->pluck('entity_slug')->unique()->filter()->values()->toArray();
+        $slugToName = empty($slugs) ? [] : DreamInterpretationEntity::whereIn('slug', $slugs)
+            ->selectRaw('slug, MAX(name) as name')
+            ->groupBy('slug')
+            ->pluck('name', 'slug')
+            ->toArray();
+        return view('admin.entity-group-edit', compact('entity_group', 'groups', 'slugToName'));
+    }
+
+    /**
+     * Обновить название группы.
+     */
+    public function entityGroupUpdate(Request $request, EntityGroup $entity_group): RedirectResponse
+    {
+        $request->validate(['name' => 'required|string|max:500']);
+        $entity_group->update(['name' => $request->input('name')]);
+        return redirect()->route('admin.entities.groups.edit', $entity_group)->with('success', 'Название группы обновлено.');
+    }
+
+    /**
+     * Удалить группу: группа и все привязки удаляются, сущности становятся свободными (без группы).
+     */
+    public function entityGroupDestroy(EntityGroup $entity_group): RedirectResponse
+    {
+        $name = $entity_group->name;
+        $entity_group->delete();
+        return redirect()->route('admin.entities.groups.index', request()->only(['sort', 'order']))->with('success', "Группа «{$name}» удалена. Сущности отвязаны и стали свободными.");
+    }
+
+    /**
+     * Добавить одну сущность в группу (по slug или названию).
+     */
+    public function entityGroupAddMapping(Request $request, EntityGroup $entity_group): RedirectResponse
+    {
+        $request->validate(['entity' => 'required|string|max:500']);
+        $input = trim($request->input('entity'));
+        $slug = DreamInterpretationEntity::nameToSlug($input);
+        if ($slug === 'n-a') {
+            return redirect()->back()->with('error', 'Не удалось получить slug из введённого значения.');
+        }
+        EntityGroupMapping::where('entity_slug', $slug)->delete();
+        EntityGroupMapping::create([
+            'entity_group_id' => $entity_group->id,
+            'entity_slug' => $slug,
+            'entity_name' => $input,
+        ]);
+        return redirect()->back()->with('success', "Сущность «{$input}» добавлена в группу.");
+    }
+
+    /**
+     * Удалить сущность из группы.
+     */
+    public function entityGroupRemoveMapping(EntityGroupMapping $mapping): RedirectResponse
+    {
+        $group = $mapping->group;
+        $mapping->delete();
+        return redirect()->route('admin.entities.groups.edit', $group)->with('success', 'Сущность удалена из группы.');
+    }
+
+    /**
+     * Добавить сущность в группу со страницы поиска сущностей (один slug — во всех типах).
+     */
+    public function entitiesAddToGroup(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'entity_slug' => 'required|string|max:255',
+            'entity_group_id' => 'required|exists:entity_groups,id',
+        ]);
+        $slug = $request->input('entity_slug');
+        $groupId = (int) $request->input('entity_group_id');
+        EntityGroupMapping::where('entity_slug', $slug)->delete();
+        EntityGroupMapping::create(['entity_group_id' => $groupId, 'entity_slug' => $slug]);
+        return redirect()->back()->with('success', 'Сущность добавлена в группу.');
+    }
+
+    /**
+     * Создать новую группу с именем сущности и добавить эту сущность в неё.
+     */
+    public function entitiesCreateGroupFromEntity(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'entity_slug' => 'required|string|max:255',
+            'entity_name' => 'required|string|max:500',
+        ]);
+        $slug = $request->input('entity_slug');
+        $name = trim($request->input('entity_name'));
+        if ($name === '') {
+            return redirect()->back()->with('error', 'Название сущности пусто.');
+        }
+        $groupSlug = EntityGroup::nameToSlug($name);
+        $group = EntityGroup::firstOrCreate(
+            ['slug' => $groupSlug],
+            ['name' => $name]
+        );
+        if (!$group->wasRecentlyCreated) {
+            $group->update(['name' => $name]);
+        }
+        EntityGroupMapping::where('entity_slug', $slug)->delete();
+        EntityGroupMapping::create([
+            'entity_group_id' => $group->id,
+            'entity_slug' => $slug,
+            'entity_name' => $name,
+        ]);
+        return redirect()->back()->with('success', "Создана группа «{$name}» и сущность добавлена в неё.");
     }
 
     /**
