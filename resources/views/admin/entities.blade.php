@@ -38,7 +38,7 @@
                         <a href="{{ route('admin.entities') }}" class="inline-block text-sm font-bold py-2 px-4 rounded border border-gray-400 bg-gray-100 text-gray-700 hover:bg-gray-200">Сбросить (общий топ)</a>
                     @endif
                     <a href="{{ route('admin.entities.compare') }}" class="ml-4 bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">Сравнить два дня</a>
-                    <a href="{{ route('admin.entities.groups.index') }}" class="ml-4 bg-amber-500 hover:bg-amber-700 text-white font-bold py-2 px-4 rounded">Группы сущностей</a>
+                    <a href="{{ route('admin.entities.groups.index') }}" class="ml-4 bg-amber-500 hover:bg-amber-700 text-white font-bold py-2 px-4 rounded" style="background-color:#d97706;color:#fff;">Группы сущностей</a>
                 </div>
             </div>
 
@@ -101,33 +101,26 @@
                                             <td class="px-2 py-2 text-sm text-gray-900 text-right">{{ $row['mentions'] ?? 0 }}</td>
                                             <td class="px-2 py-2 text-sm min-w-0">
                                                 <div class="mt-1 flex flex-col gap-1">
-                                                @if(($entityGroups ?? collect())->isNotEmpty())
                                                     <form id="add-form-sym-{{ $row['slug'] ?? '' }}" action="{{ route('admin.entities.add-to-group') }}" method="post" class="flex flex-col gap-1">
                                                         @csrf
                                                         <input type="hidden" name="entity_slug" value="{{ $row['slug'] ?? '' }}">
-                                                        <select name="entity_group_id" class="text-xs rounded border border-gray-300 py-0.5 w-full max-w-[140px]">
-                                                            @foreach($entityGroups as $g)
+                                                        <input type="hidden" name="entity_name" value="{{ $row['name'] ?? '' }}">
+                                                        <select name="entity_group_id" class="text-xs rounded border border-gray-300 py-0.5 w-full max-w-[140px]" style="border:1px solid #d1d5db;">
+                                                            <option value="">— Нет групп —</option>
+                                                            @foreach($entityGroups ?? [] as $g)
                                                                 <option value="{{ $g->id }}" {{ $gr && $gr['id'] == $g->id ? 'selected' : '' }}>{{ $g->name }}</option>
                                                             @endforeach
                                                         </select>
                                                     </form>
                                                     <div class="flex gap-1 flex-wrap">
-                                                        <button type="submit" form="add-form-sym-{{ $row['slug'] ?? '' }}" class="text-xs px-2 py-1 rounded border border-teal-600 bg-teal-50 text-teal-700 hover:bg-teal-100 shrink-0" title="Добавить в выбранную группу">В группу</button>
+                                                        <button type="submit" form="add-form-sym-{{ $row['slug'] ?? '' }}" class="text-xs px-2 py-1 rounded shrink-0" style="border:1px solid #0d9488;background:#ccfbf1;color:#0f766e;" title="Добавить в выбранную группу" @if(($entityGroups ?? collect())->isEmpty()) disabled @endif>В группу</button>
                                                         <form action="{{ route('admin.entities.create-group-from-entity') }}" method="post" class="inline" title="Создать новую группу «{{ $row['name'] ?? '' }}» и добавить сущность в неё">
-                                                        @csrf
-                                                        <input type="hidden" name="entity_slug" value="{{ $row['slug'] ?? '' }}">
-                                                        <input type="hidden" name="entity_name" value="{{ $row['name'] ?? '' }}">
-                                                        <button type="submit" class="text-xs w-7 h-7 rounded border border-teal-600 bg-teal-50 text-teal-700 hover:bg-teal-100 shrink-0 font-bold">+</button>
+                                                            @csrf
+                                                            <input type="hidden" name="entity_slug" value="{{ $row['slug'] ?? '' }}">
+                                                            <input type="hidden" name="entity_name" value="{{ $row['name'] ?? '' }}">
+                                                            <button type="submit" class="text-xs w-7 h-7 rounded font-bold shrink-0" style="border:1px solid #0d9488;background:#ccfbf1;color:#0f766e;">+</button>
                                                         </form>
                                                     </div>
-                                                @else
-                                                    <form action="{{ route('admin.entities.create-group-from-entity') }}" method="post" class="inline" title="Создать новую группу «{{ $row['name'] ?? '' }}»">
-                                                        @csrf
-                                                        <input type="hidden" name="entity_slug" value="{{ $row['slug'] ?? '' }}">
-                                                        <input type="hidden" name="entity_name" value="{{ $row['name'] ?? '' }}">
-                                                        <button type="submit" class="text-xs px-2 py-1 rounded border border-teal-600 bg-teal-50 text-teal-700 hover:bg-teal-100 shrink-0 font-bold" title="Создать группу «{{ $row['name'] ?? '' }}»">+</button>
-                                                    </form>
-                                                @endif
                                                 </div>
                                             </td>
                                         </tr>
@@ -163,33 +156,26 @@
                                             <td class="px-2 py-2 text-sm text-gray-900 text-right">{{ $row['mentions'] ?? 0 }}</td>
                                             <td class="px-2 py-2 text-sm min-w-0">
                                                 <div class="mt-1 flex flex-col gap-1">
-                                                @if(($entityGroups ?? collect())->isNotEmpty())
                                                     <form id="add-form-loc-{{ $row['slug'] ?? '' }}" action="{{ route('admin.entities.add-to-group') }}" method="post" class="flex flex-col gap-1">
                                                         @csrf
                                                         <input type="hidden" name="entity_slug" value="{{ $row['slug'] ?? '' }}">
-                                                        <select name="entity_group_id" class="text-xs rounded border border-gray-300 py-0.5 w-full max-w-[140px]">
-                                                            @foreach($entityGroups as $g)
+                                                        <input type="hidden" name="entity_name" value="{{ $row['name'] ?? '' }}">
+                                                        <select name="entity_group_id" class="text-xs rounded border border-gray-300 py-0.5 w-full max-w-[140px]" style="border:1px solid #d1d5db;">
+                                                            <option value="">— Нет групп —</option>
+                                                            @foreach($entityGroups ?? [] as $g)
                                                                 <option value="{{ $g->id }}" {{ $gr && $gr['id'] == $g->id ? 'selected' : '' }}>{{ $g->name }}</option>
                                                             @endforeach
                                                         </select>
                                                     </form>
                                                     <div class="flex gap-1 flex-wrap">
-                                                        <button type="submit" form="add-form-loc-{{ $row['slug'] ?? '' }}" class="text-xs px-2 py-1 rounded border border-teal-600 bg-teal-50 text-teal-700 hover:bg-teal-100 shrink-0" title="Добавить в выбранную группу">В группу</button>
+                                                        <button type="submit" form="add-form-loc-{{ $row['slug'] ?? '' }}" class="text-xs px-2 py-1 rounded shrink-0" style="border:1px solid #0d9488;background:#ccfbf1;color:#0f766e;" title="Добавить в выбранную группу" @if(($entityGroups ?? collect())->isEmpty()) disabled @endif>В группу</button>
                                                         <form action="{{ route('admin.entities.create-group-from-entity') }}" method="post" class="inline" title="Создать новую группу «{{ $row['name'] ?? '' }}» и добавить сущность в неё">
                                                             @csrf
                                                             <input type="hidden" name="entity_slug" value="{{ $row['slug'] ?? '' }}">
                                                             <input type="hidden" name="entity_name" value="{{ $row['name'] ?? '' }}">
-                                                            <button type="submit" class="text-xs w-7 h-7 rounded border border-teal-600 bg-teal-50 text-teal-700 hover:bg-teal-100 shrink-0 font-bold">+</button>
+                                                            <button type="submit" class="text-xs w-7 h-7 rounded font-bold shrink-0" style="border:1px solid #0d9488;background:#ccfbf1;color:#0f766e;">+</button>
                                                         </form>
                                                     </div>
-                                                @else
-                                                    <form action="{{ route('admin.entities.create-group-from-entity') }}" method="post" class="inline" title="Создать новую группу с именем «{{ $row['name'] ?? '' }}»">
-                                                        @csrf
-                                                        <input type="hidden" name="entity_slug" value="{{ $row['slug'] ?? '' }}">
-                                                        <input type="hidden" name="entity_name" value="{{ $row['name'] ?? '' }}">
-                                                        <button type="submit" class="text-xs px-2 py-1 rounded border border-teal-600 bg-teal-50 text-teal-700 hover:bg-teal-100 shrink-0 font-bold" title="Создать группу «{{ $row['name'] ?? '' }}»">+</button>
-                                                    </form>
-                                                @endif
                                                 </div>
                                             </td>
                                         </tr>
@@ -225,33 +211,26 @@
                                             <td class="px-2 py-2 text-sm text-gray-900 text-right">{{ $row['mentions'] ?? 0 }}</td>
                                             <td class="px-2 py-2 text-sm min-w-0">
                                                 <div class="mt-1 flex flex-col gap-1">
-                                                @if(($entityGroups ?? collect())->isNotEmpty())
                                                     <form id="add-form-tag-{{ $row['slug'] ?? '' }}" action="{{ route('admin.entities.add-to-group') }}" method="post" class="flex flex-col gap-1">
                                                         @csrf
                                                         <input type="hidden" name="entity_slug" value="{{ $row['slug'] ?? '' }}">
-                                                        <select name="entity_group_id" class="text-xs rounded border border-gray-300 py-0.5 w-full max-w-[140px]">
-                                                            @foreach($entityGroups as $g)
+                                                        <input type="hidden" name="entity_name" value="{{ $row['name'] ?? '' }}">
+                                                        <select name="entity_group_id" class="text-xs rounded border border-gray-300 py-0.5 w-full max-w-[140px]" style="border:1px solid #d1d5db;">
+                                                            <option value="">— Нет групп —</option>
+                                                            @foreach($entityGroups ?? [] as $g)
                                                                 <option value="{{ $g->id }}" {{ $gr && $gr['id'] == $g->id ? 'selected' : '' }}>{{ $g->name }}</option>
                                                             @endforeach
                                                         </select>
                                                     </form>
                                                     <div class="flex gap-1 flex-wrap">
-                                                        <button type="submit" form="add-form-tag-{{ $row['slug'] ?? '' }}" class="text-xs px-2 py-1 rounded border border-teal-600 bg-teal-50 text-teal-700 hover:bg-teal-100 shrink-0" title="Добавить в выбранную группу">В группу</button>
+                                                        <button type="submit" form="add-form-tag-{{ $row['slug'] ?? '' }}" class="text-xs px-2 py-1 rounded shrink-0" style="border:1px solid #0d9488;background:#ccfbf1;color:#0f766e;" title="Добавить в выбранную группу" @if(($entityGroups ?? collect())->isEmpty()) disabled @endif>В группу</button>
                                                         <form action="{{ route('admin.entities.create-group-from-entity') }}" method="post" class="inline" title="Создать новую группу «{{ $row['name'] ?? '' }}» и добавить сущность в неё">
                                                             @csrf
                                                             <input type="hidden" name="entity_slug" value="{{ $row['slug'] ?? '' }}">
                                                             <input type="hidden" name="entity_name" value="{{ $row['name'] ?? '' }}">
-                                                            <button type="submit" class="text-xs w-7 h-7 rounded border border-teal-600 bg-teal-50 text-teal-700 hover:bg-teal-100 shrink-0 font-bold">+</button>
+                                                            <button type="submit" class="text-xs w-7 h-7 rounded font-bold shrink-0" style="border:1px solid #0d9488;background:#ccfbf1;color:#0f766e;">+</button>
                                                         </form>
                                                     </div>
-                                                @else
-                                                    <form action="{{ route('admin.entities.create-group-from-entity') }}" method="post" class="inline" title="Создать новую группу с именем «{{ $row['name'] ?? '' }}»">
-                                                        @csrf
-                                                        <input type="hidden" name="entity_slug" value="{{ $row['slug'] ?? '' }}">
-                                                        <input type="hidden" name="entity_name" value="{{ $row['name'] ?? '' }}">
-                                                        <button type="submit" class="text-xs px-2 py-1 rounded border border-teal-600 bg-teal-50 text-teal-700 hover:bg-teal-100 shrink-0 font-bold" title="Создать группу «{{ $row['name'] ?? '' }}»">+</button>
-                                                    </form>
-                                                @endif
                                                 </div>
                                             </td>
                                         </tr>

@@ -594,15 +594,26 @@ class AdminController extends Controller
 
     /**
      * Экспорт групп в .txt в формате для импорта (одна строка = одна группа: «Название, сущность1, сущность2»).
+     * В экспорт попадают только названия сущностей (не slug).
      */
     public function entityGroupsExport(): Response
     {
         $groups = EntityGroup::with('mappings')->orderBy('name')->get();
+        $allSlugs = $groups->pluck('mappings')->flatten(1)->pluck('entity_slug')->unique()->filter()->values()->toArray();
+        $slugToName = empty($allSlugs) ? [] : DreamInterpretationEntity::whereIn('slug', $allSlugs)
+            ->selectRaw('slug, MAX(name) as name')
+            ->groupBy('slug')
+            ->pluck('name', 'slug')
+            ->toArray();
+
         $lines = [];
         foreach ($groups as $group) {
             $parts = [$group->name];
             foreach ($group->mappings as $m) {
-                $parts[] = $m->entity_name ?? $m->entity_slug;
+                $name = $m->entity_name && trim($m->entity_name) !== ''
+                    ? trim($m->entity_name)
+                    : ($slugToName[$m->entity_slug] ?? $m->entity_slug);
+                $parts[] = $name;
             }
             $lines[] = implode(', ', $parts);
         }
@@ -736,11 +747,20 @@ class AdminController extends Controller
         $request->validate([
             'entity_slug' => 'required|string|max:255',
             'entity_group_id' => 'required|exists:entity_groups,id',
+            'entity_name' => 'nullable|string|max:500',
         ]);
         $slug = $request->input('entity_slug');
         $groupId = (int) $request->input('entity_group_id');
+        $name = trim((string) $request->input('entity_name', ''));
+        if ($name === '') {
+            $name = DreamInterpretationEntity::where('slug', $slug)->value('name') ?? $slug;
+        }
         EntityGroupMapping::where('entity_slug', $slug)->delete();
-        EntityGroupMapping::create(['entity_group_id' => $groupId, 'entity_slug' => $slug]);
+        EntityGroupMapping::create([
+            'entity_group_id' => $groupId,
+            'entity_slug' => $slug,
+            'entity_name' => $name,
+        ]);
         return redirect()->back()->with('success', 'Сущность добавлена в группу.');
     }
 
