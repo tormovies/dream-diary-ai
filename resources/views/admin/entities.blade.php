@@ -21,7 +21,7 @@
                     <form action="{{ route('admin.entities') }}" method="get" class="flex flex-wrap items-end gap-4">
                         <div class="flex flex-col gap-1">
                             <label class="text-sm font-medium text-gray-700">Поиск</label>
-                            <input type="text" name="search" value="{{ $search ?? '' }}" placeholder="напр. дом"
+                            <input type="text" name="q" value="{{ $search ?? '' }}" placeholder="напр. дом"
                                 class="rounded-md border-2 border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500 w-52 min-h-[2.5rem]">
                         </div>
                         <div class="flex flex-col gap-1">
