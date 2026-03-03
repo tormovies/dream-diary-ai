@@ -17,6 +17,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\View\View;
 
 class AdminController extends Controller
@@ -125,6 +126,33 @@ class AdminController extends Controller
         $user->unban();
 
         return back()->with('success', "Пользователь {$user->nickname} разблокирован");
+    }
+
+    /**
+     * Подтверждение email пользователя администратором (с отправкой уведомления на почту).
+     */
+    public function verifyUserEmail(User $user): RedirectResponse
+    {
+        if ($user->hasVerifiedEmail()) {
+            return back()->with('info', 'Email пользователя уже подтверждён.');
+        }
+
+        $user->markEmailAsVerified();
+
+        $appName = config('app.name');
+        $message = "Здравствуйте!\n\nАдминистратор сайта {$appName} подтвердил ваш адрес электронной почты. Теперь вы можете пользоваться всеми возможностями сайта.\n\nС уважением,\n{$appName}";
+        $subject = "{$appName} — ваш email подтверждён";
+
+        try {
+            Mail::raw($message, function ($mail) use ($user, $subject) {
+                $mail->to($user->email)
+                    ->subject($subject);
+            });
+        } catch (\Throwable $e) {
+            return back()->with('warning', "Email пользователя подтверждён, но уведомление не удалось отправить: {$e->getMessage()}");
+        }
+
+        return back()->with('success', "Email пользователя {$user->nickname} подтверждён. Уведомление отправлено на {$user->email}.");
     }
 
     /**

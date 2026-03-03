@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -59,6 +61,22 @@ class User extends Authenticatable implements MustVerifyEmail
             'banned_at' => 'datetime',
             'is_banned' => 'boolean',
         ];
+    }
+
+    /**
+     * Отправка письма верификации email (всегда на русском).
+     */
+    public function sendEmailVerificationNotification(): void
+    {
+        $this->notify((new VerifyEmail)->locale('ru'));
+    }
+
+    /**
+     * Отправка письма со ссылкой для сброса пароля (всегда на русском).
+     */
+    public function sendPasswordResetNotification(#[\SensitiveParameter] $token): void
+    {
+        $this->notify((new ResetPassword($token))->locale('ru'));
     }
 
     /**

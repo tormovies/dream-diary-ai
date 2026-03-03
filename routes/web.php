@@ -111,6 +111,7 @@ Route::middleware('auth')->group(function () {
         Route::patch('/users/{user}', [\App\Http\Controllers\AdminController::class, 'updateUser'])->name('users.update');
         Route::post('/users/{user}/ban', [\App\Http\Controllers\AdminController::class, 'banUser'])->name('users.ban');
         Route::post('/users/{user}/unban', [\App\Http\Controllers\AdminController::class, 'unbanUser'])->name('users.unban');
+        Route::post('/users/{user}/verify-email', [\App\Http\Controllers\AdminController::class, 'verifyUserEmail'])->name('users.verify-email');
         Route::delete('/users/{user}', [\App\Http\Controllers\AdminController::class, 'deleteUser'])->name('users.delete');
         Route::get('/reports', [\App\Http\Controllers\AdminController::class, 'reports'])->name('reports');
         Route::get('/comments', [\App\Http\Controllers\AdminController::class, 'comments'])->name('comments');

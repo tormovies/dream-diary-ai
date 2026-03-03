@@ -12,6 +12,18 @@
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            @if(session('success'))
+                <div class="mb-4 p-4 rounded bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200">{{ session('success') }}</div>
+            @endif
+            @if(session('error'))
+                <div class="mb-4 p-4 rounded bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200">{{ session('error') }}</div>
+            @endif
+            @if(session('info'))
+                <div class="mb-4 p-4 rounded bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200">{{ session('info') }}</div>
+            @endif
+            @if(session('warning'))
+                <div class="mb-4 p-4 rounded bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-200">{{ session('warning') }}</div>
+            @endif
             <!-- Поиск -->
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
                 <div class="p-6">
@@ -66,6 +78,10 @@
                                             <span class="px-2 py-1 text-xs rounded bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200" title="{{ $user->ban_reason ?? 'Причина не указана' }}">
                                                 Заблокирован
                                             </span>
+                                        @elseif(!$user->hasVerifiedEmail())
+                                            <span class="px-2 py-1 text-xs rounded bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200" title="Email не подтверждён">
+                                                Почта не подтверждена
+                                            </span>
                                         @else
                                             <span class="px-2 py-1 text-xs rounded bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
                                                 Активен
@@ -77,7 +93,14 @@
                                         <div class="flex gap-2 flex-wrap">
                                             <a href="{{ route('admin.users.edit', $user) }}" class="text-blue-600 hover:text-blue-800 dark:text-blue-400">Редактировать</a>
                                             <a href="{{ route('users.profile', $user) }}" class="text-green-600 hover:text-green-800 dark:text-green-400">Профиль</a>
-                                            
+                                            @if(!$user->hasVerifiedEmail() && !$user->is_banned)
+                                                <form method="POST" action="{{ route('admin.users.verify-email', $user) }}" class="inline">
+                                                    @csrf
+                                                    <button type="submit" class="text-teal-600 hover:text-teal-800 dark:text-teal-400" onclick="return confirm('Подтвердить email пользователя {{ $user->nickname }}? На его почту будет отправлено уведомление.')">
+                                                        Подтвердить почту
+                                                    </button>
+                                                </form>
+                                            @endif
                                             @if(!$user->isAdmin() && $user->id !== auth()->id())
                                                 @if($user->is_banned)
                                                     <form method="POST" action="{{ route('admin.users.unban', $user) }}" class="inline">
