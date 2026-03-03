@@ -26,6 +26,11 @@
                             {{ __('Новая ссылка для подтверждения была отправлена на адрес электронной почты, указанный при регистрации.') }}
                         </div>
                     @endif
+                    @if (session('error'))
+                        <div class="mb-4 font-medium text-sm text-red-600 dark:text-red-400">
+                            {{ session('error') }}
+                        </div>
+                    @endif
 
                     <div class="button-group">
                         <form method="POST" action="{{ route('verification.send') }}">
