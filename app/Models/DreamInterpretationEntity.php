@@ -73,12 +73,18 @@ class DreamInterpretationEntity extends Model
     }
 
     /**
-     * Уникальные сущности с общим числом упоминаний (для списка страниц символов/локаций/тегов).
+     * Уникальные сущности с общим числом упоминаний. Поиск — подстрока в name или slug (напр. «дом» найдёт «домашний», «придомовой»).
      */
-    public static function uniqueWithCounts(string $type, int $limit = 500): array
+    public static function uniqueWithCounts(string $type, int $limit = 500, ?string $search = null): array
     {
-        return static::query()
-            ->where('type', $type)
+        $query = static::query()->where('type', $type);
+
+        if ($search !== null && $search !== '') {
+            $term = '%' . addcslashes($search, '%_\\') . '%';
+            $query->whereRaw('(name LIKE ? OR slug LIKE ?)', [$term, $term]);
+        }
+
+        return $query
             ->selectRaw('slug, MAX(name) as name, count(*) as mentions')
             ->groupBy('slug')
             ->orderByDesc('mentions')
