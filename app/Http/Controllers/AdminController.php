@@ -536,6 +536,14 @@ class AdminController extends Controller
         // Параметр «q», не «search»: на части хостингов/WAF параметр search отфильтровывается, date при этом доходит
         $search = $request->filled('q') ? trim((string) $request->get('q')) : null;
 
+        // Временная диагностика: что реально пришло в запросе (убрать после выяснения)
+        $requestDebug = [
+            'query' => $request->query(),
+            'get' => $_GET,
+            'query_string' => $_SERVER['QUERY_STRING'] ?? '',
+            'request_uri' => $_SERVER['REQUEST_URI'] ?? '',
+        ];
+
         if ($search !== null && $search !== '') {
             $symbols = DreamInterpretationEntity::uniqueWithCounts(DreamInterpretationEntity::TYPE_SYMBOL, $limit, $search);
             $locations = DreamInterpretationEntity::uniqueWithCounts(DreamInterpretationEntity::TYPE_LOCATION, $limit, $search);
@@ -565,7 +573,8 @@ class AdminController extends Controller
             'date',
             'search',
             'slugToGroup',
-            'entityGroups'
+            'entityGroups',
+            'requestDebug'
         ));
     }
 
