@@ -15,13 +15,6 @@
             @if(session('success'))
                 <p class="mb-4 text-sm text-green-700 bg-green-100 px-4 py-2 rounded">{{ session('success') }}</p>
             @endif
-            {{-- Временная диагностика запроса (удалить после выяснения, почему поиск не работает на продакшене) --}}
-            @if(isset($requestDebug))
-                <details class="mb-4 p-3 bg-gray-100 dark:bg-gray-800 rounded text-sm">
-                    <summary class="cursor-pointer font-medium text-gray-700 dark:text-gray-300">Диагностика запроса (query, GET, QUERY_STRING, REQUEST_URI)</summary>
-                    <pre class="mt-2 overflow-auto text-xs">{{ json_encode($requestDebug, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) }}</pre>
-                </details>
-            @endif
             <!-- Фильтр: поиск по сущностям и дата -->
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6 border border-gray-200">
                 <div class="p-6 flex flex-wrap items-end gap-4">
