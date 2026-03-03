@@ -6,6 +6,7 @@ use App\Console\Commands\AggregateDreamEntityDaily;
 use App\Console\Commands\BackfillDreamInterpretationStats;
 use App\Console\Commands\IndexDreamInterpretationEntities;
 use App\Console\Commands\ImportRedirectsFromFile;
+use App\Console\Commands\TestMailCommand;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -28,6 +29,7 @@ class AppServiceProvider extends ServiceProvider
             BackfillDreamInterpretationStats::class,
             IndexDreamInterpretationEntities::class,
             AggregateDreamEntityDaily::class,
+            TestMailCommand::class,
         ]);
     }
 }
