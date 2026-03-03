@@ -562,6 +562,11 @@ class AdminController extends Controller
             'search_value' => $search,
             'branch' => $branch,
             'counts' => ['symbols' => count($symbols), 'locations' => count($locations), 'tags' => count($tags)],
+            'sample_names' => [
+                'symbols' => array_slice(array_column($symbols, 'name'), 0, 8),
+                'locations' => array_slice(array_column($locations, 'name'), 0, 8),
+                'tags' => array_slice(array_column($tags, 'name'), 0, 8),
+            ],
         ];
 
         $slugs = collect($symbols)->pluck('slug')->merge(collect($locations)->pluck('slug'))->merge(collect($tags)->pluck('slug'))->unique()->filter()->values()->toArray();
