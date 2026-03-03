@@ -504,6 +504,17 @@ class AdminController extends Controller
         $date = $request->filled('date') ? $request->date : null;
         $search = $request->filled('search') ? trim($request->get('search')) : null;
 
+        // На продакшене за прокси/редиректами query-параметры иногда не попадают в $request — читаем из сырого QUERY_STRING
+        if (($search === null || $search === '') && $request->server('QUERY_STRING')) {
+            parse_str($request->server('QUERY_STRING'), $query);
+            if (!empty($query['search']) && trim((string) $query['search']) !== '') {
+                $search = trim((string) $query['search']);
+            }
+            if ($date === null && !empty($query['date']) && trim((string) $query['date']) !== '') {
+                $date = trim((string) $query['date']);
+            }
+        }
+
         if ($search !== null && $search !== '') {
             $symbols = DreamInterpretationEntity::uniqueWithCounts(DreamInterpretationEntity::TYPE_SYMBOL, $limit, $search);
             $locations = DreamInterpretationEntity::uniqueWithCounts(DreamInterpretationEntity::TYPE_LOCATION, $limit, $search);
