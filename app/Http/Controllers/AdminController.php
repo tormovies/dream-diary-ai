@@ -536,27 +536,33 @@ class AdminController extends Controller
         // Параметр «q», не «search»: на части хостингов/WAF параметр search отфильтровывается, date при этом доходит
         $search = $request->filled('q') ? trim((string) $request->get('q')) : null;
 
-        // Временная диагностика: что реально пришло в запросе (убрать после выяснения)
+        if ($search !== null && $search !== '') {
+            $symbols = DreamInterpretationEntity::uniqueWithCounts(DreamInterpretationEntity::TYPE_SYMBOL, $limit, $search);
+            $locations = DreamInterpretationEntity::uniqueWithCounts(DreamInterpretationEntity::TYPE_LOCATION, $limit, $search);
+            $tags = DreamInterpretationEntity::uniqueWithCounts(DreamInterpretationEntity::TYPE_TAG, $limit, $search);
+            $branch = 'search';
+        } elseif ($date) {
+            $symbols = DreamEntityDaily::topForDate(DreamInterpretationEntity::TYPE_SYMBOL, $date, $limit);
+            $locations = DreamEntityDaily::topForDate(DreamInterpretationEntity::TYPE_LOCATION, $date, $limit);
+            $tags = DreamEntityDaily::topForDate(DreamInterpretationEntity::TYPE_TAG, $date, $limit);
+            $branch = 'date';
+        } else {
+            $symbols = DreamInterpretationEntity::uniqueWithCounts(DreamInterpretationEntity::TYPE_SYMBOL, $limit);
+            $locations = DreamInterpretationEntity::uniqueWithCounts(DreamInterpretationEntity::TYPE_LOCATION, $limit);
+            $tags = DreamInterpretationEntity::uniqueWithCounts(DreamInterpretationEntity::TYPE_TAG, $limit);
+            $branch = 'default';
+        }
+
+        // Временная диагностика (убрать после выяснения)
         $requestDebug = [
             'query' => $request->query(),
             'get' => $_GET,
             'query_string' => $_SERVER['QUERY_STRING'] ?? '',
             'request_uri' => $_SERVER['REQUEST_URI'] ?? '',
+            'search_value' => $search,
+            'branch' => $branch,
+            'counts' => ['symbols' => count($symbols), 'locations' => count($locations), 'tags' => count($tags)],
         ];
-
-        if ($search !== null && $search !== '') {
-            $symbols = DreamInterpretationEntity::uniqueWithCounts(DreamInterpretationEntity::TYPE_SYMBOL, $limit, $search);
-            $locations = DreamInterpretationEntity::uniqueWithCounts(DreamInterpretationEntity::TYPE_LOCATION, $limit, $search);
-            $tags = DreamInterpretationEntity::uniqueWithCounts(DreamInterpretationEntity::TYPE_TAG, $limit, $search);
-        } elseif ($date) {
-            $symbols = DreamEntityDaily::topForDate(DreamInterpretationEntity::TYPE_SYMBOL, $date, $limit);
-            $locations = DreamEntityDaily::topForDate(DreamInterpretationEntity::TYPE_LOCATION, $date, $limit);
-            $tags = DreamEntityDaily::topForDate(DreamInterpretationEntity::TYPE_TAG, $date, $limit);
-        } else {
-            $symbols = DreamInterpretationEntity::uniqueWithCounts(DreamInterpretationEntity::TYPE_SYMBOL, $limit);
-            $locations = DreamInterpretationEntity::uniqueWithCounts(DreamInterpretationEntity::TYPE_LOCATION, $limit);
-            $tags = DreamInterpretationEntity::uniqueWithCounts(DreamInterpretationEntity::TYPE_TAG, $limit);
-        }
 
         $slugs = collect($symbols)->pluck('slug')->merge(collect($locations)->pluck('slug'))->merge(collect($tags)->pluck('slug'))->unique()->filter()->values()->toArray();
         $slugToGroup = EntityGroupMapping::slugsToGroups($slugs);
