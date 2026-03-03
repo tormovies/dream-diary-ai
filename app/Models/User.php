@@ -115,6 +115,14 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Толкования снов пользователя (анализатор)
+     */
+    public function dreamInterpretations(): HasMany
+    {
+        return $this->hasMany(DreamInterpretation::class);
+    }
+
+    /**
      * Друзья пользователя
      */
     public function friendships(): HasMany

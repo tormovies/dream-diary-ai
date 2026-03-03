@@ -176,7 +176,7 @@ class AdminController extends Controller
         // (на случай если каскадное удаление не настроено в миграциях)
         
         // 1. Удаляем анализы снов и связанные результаты
-        foreach ($user->dreamInterpretations as $interpretation) {
+        foreach ($user->dreamInterpretations()->get() as $interpretation) {
             // Удаляем результат анализа и связанные сны серии
             if ($interpretation->result) {
                 $interpretation->result->seriesDreams()->delete();
