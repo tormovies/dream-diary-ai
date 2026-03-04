@@ -515,39 +515,51 @@
                             
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 @if(isset($analysis['metadata']['key_symbols']) && is_array($analysis['metadata']['key_symbols']))
+                                    @php $symbolPageUrlBySlug = $symbolPageUrlBySlug ?? []; @endphp
                                     <div>
                                         <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-2">Ключевые символы</h4>
                                         <div class="flex flex-wrap gap-2">
                                             @foreach($analysis['metadata']['key_symbols'] as $symbol)
-                                                <span class="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-3 py-1 rounded-full text-sm">
-                                                    {{ $symbol }}
-                                                </span>
+                                                @php $symSlug = \App\Models\DreamInterpretationEntity::nameToSlug(is_string($symbol) ? $symbol : ''); $symUrl = $symbolPageUrlBySlug[$symSlug] ?? null; @endphp
+                                                @if($symUrl)
+                                                    <a href="{{ $symUrl }}" class="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-3 py-1 rounded-full text-sm hover:underline">{{ is_string($symbol) ? $symbol : '' }}</a>
+                                                @else
+                                                    <span class="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-3 py-1 rounded-full text-sm">{{ is_string($symbol) ? $symbol : '' }}</span>
+                                                @endif
                                             @endforeach
                                         </div>
                                     </div>
                                 @endif
 
                                 @if(isset($analysis['metadata']['tags']) && is_array($analysis['metadata']['tags']))
+                                    @php $symbolPageUrlBySlug = $symbolPageUrlBySlug ?? []; @endphp
                                     <div>
                                         <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-2">Теги</h4>
                                         <div class="flex flex-wrap gap-2">
                                             @foreach($analysis['metadata']['tags'] as $tag)
-                                                <span class="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-3 py-1 rounded-full text-sm">
-                                                    {{ $tag }}
-                                                </span>
+                                                @php $tagSlug = \App\Models\DreamInterpretationEntity::nameToSlug(is_string($tag) ? $tag : ''); $tagUrl = $symbolPageUrlBySlug[$tagSlug] ?? null; @endphp
+                                                @if($tagUrl)
+                                                    <a href="{{ $tagUrl }}" class="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-3 py-1 rounded-full text-sm hover:underline">{{ is_string($tag) ? $tag : '' }}</a>
+                                                @else
+                                                    <span class="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-3 py-1 rounded-full text-sm">{{ is_string($tag) ? $tag : '' }}</span>
+                                                @endif
                                             @endforeach
                                         </div>
                                     </div>
                                 @endif
 
                                 @if(isset($analysis['metadata']['unified_locations']) && is_array($analysis['metadata']['unified_locations']))
+                                    @php $symbolPageUrlBySlug = $symbolPageUrlBySlug ?? []; @endphp
                                     <div>
                                         <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-2">Локации</h4>
                                         <div class="flex flex-wrap gap-2">
                                             @foreach($analysis['metadata']['unified_locations'] as $location)
-                                                <span class="bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-3 py-1 rounded-full text-sm">
-                                                    {{ $location }}
-                                                </span>
+                                                @php $locSlug = \App\Models\DreamInterpretationEntity::nameToSlug(is_string($location) ? $location : ''); $locUrl = $symbolPageUrlBySlug[$locSlug] ?? null; @endphp
+                                                @if($locUrl)
+                                                    <a href="{{ $locUrl }}" class="bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-3 py-1 rounded-full text-sm hover:underline">{{ is_string($location) ? $location : '' }}</a>
+                                                @else
+                                                    <span class="bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-3 py-1 rounded-full text-sm">{{ is_string($location) ? $location : '' }}</span>
+                                                @endif
                                             @endforeach
                                         </div>
                                     </div>

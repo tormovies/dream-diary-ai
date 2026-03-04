@@ -7,10 +7,12 @@ use App\Helpers\TraditionHelper;
 use App\Http\Requests\StoreReportRequest;
 use App\Http\Requests\UpdateReportRequest;
 use App\Services\TextSanitizer;
+use App\Models\Article;
 use App\Models\Report;
 use App\Models\Dream;
 use App\Models\Tag;
 use App\Models\DreamInterpretation;
+use App\Models\DreamInterpretationEntity;
 use App\Models\SeoMeta;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -301,17 +303,20 @@ class ReportController extends Controller
             ->where('access_level', 'all');
         }
 
-        // Поиск по тексту
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->whereHas('dreams', function ($dreamQuery) use ($search) {
-                    $dreamQuery->where('title', 'like', "%{$search}%")
-                               ->orWhere('description', 'like', "%{$search}%");
+        // Поиск по тексту: по границам слов (чтобы «дом» не находило «рядом», «периодом»). MySQL 8: \b
+        $searchRaw = $request->filled('search') ? trim((string) $request->search) : null;
+        $searchRegexp = null;
+        if ($searchRaw !== null && $searchRaw !== '') {
+            $searchRegexp = '\\b' . preg_quote($searchRaw, '/') . '\\b';
+        }
+
+        if ($searchRegexp !== null) {
+            $query->where(function ($q) use ($searchRegexp) {
+                $q->whereHas('dreams', function ($dreamQuery) use ($searchRegexp) {
+                    $dreamQuery->whereRaw('(title REGEXP ? OR description REGEXP ?)', [$searchRegexp, $searchRegexp]);
                 })
-                ->orWhereHas('user', function ($userQuery) use ($search) {
-                    $userQuery->where('nickname', 'like', "%{$search}%")
-                              ->orWhere('name', 'like', "%{$search}%");
+                ->orWhereHas('user', function ($userQuery) use ($searchRegexp) {
+                    $userQuery->whereRaw('(nickname REGEXP ? OR name REGEXP ?)', [$searchRegexp, $searchRegexp]);
                 });
             });
         }
@@ -353,6 +358,32 @@ class ReportController extends Controller
 
         $reports = $query->paginate($perPage)->withQueryString();
 
+        // Поиск по символам (страницы групп сущностей); при наличии сущностей — примеры толкований (инструкции из поиска исключены)
+        $searchSymbols = collect();
+        $searchInterpretationsByEntities = collect();
+
+        if ($searchRaw !== null && strlen($searchRaw) >= 2 && $searchRegexp !== null) {
+            // Символы (опубликованные страницы групп сущностей) — по границам слов
+            $searchSymbols = Article::where('type', 'entity_group')
+                ->where('status', 'published')
+                ->whereRaw('(title REGEXP ? OR content REGEXP ?)', [$searchRegexp, $searchRegexp])
+                ->orderBy('title')
+                ->limit(20)
+                ->get(['id', 'title', 'slug']);
+
+            // Сущности: по name/slug по границам слов; последние толкования с этими сущностями
+            $interpretationIds = DreamInterpretationEntity::whereRaw('(name REGEXP ? OR slug REGEXP ?)', [$searchRegexp, $searchRegexp])
+                ->distinct()
+                ->pluck('dream_interpretation_id');
+            if ($interpretationIds->isNotEmpty()) {
+                $searchInterpretationsByEntities = DreamInterpretation::whereIn('id', $interpretationIds)
+                    ->where('processing_status', 'completed')
+                    ->orderByDesc('created_at')
+                    ->limit(15)
+                    ->get(['id', 'hash', 'dream_description', 'created_at']);
+            }
+        }
+
         // Получаем все теги для фильтра (только из опубликованных отчетов)
         $allTags = Tag::whereHas('reports', function ($q) {
             $q->where('status', 'published')
@@ -378,7 +409,16 @@ class ReportController extends Controller
             SeoHelper::getStructuredDataForOrganization()
         ];
 
-        return view('search', compact('reports', 'allTags', 'dreamTypes', 'seo', 'structuredData'));
+        return view('search', compact(
+            'reports',
+            'allTags',
+            'dreamTypes',
+            'seo',
+            'structuredData',
+            'searchSymbols',
+            'searchInterpretationsByEntities',
+            'searchRaw'
+        ));
     }
 
     /**

@@ -87,12 +87,24 @@
             
             <!-- Key Symbols -->
             @if($result->key_symbols && count($result->key_symbols) > 0)
+                @php $symbolPageUrlBySlug = $symbolPageUrlBySlug ?? []; @endphp
                 <div class="border-t border-gray-200 dark:border-gray-700 pt-6">
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">КЛЮЧЕВЫЕ СИМВОЛЫ И ИХ ЗНАЧЕНИЕ</h3>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         @foreach($result->key_symbols as $symbol)
+                            @php
+                                $symName = $symbol['symbol'] ?? 'Символ';
+                                $symSlug = \App\Models\DreamInterpretationEntity::nameToSlug(strip_tags($symName));
+                                $symUrl = $symbolPageUrlBySlug[$symSlug] ?? null;
+                            @endphp
                             <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow">
-                                <h4 class="font-semibold text-indigo-800 dark:text-indigo-200 mb-2">{!! \App\Helpers\HtmlHelper::sanitize($symbol['symbol'] ?? 'Символ') !!}</h4>
+                                <h4 class="font-semibold text-indigo-800 dark:text-indigo-200 mb-2">
+                                    @if($symUrl)
+                                        <a href="{{ $symUrl }}" class="hover:underline">{!! \App\Helpers\HtmlHelper::sanitize($symName) !!}</a>
+                                    @else
+                                        {!! \App\Helpers\HtmlHelper::sanitize($symName) !!}
+                                    @endif
+                                </h4>
                                 
                                 @if(isset($symbol['meaning']))
                                     <div class="text-sm text-gray-700 dark:text-gray-300">
@@ -107,13 +119,17 @@
             
             <!-- Unified Locations -->
             @if($result->unified_locations && count($result->unified_locations) > 0)
+                @php $symbolPageUrlBySlug = $symbolPageUrlBySlug ?? []; @endphp
                 <div class="border-t border-gray-200 dark:border-gray-700 pt-6">
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">Локации</h3>
                     <div class="flex flex-wrap gap-2">
                         @foreach($result->unified_locations as $location)
-                            <span class="bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-3 py-1 rounded-full text-sm">
-                                {{ $location }}
-                            </span>
+                            @php $locSlug = \App\Models\DreamInterpretationEntity::nameToSlug($location); $locUrl = ($symbolPageUrlBySlug ?? [])[$locSlug] ?? null; @endphp
+                            @if($locUrl)
+                                <a href="{{ $locUrl }}" class="bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-3 py-1 rounded-full text-sm hover:underline">{{ $location }}</a>
+                            @else
+                                <span class="bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-3 py-1 rounded-full text-sm">{{ $location }}</span>
+                            @endif
                         @endforeach
                     </div>
                 </div>
@@ -121,13 +137,17 @@
             
             <!-- Key Tags -->
             @if($result->key_tags && count($result->key_tags) > 0)
+                @php $symbolPageUrlBySlug = $symbolPageUrlBySlug ?? []; @endphp
                 <div class="border-t border-gray-200 dark:border-gray-700 pt-6">
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">Теги</h3>
                     <div class="flex flex-wrap gap-2">
                         @foreach($result->key_tags as $tag)
-                            <span class="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-3 py-1 rounded-full text-sm">
-                                {{ $tag }}
-                            </span>
+                            @php $tagSlug = \App\Models\DreamInterpretationEntity::nameToSlug($tag); $tagUrl = ($symbolPageUrlBySlug ?? [])[$tagSlug] ?? null; @endphp
+                            @if($tagUrl)
+                                <a href="{{ $tagUrl }}" class="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-3 py-1 rounded-full text-sm hover:underline">{{ $tag }}</a>
+                            @else
+                                <span class="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-3 py-1 rounded-full text-sm">{{ $tag }}</span>
+                            @endif
                         @endforeach
                     </div>
                 </div>

@@ -76,8 +76,8 @@ class SeoHelper
         // Формируем canonical URL
         $result['canonical'] = self::generateCanonicalUrl($pageType, $pageId, $variables);
 
-        // Для статей и инструкций устанавливаем og_type='article' и добавляем article мета-теги
-        if (in_array($pageType, ['article', 'guide']) && isset($variables['article'])) {
+        // Для статей, инструкций и страниц символов устанавливаем og_type='article' и добавляем article мета-теги
+        if (in_array($pageType, ['article', 'guide', 'entity_group']) && isset($variables['article'])) {
             $article = $variables['article'];
             $result['og_type'] = 'article';
             $result['article_author'] = config('seo.site_name', 'Дневник сновидений');
@@ -269,10 +269,14 @@ class SeoHelper
                 return $baseUrl . '/guide/' . ($variables['slug'] ?? $pageId ?? '');
             case 'article':
                 return $baseUrl . '/articles/' . ($variables['slug'] ?? $pageId ?? '');
+            case 'entity_group':
+                return $baseUrl . '/symbol/' . ($variables['slug'] ?? $pageId ?? '');
             case 'guide-index':
                 return $baseUrl . '/guide';
             case 'articles-index':
                 return $baseUrl . '/articles';
+            case 'symbol-index':
+                return $baseUrl . '/symbol';
             default:
                 return $baseUrl;
         }
@@ -1147,6 +1151,18 @@ class SeoHelper
                 'name' => $guide->title,
                 'url' => $baseUrl . route('guide.show', ['slug' => $guide->slug], false)
             ]
+        ];
+    }
+
+    /**
+     * Получить breadcrumbs для страницы символа (группы сущностей)
+     */
+    public static function getBreadcrumbsForSymbol($article): array
+    {
+        $baseUrl = rtrim(config('seo.base_url', config('app.url')), '/');
+        return [
+            ['name' => 'Главная', 'url' => $baseUrl . route('home', [], false)],
+            ['name' => $article->title, 'url' => $baseUrl . route('symbol.show', ['slug' => $article->slug], false)]
         ];
     }
 

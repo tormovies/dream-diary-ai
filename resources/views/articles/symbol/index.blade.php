@@ -15,13 +15,7 @@
                     <div class="gradient-primary rounded-2xl p-6 text-white card-shadow">
                         <h3 class="text-xl font-bold mb-2">Добро пожаловать, {{ auth()->user()->nickname }}!</h3>
                         <p class="text-purple-100 mb-4 text-sm">
-                            @if($article->type === 'guide')
-                                Просмотр инструкции
-                            @elseif($article->type === 'entity_group')
-                                Толкование символа
-                            @else
-                                Просмотр статьи
-                            @endif
+                            Символы снов
                         </p>
                         <a href="{{ route('reports.create') }}" class="inline-block bg-white text-purple-600 px-4 py-2 rounded-lg font-semibold hover:bg-purple-50 transition-colors text-sm">
                             <i class="fas fa-plus mr-2"></i>Добавить сон
@@ -91,75 +85,40 @@
                 
                 <!-- Центрально-правая панель -->
                 <main class="space-y-6 min-w-0">
-                    <!-- Заголовок и кнопки действий -->
+                    <!-- Заголовок -->
                     <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
-                        <div class="mb-4">
-                            @if(isset($breadcrumbs) && !empty($breadcrumbs))
-                                <x-breadcrumbs :items="$breadcrumbs" />
-                            @endif
-                            <div class="mb-4">
-                                <h1 class="text-2xl font-bold text-purple-600 dark:text-purple-400">{{ $seo['h1'] ?? $article->title }}</h1>
-                                @if(isset($seo['h1_description']) && !empty($seo['h1_description']))
-                                    <p class="text-gray-600 dark:text-gray-300 mt-3 text-lg leading-relaxed">{{ $seo['h1_description'] }}</p>
-                                @endif
+                        <h2 class="text-2xl font-bold text-purple-600 dark:text-purple-400">{{ $seo['h1'] ?? 'Символы снов' }}</h2>
+                        @if(isset($seo['h1_description']) && !empty($seo['h1_description']))
+                            <div class="mt-4 bg-purple-50 dark:bg-purple-900/20 border-l-4 border-purple-500 dark:border-purple-400 p-4 rounded-r-lg">
+                                <p class="text-gray-700 dark:text-gray-300 italic">{{ $seo['h1_description'] }}</p>
                             </div>
-                            <div class="flex flex-col sm:flex-row gap-2 sm:items-stretch">
-                                @php
-                                    // Получаем предыдущий URL, если он с нашего сайта
-                                    $previousUrl = url()->previous();
-                                    $currentHost = parse_url(url('/'), PHP_URL_HOST);
-                                    $previousHost = parse_url($previousUrl, PHP_URL_HOST);
-                                    
-                                    // Если предыдущий URL с нашего сайта, используем его, иначе соответствующая стартовая страница
-                                    $backUrl = ($previousHost === $currentHost && $previousUrl !== url()->current()) 
-                                        ? $previousUrl 
-                                        : ($article->type === 'guide' ? route('guide.index') : ($article->type === 'entity_group' ? route('symbol.index') : route('articles.index')));
-                                @endphp
-                                
-                                <!-- Кнопка "Назад" -->
-                                <a href="{{ $backUrl }}" 
-                                   class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-colors text-center w-full sm:w-auto sm:flex-1">
-                                    <i class="fas fa-arrow-left mr-2"></i>Назад
-                                </a>
-                                
-                                <!-- Кнопка "Список инструкций/статей/символов" -->
-                                <a href="{{ $article->type === 'guide' ? route('guide.index') : ($article->type === 'entity_group' ? route('symbol.index') : route('articles.index')) }}" 
-                                   class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg transition-colors text-center w-full sm:w-auto sm:flex-1">
-                                    <i class="fas fa-list mr-2"></i>{{ $article->type === 'guide' ? 'Все инструкции' : ($article->type === 'entity_group' ? 'Все символы' : 'Все статьи') }}
-                                </a>
-                            </div>
-                        </div>
+                        @endif
                     </div>
 
-
-                    <!-- Содержимое статьи -->
-                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
-                        <div class="prose dark:prose-invert max-w-none" style="min-height: 200px;">
-                            {!! $article->content !!}
+                    <!-- Список символов -->
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden card-shadow border border-gray-200 dark:border-gray-700">
+                        <div class="p-6">
+                            @forelse($articles as $article)
+                                <a href="{{ route('symbol.show', $article->slug) }}" class="guide-item-link block mb-4 p-5 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-gray-700 dark:to-gray-700 hover:from-purple-100 hover:to-blue-100 dark:hover:from-gray-600 dark:hover:to-gray-600 border-l-4 border-purple-500 dark:border-purple-400 rounded-r-lg transition-all duration-200 hover:shadow-lg group">
+                                    <div class="flex items-start justify-between">
+                                        <div class="flex-1">
+                                            <h3 class="text-xl font-bold text-purple-700 dark:text-purple-300 mb-0 group-hover:text-purple-900 dark:group-hover:text-purple-100 transition-colors flex items-center">
+                                                <i class="fas fa-star mr-3 text-purple-500 dark:text-purple-400"></i>
+                                                {{ $article->title }}
+                                            </h3>
+                                        </div>
+                                        <div class="ml-4 flex-shrink-0">
+                                            <i class="fas fa-arrow-right text-purple-500 dark:text-purple-400 group-hover:text-purple-700 dark:group-hover:text-purple-300 group-hover:translate-x-1 transition-all duration-200"></i>
+                                        </div>
+                                    </div>
+                                </a>
+                            @empty
+                                <p class="text-gray-500 dark:text-gray-400 text-center py-8">
+                                    Страницы символов пока не добавлены.
+                                </p>
+                            @endforelse
                         </div>
                     </div>
-
-                    @if($article->type === 'entity_group' && isset($exampleInterpretations) && $exampleInterpretations->isNotEmpty())
-                        <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
-                            <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Примеры толкований с символом {{ $article->title }}</h2>
-                            <ul class="space-y-3">
-                                @foreach($exampleInterpretations as $interp)
-                                    <li>
-                                        <a href="{{ route('dream-analyzer.show', $interp->hash) }}" class="text-purple-600 dark:text-purple-400 hover:underline font-medium">
-                                            @if($interp->dream_description)
-                                                {{ Str::limit(strip_tags($interp->dream_description), 80) }}
-                                            @else
-                                                Толкование от {{ $interp->created_at?->format('d.m.Y') ?? '—' }}
-                                            @endif
-                                        </a>
-                                        @if($interp->created_at)
-                                            <span class="text-sm text-gray-500 dark:text-gray-400 ml-2">{{ $interp->created_at->format('d.m.Y') }}</span>
-                                        @endif
-                                    </li>
-                                @endforeach
-                            </ul>
-                        </div>
-                    @endif
                 </main>
             </div>
         </div>

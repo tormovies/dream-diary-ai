@@ -69,7 +69,7 @@
                                                id="search" 
                                                name="search" 
                                                value="{{ request('search') }}"
-                                               placeholder="Поиск по названию, описанию снов или пользователям..."
+                                               placeholder="Поиск по символам, дневникам..."
                                                class="form-input">
                                     </div>
 
@@ -203,7 +203,37 @@
                     
                     <!-- Результаты поиска -->
                     <div class="space-y-6">
+                        @php
+                            $hasAnyResults = $reports->count() > 0
+                                || (isset($searchSymbols) && $searchSymbols->isNotEmpty())
+                                || (isset($searchInterpretationsByEntities) && $searchInterpretationsByEntities->isNotEmpty());
+                        @endphp
+
+                        {{-- 1. Символы (страницы групп сущностей) --}}
+                        @if(isset($searchSymbols) && $searchSymbols->isNotEmpty())
+                            <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                                    <i class="fas fa-star text-purple-500"></i> Символы снов
+                                </h3>
+                                <ul class="space-y-2">
+                                    @foreach($searchSymbols as $article)
+                                        <li>
+                                            <a href="{{ route('symbol.show', $article->slug) }}" class="text-purple-600 dark:text-purple-400 hover:underline font-medium">
+                                                {{ $article->title }}
+                                            </a>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
+
+                        {{-- 2. Дневники (отчёты) --}}
                         @if($reports->count() > 0)
+                            @if(isset($searchSymbols) && $searchSymbols->isNotEmpty())
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                                    <i class="fas fa-moon text-purple-500"></i> Записи в дневниках
+                                </h3>
+                            @endif
                             @foreach($reports as $report)
                                 <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all">
                                     <div class="flex justify-between items-start mb-4">
@@ -275,7 +305,34 @@
                             <div class="mt-6">
                                 {{ $reports->links() }}
                             </div>
-                        @else
+                        @endif
+
+                        {{-- 4. Примеры толкований (по сущностям, если нет страницы символа — как вариант ответа) --}}
+                        @if(isset($searchInterpretationsByEntities) && $searchInterpretationsByEntities->isNotEmpty())
+                            <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                                    <i class="fas fa-brain text-purple-500"></i> Примеры толкований с этим образом
+                                </h3>
+                                <ul class="space-y-3">
+                                    @foreach($searchInterpretationsByEntities as $interp)
+                                        <li>
+                                            <a href="{{ route('dream-analyzer.show', $interp->hash) }}" class="text-purple-600 dark:text-purple-400 hover:underline font-medium block">
+                                                @if($interp->dream_description)
+                                                    {{ \Illuminate\Support\Str::limit(strip_tags($interp->dream_description), 80) }}
+                                                @else
+                                                    Толкование от {{ $interp->created_at?->format('d.m.Y') ?? '—' }}
+                                                @endif
+                                            </a>
+                                            @if($interp->created_at)
+                                                <span class="text-sm text-gray-500 dark:text-gray-400">{{ $interp->created_at->format('d.m.Y') }}</span>
+                                            @endif
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
+
+                        @if(!$hasAnyResults)
                             <div class="bg-white dark:bg-gray-800 rounded-2xl p-12 text-center card-shadow border border-gray-200 dark:border-gray-700">
                                 <p class="text-gray-600 dark:text-gray-400 mb-4">По вашему запросу ничего не найдено.</p>
                                 <a href="{{ route('reports.search') }}" class="inline-block mt-4 gradient-primary text-white px-6 py-3 rounded-lg hover:shadow-lg transition-all">
@@ -294,7 +351,7 @@
                             <i class="fas fa-info-circle"></i> О поиске
                         </h3>
                         <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                            Используйте фильтры для поиска сновидений по различным критериям. Вы можете искать по тексту, типу сна и дате.
+                            Поиск по символам снов, записям в дневниках и авторам. При совпадении по сущностям показываются примеры толкований. Доступны фильтры по типу сна и дате.
                         </p>
                         @guest
                         <div class="mt-4 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">

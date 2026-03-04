@@ -38,6 +38,8 @@ Route::get('/guide', [\App\Http\Controllers\ArticleController::class, 'guideInde
 Route::get('/guide/{slug}', [\App\Http\Controllers\ArticleController::class, 'guideShow'])->name('guide.show');
 Route::get('/articles', [\App\Http\Controllers\ArticleController::class, 'articlesIndex'])->name('articles.index');
 Route::get('/articles/{slug}', [\App\Http\Controllers\ArticleController::class, 'articleShow'])->name('articles.show');
+Route::get('/symbol', [\App\Http\Controllers\ArticleController::class, 'symbolIndex'])->name('symbol.index');
+Route::get('/symbol/{slug}', [\App\Http\Controllers\ArticleController::class, 'symbolShow'])->name('symbol.show');
 
 // Просмотр анализа отчета (доступен всем, проверка прав через Policy)
 Route::get('/reports/{report}/analysis', [\App\Http\Controllers\ReportController::class, 'showAnalysis'])->name('reports.analysis');
@@ -127,6 +129,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/entities/groups', [\App\Http\Controllers\AdminController::class, 'entityGroupsStore'])->name('entities.groups.store');
         Route::get('/entities/groups/{entity_group}', [\App\Http\Controllers\AdminController::class, 'entityGroupEdit'])->name('entities.groups.edit');
         Route::patch('/entities/groups/{entity_group}', [\App\Http\Controllers\AdminController::class, 'entityGroupUpdate'])->name('entities.groups.update');
+        Route::post('/entities/groups/{entity_group}/request-symbol-page', [\App\Http\Controllers\AdminController::class, 'entityGroupRequestSymbolPage'])->name('entities.groups.request-symbol-page');
         Route::delete('/entities/groups/{entity_group}', [\App\Http\Controllers\AdminController::class, 'entityGroupDestroy'])->name('entities.groups.destroy');
         Route::post('/entities/groups/{entity_group}/mappings', [\App\Http\Controllers\AdminController::class, 'entityGroupAddMapping'])->name('entities.groups.mappings.store');
         Route::delete('/entities/groups/mappings/{mapping}', [\App\Http\Controllers\AdminController::class, 'entityGroupRemoveMapping'])->name('entities.groups.mappings.destroy');
@@ -166,6 +169,7 @@ Route::get('/sitemap.xml', [\App\Http\Controllers\SitemapController::class, 'ind
 Route::get('/sitemap-static.xml', [\App\Http\Controllers\SitemapController::class, 'static'])->name('sitemap.static');
 Route::get('/sitemap-guides.xml', [\App\Http\Controllers\SitemapController::class, 'guides'])->name('sitemap.guides');
 Route::get('/sitemap-articles.xml', [\App\Http\Controllers\SitemapController::class, 'articles'])->name('sitemap.articles');
+Route::get('/sitemap-symbols.xml', [\App\Http\Controllers\SitemapController::class, 'symbols'])->name('sitemap.symbols');
 Route::get('/sitemap-interpretations-{page}.xml', [\App\Http\Controllers\SitemapController::class, 'interpretations'])->name('sitemap.interpretations')->where('page', '[0-9]+');
 Route::get('/sitemap-reports-{page}.xml', [\App\Http\Controllers\SitemapController::class, 'reports'])->name('sitemap.reports')->where('page', '[0-9]+');
 Route::get('/sitemap-report-analyses-{page}.xml', [\App\Http\Controllers\SitemapController::class, 'reportAnalyses'])->name('sitemap.report-analyses')->where('page', '[0-9]+');

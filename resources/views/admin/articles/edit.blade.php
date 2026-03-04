@@ -42,10 +42,14 @@
                             <label for="type" class="form-label required">
                                 <i class="fas fa-file-alt"></i> Тип
                             </label>
-                            <select id="type" name="type" class="form-select" required>
+                            <select id="type" name="type" class="form-select" required {{ $article->type === 'entity_group' ? 'disabled' : '' }}>
                                 <option value="guide" {{ old('type', $article->type) === 'guide' ? 'selected' : '' }}>Инструкция</option>
                                 <option value="article" {{ old('type', $article->type) === 'article' ? 'selected' : '' }}>Статья</option>
+                                <option value="entity_group" {{ old('type', $article->type) === 'entity_group' ? 'selected' : '' }}>Страница символа</option>
                             </select>
+                            @if($article->type === 'entity_group')
+                                <input type="hidden" name="type" value="entity_group" />
+                            @endif
                             <x-input-error class="mt-2" :messages="$errors->get('type')" />
                         </div>
 

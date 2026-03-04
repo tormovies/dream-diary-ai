@@ -215,6 +215,93 @@ class DeepSeekService
     }
 
     /**
+     * Запрос к DeepSeek для генерации страницы группы сущностей (символа).
+     * Возвращает сырой текст ответа (ожидается JSON-массив).
+     *
+     * @throws \Exception
+     */
+    public function requestSymbolPage(\App\Models\EntityGroup $group): string
+    {
+        if (empty($this->apiKey)) {
+            Log::error('DeepSeek API Key Missing');
+            throw new \Exception('DeepSeek API ключ не настроен.');
+        }
+
+        // В промпт передаём только человекочитаемые имена (не slug)
+        $slugsWithoutName = $group->mappings->filter(fn ($m) => trim((string) ($m->entity_name ?? '')) === '')->pluck('entity_slug')->unique()->values()->all();
+        $slugToName = [];
+        if (!empty($slugsWithoutName)) {
+            $slugToName = \App\Models\DreamInterpretationEntity::whereIn('slug', $slugsWithoutName)
+                ->selectRaw('slug, MAX(name) as name')
+                ->groupBy('slug')
+                ->pluck('name', 'slug')
+                ->toArray();
+        }
+        $entityNames = $group->mappings->map(function ($m) use ($slugToName) {
+            $name = trim((string) ($m->entity_name ?? ''));
+            if ($name !== '') {
+                return $name;
+            }
+            return $slugToName[$m->entity_slug] ?? $m->entity_slug; // fallback на slug только если в справочнике нет имени
+        })->filter()->unique()->values()->all();
+
+        if (empty($entityNames)) {
+            throw new \Exception('В группе нет сущностей. Добавьте хотя бы одну сущность перед запросом.');
+        }
+
+        $template = require base_path('config/prompts/entity_group_symbol.php');
+        $prompt = str_replace(
+            ['{НАЗВАНИЕ_СИМВОЛА}', '{СПИСОК_ВАРИАЦИЙ}'],
+            [$group->name, implode(', ', $entityNames)],
+            $template
+        );
+
+        $requestData = [
+            'model' => 'deepseek-chat',
+            'messages' => [['role' => 'user', 'content' => $prompt]],
+            'temperature' => 0.7,
+            'max_tokens' => 8000,
+        ];
+
+        $phpTimeout = (int) \App\Models\Setting::getValue('deepseek_php_execution_timeout', 660);
+        $httpTimeout = (int) \App\Models\Setting::getValue('deepseek_http_timeout', 600);
+        $connectTimeout = $httpTimeout;
+        set_time_limit($phpTimeout);
+
+        $response = Http::timeout($httpTimeout)
+            ->connectTimeout($connectTimeout)
+            ->retry(2, 1000)
+            ->withOptions([
+                CURLOPT_SSL_VERIFYPEER => true,
+                CURLOPT_SSL_VERIFYHOST => 2,
+                CURLOPT_TIMEOUT => $httpTimeout,
+                CURLOPT_CONNECTTIMEOUT => $connectTimeout,
+                CURLOPT_SSLVERSION => CURL_SSLVERSION_TLSv1_2,
+                CURLOPT_CAINFO => null,
+                CURLOPT_CAPATH => null,
+            ])
+            ->withHeaders([
+                'Authorization' => 'Bearer ' . $this->apiKey,
+                'Content-Type' => 'application/json',
+            ])
+            ->post("{$this->baseUrl}/chat/completions", $requestData);
+
+        $rawResponse = $response->body();
+        if ($response->failed()) {
+            $errorData = $response->json();
+            $errorMessage = $errorData['error']['message'] ?? $errorData['message'] ?? 'Ошибка API: ' . $response->status();
+            throw new \Exception($errorMessage, $response->status());
+        }
+
+        $responseData = $response->json();
+        if (!isset($responseData['choices'][0]['message']['content'])) {
+            throw new \Exception('Неверная структура ответа API.');
+        }
+
+        return (string) $responseData['choices'][0]['message']['content'];
+    }
+
+    /**
      * Построение промпта для API
      */
     private function buildPrompt(string $dreamDescription, ?string $context, array $traditions, string $analysisType = 'single', ?array $dreams = null): string

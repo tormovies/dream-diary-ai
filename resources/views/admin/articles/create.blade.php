@@ -44,6 +44,7 @@
                             <select id="type" name="type" class="form-select" required>
                                 <option value="guide" {{ old('type') === 'guide' ? 'selected' : '' }}>Инструкция</option>
                                 <option value="article" {{ old('type') === 'article' ? 'selected' : '' }}>Статья</option>
+                                <option value="entity_group" {{ old('type') === 'entity_group' ? 'selected' : '' }}>Страница символа</option>
                             </select>
                             <x-input-error class="mt-2" :messages="$errors->get('type')" />
                         </div>

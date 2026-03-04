@@ -35,11 +35,11 @@
                         <h2 class="text-2xl font-bold mb-2 text-purple-600 dark:text-purple-400">Лента сновидений</h2>
                         <p class="text-gray-600 dark:text-gray-400 mb-4">Самые интересные сны от пользователей</p>
                         
-                        <form method="GET" action="{{ route('dashboard') }}" class="flex gap-2 mb-4">
+                        <form method="GET" action="{{ route('reports.search') }}" class="flex gap-2 mb-4">
                             <input type="text" 
                                    name="search" 
                                    value="{{ request('search') }}"
-                                   placeholder="Поиск по снам, тегам, пользователям..." 
+                                   placeholder="Поиск по символам, дневникам..." 
                                    class="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-l-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500">
                             <button type="submit" class="gradient-primary text-white px-6 py-3 rounded-r-lg hover:shadow-lg transition-all">
                                 <i class="fas fa-search"></i>

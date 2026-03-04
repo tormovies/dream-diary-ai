@@ -36,6 +36,7 @@
                             <option value="">Все типы</option>
                             <option value="guide" {{ ($filters['type'] ?? '') === 'guide' ? 'selected' : '' }}>Инструкции</option>
                             <option value="article" {{ ($filters['type'] ?? '') === 'article' ? 'selected' : '' }}>Статьи</option>
+                            <option value="entity_group" {{ ($filters['type'] ?? '') === 'entity_group' ? 'selected' : '' }}>Страницы символов</option>
                         </select>
                         <select name="status" class="border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
                             <option value="">Все статусы</option>
@@ -75,12 +76,12 @@
                                             {{ $article->title }}
                                         </div>
                                         <div class="text-xs text-gray-500 dark:text-gray-400">
-                                            /{{ $article->type }}/{{ $article->slug }}
+                                            /{{ $article->type === 'entity_group' ? 'symbol' : $article->type }}/{{ $article->slug }}
                                         </div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="px-2 py-1 text-xs rounded {{ $article->type === 'guide' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' : 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200' }}">
-                                            {{ $article->type === 'guide' ? 'Инструкция' : 'Статья' }}
+                                        <span class="px-2 py-1 text-xs rounded {{ $article->type === 'guide' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' : ($article->type === 'entity_group' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200' : 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200') }}">
+                                            {{ $article->type === 'guide' ? 'Инструкция' : ($article->type === 'entity_group' ? 'Страница символа' : 'Статья') }}
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
@@ -96,7 +97,7 @@
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm">
                                         <div class="flex gap-3 items-center">
-                                            <a href="{{ $article->type === 'guide' ? route('guide.show', $article->slug) : route('articles.show', $article->slug) }}" 
+                                            <a href="{{ $article->type === 'guide' ? route('guide.show', $article->slug) : ($article->type === 'entity_group' ? route('symbol.show', $article->slug) : route('articles.show', $article->slug)) }}" 
                                                target="_blank"
                                                class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300" 
                                                title="Просмотр">

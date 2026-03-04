@@ -85,6 +85,11 @@ class SitemapController extends Controller
             // Всегда добавляем в index, даже если контента нет (sitemap файл будет пустым)
             $xml .= $this->sitemap($baseUrl . '/sitemap-articles.xml', now());
         }
+
+        // Страницы символов (группы сущностей)
+        if (\App\Models\Setting::getValue('sitemap.symbols.enabled', true)) {
+            $xml .= $this->sitemap($baseUrl . '/sitemap-symbols.xml', now());
+        }
         
         // Толкования сновидений (включаем в index, даже если контента нет)
         if (\App\Models\Setting::getValue('sitemap.interpretations.enabled', true)) {
@@ -262,6 +267,47 @@ class SitemapController extends Controller
             return $xml;
         });
         
+        return response($xml, 200)
+            ->header('Content-Type', 'application/xml; charset=utf-8');
+    }
+
+    /**
+     * Страницы символов (группы сущностей) — только опубликованные
+     */
+    public function symbols(): Response
+    {
+        if (!\App\Models\Setting::getValue('sitemap.symbols.enabled', true)) {
+            return $this->emptySitemap();
+        }
+
+        $cacheKey = $this->getCacheKey('symbols');
+
+        $xml = Cache::remember($cacheKey, self::CACHE_TTL, function () {
+            $this->updateCacheTimestamp();
+            $baseUrl = rtrim(config('seo.base_url', config('app.url')), '/');
+
+            $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+            $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
+
+            $symbols = Article::where('type', 'entity_group')
+                ->where('status', 'published')
+                ->orderBy('updated_at', 'desc')
+                ->get();
+
+            foreach ($symbols as $article) {
+                $xml .= $this->url(
+                    $baseUrl . '/symbol/' . $article->slug,
+                    $article->updated_at ?? $article->created_at,
+                    'monthly',
+                    0.7
+                );
+            }
+
+            $xml .= '</urlset>';
+
+            return $xml;
+        });
+
         return response($xml, 200)
             ->header('Content-Type', 'application/xml; charset=utf-8');
     }

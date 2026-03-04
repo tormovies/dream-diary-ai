@@ -7,15 +7,20 @@ use App\Models\DreamInterpretation;
 use App\Models\DreamEntityDaily;
 use App\Models\DreamInterpretationEntity;
 use App\Models\DreamInterpretationStat;
+use App\Models\Article;
 use App\Models\EntityGroup;
 use App\Models\EntityGroupMapping;
 use App\Models\Report;
+use App\Models\SeoMeta;
 use App\Models\Setting;
 use App\Models\User;
 use App\Rules\NoSpam;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use App\Helpers\MarkdownHelper;
+use App\Helpers\SymbolPageLinkHelper;
+use App\Services\DeepSeekService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\View\View;
@@ -613,7 +618,7 @@ class AdminController extends Controller
             $sort = 'name';
         }
 
-        $query = EntityGroup::withCount('mappings')->with('mappings');
+        $query = EntityGroup::withCount('mappings')->with(['mappings', 'symbolPage']);
         if ($sort === 'name') {
             $query->orderBy('name', $order);
         } else {
@@ -621,7 +626,18 @@ class AdminController extends Controller
         }
         $groups = $query->get();
 
-        return view('admin.entity-groups-index', compact('groups', 'sort', 'order'));
+        // Чтобы в списке везде выводились имена, а не slug: подставляем name из справочника сущностей
+        $allSlugs = $groups->pluck('mappings')->flatten(1)->pluck('entity_slug')->unique()->filter()->values()->toArray();
+        $slugToName = [];
+        if (!empty($allSlugs)) {
+            $slugToName = DreamInterpretationEntity::whereIn('slug', $allSlugs)
+                ->selectRaw('slug, MAX(name) as name')
+                ->groupBy('slug')
+                ->pluck('name', 'slug')
+                ->toArray();
+        }
+
+        return view('admin.entity-groups-index', compact('groups', 'sort', 'order', 'slugToName'));
     }
 
     /**
@@ -702,6 +718,7 @@ class AdminController extends Controller
             }
             $created++;
         }
+        SymbolPageLinkHelper::clearCache();
         return redirect()->route('admin.entities.groups.index')->with('success', "Обработано групп: {$created}.");
     }
 
@@ -732,12 +749,89 @@ class AdminController extends Controller
     }
 
     /**
+     * Запрос к DeepSeek для создания/обновления страницы группы сущностей. Сохраняет в черновик.
+     */
+    public function entityGroupRequestSymbolPage(EntityGroup $entity_group): RedirectResponse
+    {
+        $entity_group->load('mappings');
+
+        try {
+            $content = app(DeepSeekService::class)->requestSymbolPage($entity_group);
+        } catch (\Throwable $e) {
+            return redirect()->back()->with('error', 'Ошибка запроса к DeepSeek: ' . $e->getMessage());
+        }
+
+        $content = trim($content);
+        if (preg_match('/^```(?:json)?\s*\n?(.*?)\n?```\s*$/s', $content, $m)) {
+            $content = trim($m[1]);
+        }
+        $data = json_decode($content, true);
+        if (!is_array($data) || empty($data)) {
+            return redirect()->back()->with('error', 'Ответ DeepSeek не является валидным JSON-массивом.');
+        }
+        $first = $data[0] ?? null;
+        if (!is_array($first) || empty($first['content'])) {
+            return redirect()->back()->with('error', 'В ответе отсутствует объект с полем content.');
+        }
+
+        $metaTitle = $first['meta_title'] ?? $entity_group->name;
+        $metaDescription = $first['meta_description'] ?? '';
+        $h1 = $first['h1'] ?? $entity_group->name;
+        $subtitle = $first['subtitle'] ?? '';
+        $contentMarkdown = $first['content'];
+
+        $contentHtml = MarkdownHelper::toHtml($contentMarkdown);
+
+        $article = Article::where('entity_group_id', $entity_group->id)->where('type', 'entity_group')->first();
+        $slug = $entity_group->slug;
+        if (!$article) {
+            if (Article::where('slug', $slug)->exists()) {
+                $slug = $entity_group->slug . '-simvol';
+            }
+            $article = Article::create([
+                'title' => $h1,
+                'slug' => $slug,
+                'content' => $contentHtml,
+                'type' => 'entity_group',
+                'status' => 'draft',
+                'order' => 0,
+                'author_id' => auth()->id(),
+                'entity_group_id' => $entity_group->id,
+            ]);
+        } else {
+            $article->update([
+                'title' => $h1,
+                'content' => $contentHtml,
+            ]);
+        }
+
+        SeoMeta::updateOrCreate(
+            [
+                'page_type' => 'entity_group',
+                'page_id' => $article->id,
+            ],
+            [
+                'title' => $metaTitle,
+                'description' => $metaDescription,
+                'h1' => $h1,
+                'h1_description' => $subtitle,
+                'og_title' => $metaTitle,
+                'og_description' => $metaDescription,
+                'is_active' => true,
+            ]
+        );
+
+        return redirect()->back()->with('success', 'Страница группы «' . $entity_group->name . '» создана/обновлена (черновик). Редактирование: ' . route('admin.articles.edit', $article));
+    }
+
+    /**
      * Удалить группу: группа и все привязки удаляются, сущности становятся свободными (без группы).
      */
     public function entityGroupDestroy(EntityGroup $entity_group): RedirectResponse
     {
         $name = $entity_group->name;
         $entity_group->delete();
+        SymbolPageLinkHelper::clearCache();
         return redirect()->route('admin.entities.groups.index', request()->only(['sort', 'order']))->with('success', "Группа «{$name}» удалена. Сущности отвязаны и стали свободными.");
     }
 
@@ -758,6 +852,7 @@ class AdminController extends Controller
             'entity_slug' => $slug,
             'entity_name' => $input,
         ]);
+        SymbolPageLinkHelper::clearCache();
         return redirect()->back()->with('success', "Сущность «{$input}» добавлена в группу.");
     }
 
@@ -768,6 +863,7 @@ class AdminController extends Controller
     {
         $group = $mapping->group;
         $mapping->delete();
+        SymbolPageLinkHelper::clearCache();
         return redirect()->route('admin.entities.groups.edit', $group)->with('success', 'Сущность удалена из группы.');
     }
 
@@ -793,6 +889,7 @@ class AdminController extends Controller
             'entity_slug' => $slug,
             'entity_name' => $name,
         ]);
+        SymbolPageLinkHelper::clearCache();
         return redirect()->back()->with('success', 'Сущность добавлена в группу.');
     }
 
@@ -824,6 +921,7 @@ class AdminController extends Controller
             'entity_slug' => $slug,
             'entity_name' => $name,
         ]);
+        SymbolPageLinkHelper::clearCache();
         return redirect()->back()->with('success', "Создана группа «{$name}» и сущность добавлена в неё.");
     }
 

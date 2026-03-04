@@ -1,153 +1,209 @@
-/* Стили для статей и инструкций */
+/* Стили для статей и инструкций (страницы символов — тот же шаблон).
+   Переключатель темы: светлая = без класса .dark на html, тёмная = html.dark. */
 
 /* ============================================
-   БАЗОВЫЕ СТИЛИ ДЛЯ СТАТЕЙ
+   СВЕТЛАЯ ТЕМА: только когда html без .dark
    ============================================ */
 
-/* Улучшенные стили для светлой темы - темные цвета для читабельности */
-.prose {
+/* Размеры как в проекте: основной текст text-base (1rem), межстрочный leading-relaxed (1.625) */
+html:not(.dark) .prose {
     color: #1f2937 !important;
+    font-size: 1rem !important;
+    line-height: 1.625 !important;
 }
 
-.prose ul,
-.prose ol {
+html:not(.dark) .prose ul,
+html:not(.dark) .prose ol,
+html:not(.dark) .prose li,
+html:not(.dark) .prose p {
     color: #1f2937 !important;
+    font-size: 1rem !important;
+    line-height: 1.625 !important;
 }
 
-.prose li {
-    color: #1f2937 !important;
-}
-
-.prose p {
-    color: #1f2937 !important;
-}
-
-.prose strong {
+html:not(.dark) .prose strong {
     color: #111827 !important;
 }
 
-.prose a {
+html:not(.dark) .prose a {
     color: #7c3aed !important;
 }
 
-.prose a:hover {
+html:not(.dark) .prose a:hover {
     color: #6d28d9 !important;
 }
 
-/* Списки в светлой теме - темные цвета */
-.prose ul li,
-.prose ol li {
+html:not(.dark) .prose ul li,
+html:not(.dark) .prose ol li {
     color: #1f2937 !important;
 }
 
-.prose ul li::marker,
-.prose ol li::marker {
+html:not(.dark) .prose ul li::marker,
+html:not(.dark) .prose ol li::marker {
     color: #4b5563 !important;
 }
 
-/* Все текстовые элементы в светлой теме - темные */
-.prose h1,
-.prose h2,
-.prose h3,
-.prose h4,
-.prose h5,
-.prose h6 {
+html:not(.dark) .prose h1,
+html:not(.dark) .prose h2,
+html:not(.dark) .prose h3,
+html:not(.dark) .prose h4,
+html:not(.dark) .prose h5,
+html:not(.dark) .prose h6 {
     color: #111827 !important;
+    font-weight: 700 !important;
+    line-height: 1.3 !important;
 }
+/* Заголовки в контенте: шкала как в проекте (text-2xl→h1, text-xl→h2, text-lg→h3, text-base→h4, text-sm→h5, text-xs→h6) */
+html:not(.dark) .prose h1 { font-size: 1.5rem !important; margin-top: 0 !important; margin-bottom: 1rem !important; }
+html:not(.dark) .prose h2 { font-size: 1.25rem !important; margin-top: 2rem !important; margin-bottom: 0.75rem !important; }
+html:not(.dark) .prose h3 { font-size: 1.125rem !important; margin-top: 1.5rem !important; margin-bottom: 0.5rem !important; }
+html:not(.dark) .prose h4 { font-size: 1rem !important; margin-top: 1.25rem !important; margin-bottom: 0.5rem !important; }
+html:not(.dark) .prose h5 { font-size: 0.875rem !important; margin-top: 1rem !important; margin-bottom: 0.375rem !important; }
+html:not(.dark) .prose h6 { font-size: 0.75rem !important; margin-top: 0.75rem !important; margin-bottom: 0.25rem !important; }
+html:not(.dark) .prose h2:first-child,
+html:not(.dark) .prose h3:first-child,
+html:not(.dark) .prose h1:first-child { margin-top: 0 !important; }
 
-/* Ровные отступы для заголовков h2 */
-.prose h2 {
-    margin-top: 2.5rem !important;
-    margin-bottom: 1rem !important;
+html:not(.dark) .prose h2 {
+    margin-top: 2rem !important;
+    margin-bottom: 0.75rem !important;
 }
+html:not(.dark) .prose h2:first-child { margin-top: 0 !important; }
 
-.prose h2:first-child {
-    margin-top: 0 !important;
-}
-
-/* Ровные отступы для заголовков вопросов (div с классом question-header) */
-.prose .question-header {
+html:not(.dark) .prose .question-header {
     margin-top: 1.5rem !important;
     margin-bottom: 1.5rem !important;
 }
+html:not(.dark) .prose .question-header:first-child { margin-top: 0 !important; }
 
-.prose .question-header:first-child {
-    margin-top: 0 !important;
-}
-
-/* Переопределяем mt-10, если он остался в старых записях */
-.prose div.mt-10 {
+html:not(.dark) .prose div.mt-10 {
     margin-top: 1.5rem !important;
     margin-bottom: 1.5rem !important;
 }
+html:not(.dark) .prose div.mt-10:first-child { margin-top: 0 !important; }
 
-.prose div.mt-10:first-child {
-    margin-top: 0 !important;
-}
-
-.prose blockquote {
+html:not(.dark) .prose blockquote {
     color: #374151 !important;
 }
 
-.prose code {
+html:not(.dark) .prose code {
     color: #1f2937 !important;
     background-color: #f3f4f6 !important;
 }
 
-/* Убираем светлые серые цвета в светлой теме */
-.prose .text-gray-300,
-.prose .text-gray-400,
-.prose .text-gray-500 {
+html:not(.dark) .prose .text-gray-300,
+html:not(.dark) .prose .text-gray-400,
+html:not(.dark) .prose .text-gray-500,
+html:not(.dark) .prose [class*="text-gray-300"],
+html:not(.dark) .prose [class*="text-gray-400"],
+html:not(.dark) .prose [class*="text-gray-500"] {
     color: #1f2937 !important;
 }
 
-/* Специально для элементов с классами Tailwind в контенте */
-.prose [class*="text-gray-300"],
-.prose [class*="text-gray-400"],
-.prose [class*="text-gray-500"] {
-    color: #1f2937 !important;
-}
+/* ============================================
+   ТЕМНАЯ ТЕМА: только когда на html есть класс .dark (переключатель темы)
+   Контент статей и страниц символов — светлый текст на тёмном фоне
+   ============================================ */
 
-/* Улучшенные стили для темной темы в статьях */
+/* Базовый цвет и размер текста в .prose при тёмной теме (как в проекте: 1rem, leading-relaxed) */
+.dark .prose,
 .prose.dark\:prose-invert {
-    color: #e5e7eb;
+    color: #e5e7eb !important;
+    font-size: 1rem !important;
+    line-height: 1.625 !important;
 }
 
+.dark .prose p,
+.dark .prose li,
+.dark .prose ul,
+.dark .prose ol,
+.prose.dark\:prose-invert p,
 .prose.dark\:prose-invert ul,
-.prose.dark\:prose-invert ol {
-    color: #d1d5db;
-}
-
+.prose.dark\:prose-invert ol,
 .prose.dark\:prose-invert li {
-    color: #d1d5db;
-}
-
-.prose.dark\:prose-invert a {
-    color: #a78bfa;
-}
-
-.prose.dark\:prose-invert a:hover {
-    color: #c4b5fd;
-}
-
-.prose.dark\:prose-invert strong {
-    color: #e5e7eb;
-}
-
-.prose.dark\:prose-invert code {
-    background-color: #374151;
-    color: #f3f4f6;
-}
-
-/* Улучшение цветов для списков в темной теме - более мягкие */
-.dark .prose ul li,
-.dark .prose ol li {
     color: #d1d5db !important;
+    font-size: 1rem !important;
+    line-height: 1.625 !important;
 }
 
+.dark .prose strong,
+.prose.dark\:prose-invert strong {
+    color: #f3f4f6 !important;
+}
+
+.dark .prose a,
+.prose.dark\:prose-invert a {
+    color: #a78bfa !important;
+}
+
+.dark .prose a:hover,
+.prose.dark\:prose-invert a:hover {
+    color: #c4b5fd !important;
+}
+
+.dark .prose blockquote,
+.prose.dark\:prose-invert blockquote {
+    color: #9ca3af !important;
+    border-color: #4b5563;
+}
+
+.dark .prose code,
+.prose.dark\:prose-invert code {
+    background-color: #374151 !important;
+    color: #f3f4f6 !important;
+}
+
+.dark .prose pre,
+.prose.dark\:prose-invert pre {
+    background-color: #1f2937 !important;
+    color: #e5e7eb !important;
+}
+
+/* Заголовки в темной теме (размер, жирность, цвет) */
+.dark .prose h1,
+.dark .prose h2,
+.dark .prose h3,
+.dark .prose h4,
+.dark .prose h5,
+.dark .prose h6,
+.prose.dark\:prose-invert h1,
+.prose.dark\:prose-invert h2,
+.prose.dark\:prose-invert h3,
+.prose.dark\:prose-invert h4,
+.prose.dark\:prose-invert h5,
+.prose.dark\:prose-invert h6 {
+    color: #f3f4f6 !important;
+    font-weight: 700 !important;
+}
+.dark .prose h1,
+.prose.dark\:prose-invert h1 { font-size: 1.5rem !important; }
+.dark .prose h2,
+.prose.dark\:prose-invert h2 { font-size: 1.25rem !important; }
+.dark .prose h3,
+.prose.dark\:prose-invert h3 { font-size: 1.125rem !important; }
+.dark .prose h4,
+.prose.dark\:prose-invert h4 { font-size: 1rem !important; }
+.dark .prose h5,
+.prose.dark\:prose-invert h5 { font-size: 0.875rem !important; }
+.dark .prose h6,
+.prose.dark\:prose-invert h6 { font-size: 0.75rem !important; }
+
+/* Маркеры списков в тёмной теме */
 .dark .prose ul li::marker,
-.dark .prose ol li::marker {
-    color: #9ca3af;
+.dark .prose ol li::marker,
+.prose.dark\:prose-invert ul li::marker,
+.prose.dark\:prose-invert ol li::marker {
+    color: #9ca3af !important;
+}
+
+/* Переопределение серых классов внутри .prose в тёмной теме */
+.dark .prose .text-gray-300,
+.dark .prose .text-gray-400,
+.dark .prose .text-gray-500,
+.dark .prose [class*="text-gray-300"],
+.dark .prose [class*="text-gray-400"],
+.dark .prose [class*="text-gray-500"] {
+    color: #d1d5db !important;
 }
 
 /* Улучшение цветов для карточек в темной теме */

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Helpers\SymbolPageLinkHelper;
 use App\Http\Controllers\Controller;
 use App\Models\Article;
 use App\Models\SeoMeta;
@@ -76,7 +77,7 @@ class ArticleController extends Controller
             'slug' => 'nullable|string|max:255|unique:articles,slug',
             'content' => 'required|string',
             'questions_preview' => 'nullable|string',
-            'type' => 'required|in:guide,article',
+            'type' => 'required|in:guide,article,entity_group',
             'status' => 'required|in:draft,published',
             'order' => 'nullable|integer|min:0',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
@@ -141,7 +142,7 @@ class ArticleController extends Controller
             'slug' => 'required|string|max:255|unique:articles,slug,' . $article->id,
             'content' => 'required|string',
             'questions_preview' => 'nullable|string',
-            'type' => 'required|in:guide,article',
+            'type' => 'required|in:guide,article,entity_group',
             'status' => 'required|in:draft,published',
             'order' => 'nullable|integer|min:0',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
@@ -204,6 +205,10 @@ class ArticleController extends Controller
         // Удаляем статью
         $article->delete();
 
+        if ($article->type === 'entity_group') {
+            SymbolPageLinkHelper::clearCache();
+        }
+
         return redirect()->route('admin.articles.index')
             ->with('success', 'Статья успешно удалена');
     }
@@ -218,6 +223,10 @@ class ArticleController extends Controller
             'published_at' => $article->published_at ?? now(),
         ]);
 
+        if ($article->type === 'entity_group') {
+            SymbolPageLinkHelper::clearCache();
+        }
+
         return redirect()->back()->with('success', 'Статья опубликована');
     }
 
@@ -227,6 +236,10 @@ class ArticleController extends Controller
     public function unpublish(Article $article): RedirectResponse
     {
         $article->update(['status' => 'draft']);
+
+        if ($article->type === 'entity_group') {
+            SymbolPageLinkHelper::clearCache();
+        }
 
         return redirect()->back()->with('success', 'Статья переведена в черновик');
     }
@@ -271,7 +284,7 @@ class ArticleController extends Controller
      */
     private function saveSeoMeta(Article $article, array $validated): void
     {
-        $pageType = $article->type === 'guide' ? 'guide' : 'article';
+        $pageType = $article->type; // guide, article, entity_group
         
         // Проверяем, есть ли уже SEO запись
         $seoMeta = SeoMeta::where('page_type', $pageType)

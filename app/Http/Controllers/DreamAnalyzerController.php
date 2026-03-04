@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\SeoHelper;
+use App\Helpers\SymbolPageLinkHelper;
 use App\Helpers\TraditionHelper;
 use App\Models\Comment;
 use App\Models\DreamInterpretation;
@@ -389,8 +390,11 @@ class DreamAnalyzerController extends Controller
 
         // Breadcrumbs
         $breadcrumbs = \App\Helpers\SeoHelper::getBreadcrumbsForDreamInterpretation($interpretation);
+
+        // Карта entity_slug → URL страницы символа (для ссылок в толковании)
+        $symbolPageUrlBySlug = SymbolPageLinkHelper::getSymbolPageUrlByEntitySlug();
         
-        return view('dream-analyzer.show', array_merge(compact('interpretation', 'request', 'similarInterpretations', 'structuredData', 'breadcrumbs'), $layoutData, compact('seo')));
+        return view('dream-analyzer.show', array_merge(compact('interpretation', 'request', 'similarInterpretations', 'structuredData', 'breadcrumbs', 'symbolPageUrlBySlug'), $layoutData, compact('seo')));
     }
 
     /**

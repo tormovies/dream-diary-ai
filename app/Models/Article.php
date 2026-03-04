@@ -21,6 +21,7 @@ class Article extends Model
         'status',
         'order',
         'author_id',
+        'entity_group_id',
         'image',
         'published_at',
     ];
@@ -38,11 +39,23 @@ class Article extends Model
     }
 
     /**
+     * Группа сущностей (только для type = entity_group).
+     */
+    public function entityGroup(): BelongsTo
+    {
+        return $this->belongsTo(EntityGroup::class, 'entity_group_id');
+    }
+
+    /**
      * SEO метаданные
      */
     public function seoMeta()
     {
-        $pageType = $this->type === 'guide' ? 'guide' : 'article';
+        $pageType = match ($this->type) {
+            'guide' => 'guide',
+            'entity_group' => 'entity_group',
+            default => 'article',
+        };
         return \App\Models\SeoMeta::where('page_type', $pageType)
             ->where('page_id', $this->id)
             ->first();
@@ -78,6 +91,14 @@ class Article extends Model
     public function scopeArticle($query)
     {
         return $query->where('type', 'article');
+    }
+
+    /**
+     * Scope: страницы групп сущностей (символы)
+     */
+    public function scopeEntityGroup($query)
+    {
+        return $query->where('type', 'entity_group');
     }
 
     /**
@@ -166,7 +187,10 @@ class Article extends Model
      */
     public function getUrlAttribute(): string
     {
-        $prefix = $this->type === 'guide' ? 'guide' : 'articles';
-        return route("{$prefix}.show", $this->slug);
+        return match ($this->type) {
+            'guide' => route('guide.show', $this->slug),
+            'entity_group' => route('symbol.show', $this->slug),
+            default => route('articles.show', $this->slug),
+        };
     }
 }

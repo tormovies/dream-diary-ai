@@ -18,6 +18,14 @@ class EntityGroup extends Model
     }
 
     /**
+     * Страница группы сущностей (статья типа entity_group), если создана.
+     */
+    public function symbolPage()
+    {
+        return $this->hasOne(Article::class, 'entity_group_id')->where('type', 'entity_group');
+    }
+
+    /**
      * Slug группы из названия (для URL).
      */
     public static function nameToSlug(string $name): string
