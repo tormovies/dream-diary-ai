@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\SeoHelper;
+use App\Helpers\SymbolPageLinkHelper;
 use App\Helpers\TraditionHelper;
 use App\Http\Requests\StoreReportRequest;
 use App\Http\Requests\UpdateReportRequest;
@@ -1181,8 +1182,11 @@ class ReportController extends Controller
         if ($report->access_level === 'all' && $report->user->diary_privacy === 'public') {
             $breadcrumbs = \App\Helpers\SeoHelper::getBreadcrumbsForReportAnalysis($report);
         }
-        
-        return view('reports.analysis', compact('report', 'interpretation', 'seo', 'userStats', 'todayReportsCount', 'stats', 'similarInterpretations', 'structuredData', 'breadcrumbs'));
+
+        // Карта ссылок на страницы символов (групп сущностей) — для отображения ссылок у символов/локаций/тегов в анализе
+        $symbolPageUrlBySlug = SymbolPageLinkHelper::getSymbolPageUrlByEntitySlug();
+
+        return view('reports.analysis', compact('report', 'interpretation', 'seo', 'userStats', 'todayReportsCount', 'stats', 'similarInterpretations', 'structuredData', 'breadcrumbs', 'symbolPageUrlBySlug'));
     }
 
     /**

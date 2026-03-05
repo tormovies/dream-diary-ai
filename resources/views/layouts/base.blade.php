@@ -37,8 +37,8 @@
             @endforeach
         @endif
         
-        {{-- Vite ресурсы (по умолчанию, можно добавить дополнительные через @push('vite')) --}}
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
+        {{-- Vite: основные стили + стили статей/символов (.prose и тема) --}}
+        @vite(['resources/css/app.css', 'resources/css/articles.css', 'resources/js/app.js'])
         @stack('vite')
         
         {{-- Дополнительные стили --}}

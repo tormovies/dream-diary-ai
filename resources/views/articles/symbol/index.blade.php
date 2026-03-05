@@ -1,9 +1,5 @@
 @extends('layouts.base')
 
-@push('vite')
-    @vite(['resources/css/articles.css'])
-@endpush
-
 @section('content')
     <!-- Основной контент -->
     <div class="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -99,12 +95,18 @@
                     <div class="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden card-shadow border border-gray-200 dark:border-gray-700">
                         <div class="p-6">
                             @forelse($articles as $article)
+                                @php
+                                    $symbolName = $article->entityGroup && $article->entityGroup->name
+                                        ? $article->entityGroup->name
+                                        : $article->title;
+                                    $symbolName = $symbolName !== '' ? mb_strtoupper(mb_substr($symbolName, 0, 1, 'UTF-8'), 'UTF-8') . mb_substr($symbolName, 1, null, 'UTF-8') : $symbolName;
+                                @endphp
                                 <a href="{{ route('symbol.show', $article->slug) }}" class="guide-item-link block mb-4 p-5 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-gray-700 dark:to-gray-700 hover:from-purple-100 hover:to-blue-100 dark:hover:from-gray-600 dark:hover:to-gray-600 border-l-4 border-purple-500 dark:border-purple-400 rounded-r-lg transition-all duration-200 hover:shadow-lg group">
                                     <div class="flex items-start justify-between">
                                         <div class="flex-1">
                                             <h3 class="text-xl font-bold text-purple-700 dark:text-purple-300 mb-0 group-hover:text-purple-900 dark:group-hover:text-purple-100 transition-colors flex items-center">
                                                 <i class="fas fa-star mr-3 text-purple-500 dark:text-purple-400"></i>
-                                                {{ $article->title }}
+                                                {{ $symbolName }}
                                             </h3>
                                         </div>
                                         <div class="ml-4 flex-shrink-0">

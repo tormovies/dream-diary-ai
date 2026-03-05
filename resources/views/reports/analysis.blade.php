@@ -221,10 +221,10 @@
                         <!-- Результаты анализа -->
                         @if($interpretation->analysis_type === 'single')
                             <!-- Одиночный анализ -->
-                            @include('dream-analyzer.partials.single-analysis-normalized', ['result' => $interpretation->result, 'interpretation' => $interpretation])
+                            @include('dream-analyzer.partials.single-analysis-normalized', ['result' => $interpretation->result, 'interpretation' => $interpretation, 'symbolPageUrlBySlug' => $symbolPageUrlBySlug ?? []])
                         @else
                             <!-- Серия снов -->
-                            @include('dream-analyzer.partials.series-analysis-normalized', ['result' => $interpretation->result, 'interpretation' => $interpretation])
+                            @include('dream-analyzer.partials.series-analysis-normalized', ['result' => $interpretation->result, 'interpretation' => $interpretation, 'symbolPageUrlBySlug' => $symbolPageUrlBySlug ?? []])
                         @endif
                     @endif
 

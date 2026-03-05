@@ -93,6 +93,7 @@ class ArticleController extends Controller
     {
         $articles = Article::where('type', 'entity_group')
             ->where('status', 'published')
+            ->with('entityGroup')
             ->orderBy('title', 'asc')
             ->get();
 
