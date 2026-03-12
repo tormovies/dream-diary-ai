@@ -134,6 +134,8 @@ Route::middleware('auth')->group(function () {
         Route::post('/entities/groups/{entity_group}/mappings', [\App\Http\Controllers\AdminController::class, 'entityGroupAddMapping'])->name('entities.groups.mappings.store');
         Route::delete('/entities/groups/mappings/{mapping}', [\App\Http\Controllers\AdminController::class, 'entityGroupRemoveMapping'])->name('entities.groups.mappings.destroy');
         Route::post('/entities/add-to-group', [\App\Http\Controllers\AdminController::class, 'entitiesAddToGroup'])->name('entities.add-to-group');
+        Route::post('/entities/bulk-add-to-group', [\App\Http\Controllers\AdminController::class, 'entitiesBulkAddToGroup'])->name('entities.bulk-add-to-group');
+        Route::post('/entities/bulk-create-group', [\App\Http\Controllers\AdminController::class, 'entitiesBulkCreateGroup'])->name('entities.bulk-create-group');
         Route::post('/entities/create-group-from-entity', [\App\Http\Controllers\AdminController::class, 'entitiesCreateGroupFromEntity'])->name('entities.create-group-from-entity');
         Route::get('/settings', [\App\Http\Controllers\AdminController::class, 'settings'])->name('settings');
         Route::patch('/settings', [\App\Http\Controllers\AdminController::class, 'updateSettings'])->name('settings.update');

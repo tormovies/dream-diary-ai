@@ -63,12 +63,12 @@
                                     @if($group->symbolPage)
                                         <a href="{{ route('symbol.show', $group->symbolPage->slug) }}" class="text-green-600 hover:text-green-800 font-medium" target="_blank" rel="noopener">{{ $group->slug }}</a>
                                         <a href="{{ route('admin.articles.edit', $group->symbolPage) }}" class="text-gray-500 hover:text-teal-600" title="Редактировать страницу">✎</a>
-                                        <form action="{{ route('admin.entities.groups.request-symbol-page', $group) }}" method="post" class="inline" onsubmit="return confirm('Перезапросить DeepSeek и перезаписать контент страницы? Текущий текст будет заменён. Продолжить?');">
+                                        <form action="{{ route('admin.entities.groups.request-symbol-page', $group) }}" method="post" class="inline" target="_blank" onsubmit="return confirm('Перезапросить DeepSeek и перезаписать контент страницы? Текущий текст будет заменён. Продолжить?');">
                                             @csrf
                                             <button type="submit" class="text-amber-600 hover:text-amber-800 text-sm" title="Перезапросить страницу через DeepSeek">↻</button>
                                         </form>
                                     @else
-                                        <form action="{{ route('admin.entities.groups.request-symbol-page', $group) }}" method="post" class="inline" onsubmit="return confirm('Отправить запрос в DeepSeek для генерации страницы? Это может занять до минуты.');">
+                                        <form action="{{ route('admin.entities.groups.request-symbol-page', $group) }}" method="post" class="inline" target="_blank" onsubmit="return confirm('Отправить запрос в DeepSeek для генерации страницы? Это может занять до нескольких минут.');">
                                             @csrf
                                             <button type="submit" class="text-teal-600 hover:text-teal-800 font-medium">Запрос</button>
                                         </form>

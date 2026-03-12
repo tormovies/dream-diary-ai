@@ -821,7 +821,7 @@ class AdminController extends Controller
             ]
         );
 
-        return redirect()->back()->with('success', 'Страница группы «' . $entity_group->name . '» создана/обновлена (черновик). Редактирование: ' . route('admin.articles.edit', $article));
+        return redirect()->route('admin.articles.edit', $article)->with('success', 'Страница группы «' . $entity_group->name . '» создана/обновлена (черновик). Можно опубликовать.');
     }
 
     /**
@@ -923,6 +923,84 @@ class AdminController extends Controller
         ]);
         SymbolPageLinkHelper::clearCache();
         return redirect()->back()->with('success', "Создана группа «{$name}» и сущность добавлена в неё.");
+    }
+
+    /**
+     * Массово добавить выбранные сущности в группу.
+     */
+    public function entitiesBulkAddToGroup(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'entity_group_id' => 'required|exists:entity_groups,id',
+            'entity_slugs' => 'required|array',
+            'entity_slugs.*' => 'string|max:255',
+        ]);
+        $groupId = (int) $request->input('entity_group_id');
+        $slugs = array_unique(array_filter($request->input('entity_slugs', [])));
+        if (empty($slugs)) {
+            return redirect()->back()->with('error', 'Не выбрано ни одной сущности.');
+        }
+        $names = DreamInterpretationEntity::whereIn('slug', $slugs)->selectRaw('slug, MAX(name) as name')->groupBy('slug')->pluck('name', 'slug')->toArray();
+        $added = 0;
+        foreach ($slugs as $slug) {
+            $name = trim((string) ($names[$slug] ?? $slug));
+            if ($name === '') {
+                $name = $slug;
+            }
+            EntityGroupMapping::where('entity_slug', $slug)->delete();
+            EntityGroupMapping::create([
+                'entity_group_id' => $groupId,
+                'entity_slug' => $slug,
+                'entity_name' => $name,
+            ]);
+            $added++;
+        }
+        SymbolPageLinkHelper::clearCache();
+        return redirect()->back()->with('success', "В группу добавлено сущностей: {$added}.");
+    }
+
+    /**
+     * Массово создать группу из выбранных сущностей (имя группы — по первой выбранной).
+     */
+    public function entitiesBulkCreateGroup(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'entity_slugs' => 'required|array',
+            'entity_slugs.*' => 'string|max:255',
+        ]);
+        $slugs = array_unique(array_filter($request->input('entity_slugs', [])));
+        if (empty($slugs)) {
+            return redirect()->back()->with('error', 'Не выбрано ни одной сущности.');
+        }
+        $firstSlug = $slugs[0];
+        $name = DreamInterpretationEntity::where('slug', $firstSlug)->value('name');
+        $name = trim((string) ($name ?? $firstSlug));
+        if ($name === '') {
+            $name = $firstSlug;
+        }
+        $groupSlug = EntityGroup::nameToSlug($name);
+        $group = EntityGroup::firstOrCreate(
+            ['slug' => $groupSlug],
+            ['name' => $name]
+        );
+        if (!$group->wasRecentlyCreated) {
+            $group->update(['name' => $name]);
+        }
+        $names = DreamInterpretationEntity::whereIn('slug', $slugs)->selectRaw('slug, MAX(name) as name')->groupBy('slug')->pluck('name', 'slug')->toArray();
+        foreach ($slugs as $slug) {
+            $entityName = trim((string) ($names[$slug] ?? $slug));
+            if ($entityName === '') {
+                $entityName = $slug;
+            }
+            EntityGroupMapping::where('entity_slug', $slug)->delete();
+            EntityGroupMapping::create([
+                'entity_group_id' => $group->id,
+                'entity_slug' => $slug,
+                'entity_name' => $entityName,
+            ]);
+        }
+        SymbolPageLinkHelper::clearCache();
+        return redirect()->back()->with('success', "Создана группа «{$name}» и добавлено сущностей: " . count($slugs) . '.');
     }
 
     /**
