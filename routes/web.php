@@ -27,6 +27,7 @@ Route::get('/activity', [\App\Http\Controllers\ActivityController::class, 'index
 Route::get('/tolkovanie-snov', [\App\Http\Controllers\DreamAnalyzerController::class, 'create'])->name('dream-analyzer.create');
 Route::post('/tolkovanie-snov', [\App\Http\Controllers\DreamAnalyzerController::class, 'store'])->name('dream-analyzer.store');
 Route::post('/tolkovanie-snov/{hash}/process', [\App\Http\Controllers\DreamAnalyzerController::class, 'processAnalysis'])->name('dream-analyzer.process');
+Route::get('/tolkovanie-snov/{hash}/status', [\App\Http\Controllers\DreamAnalyzerController::class, 'status'])->name('dream-analyzer.status');
 Route::post('/tolkovanie-snov/{hash}/retry', [\App\Http\Controllers\DreamAnalyzerController::class, 'retry'])->name('dream-analyzer.retry');
 Route::get('/tolkovanie-snov/{hash}', [\App\Http\Controllers\DreamAnalyzerController::class, 'show'])->name('dream-analyzer.show');
 
@@ -139,6 +140,8 @@ Route::middleware('auth')->group(function () {
         Route::post('/entities/create-group-from-entity', [\App\Http\Controllers\AdminController::class, 'entitiesCreateGroupFromEntity'])->name('entities.create-group-from-entity');
         Route::get('/settings', [\App\Http\Controllers\AdminController::class, 'settings'])->name('settings');
         Route::patch('/settings', [\App\Http\Controllers\AdminController::class, 'updateSettings'])->name('settings.update');
+        Route::get('/ad', [\App\Http\Controllers\AdminController::class, 'ad'])->name('ad');
+        Route::patch('/ad', [\App\Http\Controllers\AdminController::class, 'updateAd'])->name('ad.update');
         
         // SEO управление
         Route::resource('seo', \App\Http\Controllers\Admin\SeoController::class)->except(['show']);

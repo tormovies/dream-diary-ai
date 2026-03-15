@@ -182,46 +182,58 @@
                         </div>
                     </div>
 
+                    @if(!empty($dreamAnalyzerAdCode ?? ''))
+                    <div class="mt-6 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-600">
+                        <div class="p-2 bg-gray-50 dark:bg-gray-800/50 text-center text-xs text-gray-500 dark:text-gray-400">Реклама</div>
+                        <div class="p-4 min-h-[100px] flex items-center justify-center">
+                            {!! $dreamAnalyzerAdCode !!}
+                        </div>
+                    </div>
+                    @endif
+
                     <script>
-                        // Запускаем обработку через AJAX если статус pending
-                        @if($processingStatus === 'pending')
-                            // Запускаем обработку в фоне через 2 секунды (чтобы страница успела отрендериться)
+                        (function() {
+                            var statusUrl = '{{ route('dream-analyzer.status', $interpretation->hash) }}';
+                            var processUrl = '{{ route('dream-analyzer.process', $interpretation->hash) }}';
+                            var csrf = '{{ csrf_token() }}';
+                            var pollIntervalMs = 5000;
+
+                            function reloadWhenReady() {
+                                fetch(statusUrl, { headers: { 'Accept': 'application/json' } })
+                                    .then(function(r) { return r.json(); })
+                                    .then(function(data) {
+                                        if (data.processing_status === 'completed' || data.processing_status === 'failed') {
+                                            location.reload();
+                                        }
+                                    })
+                                    .catch(function() {});
+                            }
+
+                            @if($processingStatus === 'pending')
+                            // Запускаем обработку через 2 секунды, затем опрашиваем статус без перезагрузки
                             setTimeout(function() {
-                                fetch('{{ route('dream-analyzer.process', $interpretation->hash) }}', {
+                                fetch(processUrl, {
                                     method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                        'Accept': 'application/json'
-                                    }
+                                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' }
                                 })
-                                .then(response => response.json())
-                                .then(data => {
-                                    console.log('Analysis process response:', data);
-                                    // Если обработка завершена сразу - перезагружаем сразу
+                                .then(function(r) { return r.json(); })
+                                .then(function(data) {
                                     if (data.status === 'completed') {
                                         location.reload();
-                                    } else {
-                                        // Если запущена - перезагружаем через 3 секунды
-                                        setTimeout(function() {
-                                            location.reload();
-                                        }, 3000);
+                                        return;
                                     }
+                                    // processing или ошибка — опрашиваем статус раз в pollIntervalMs, перезагрузка только при completed/failed
+                                    setInterval(reloadWhenReady, pollIntervalMs);
                                 })
-                                .catch(error => {
-                                    console.error('Error starting analysis:', error);
-                                    // При ошибке перезагружаем через 3 секунды
-                                    setTimeout(function() {
-                                        location.reload();
-                                    }, 3000);
+                                .catch(function() {
+                                    setInterval(reloadWhenReady, pollIntervalMs);
                                 });
                             }, 2000);
-                        @else
-                            // Если уже в processing - просто ждем и перезагружаем
-                            setTimeout(function() {
-                                location.reload();
-                            }, 5000);
-                        @endif
+                            @else
+                            // Уже в processing — только опрос статуса, без перезагрузки страницы
+                            setInterval(reloadWhenReady, pollIntervalMs);
+                            @endif
+                        })();
                     </script>
                 @else
                     @php
@@ -266,6 +278,15 @@
                         }
                         
                     @endphp
+
+                    @if(!empty($dreamAnalyzerAdCodeResults ?? ''))
+                    <div class="mb-6 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-600">
+                        <div class="p-2 bg-gray-50 dark:bg-gray-800/50 text-center text-xs text-gray-500 dark:text-gray-400">Реклама</div>
+                        <div class="p-4 min-h-[80px] flex items-center justify-center">
+                            {!! $dreamAnalyzerAdCodeResults !!}
+                        </div>
+                    </div>
+                    @endif
 
                     @if($useNormalized)
                         @if($isNewSystem)

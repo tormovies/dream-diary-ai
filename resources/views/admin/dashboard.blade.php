@@ -64,6 +64,9 @@
                         <a href="{{ route('admin.settings') }}" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded text-center flex-1 min-w-[120px]">
                             Настройки
                         </a>
+                        <a href="{{ route('admin.ad') }}" class="bg-amber-500 hover:bg-amber-700 text-white font-bold py-2 px-4 rounded text-center flex-1 min-w-[120px]">
+                            Реклама
+                        </a>
                     </div>
                 </div>
             </div>

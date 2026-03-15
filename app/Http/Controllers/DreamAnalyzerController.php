@@ -11,6 +11,7 @@ use App\Models\DreamInterpretationResult;
 use App\Models\DreamInterpretationSeriesDream;
 use App\Models\Report;
 use App\Models\SeoMeta;
+use App\Models\Setting;
 use App\Models\Tag;
 use App\Models\User;
 use App\Services\DeepSeekService;
@@ -393,8 +394,12 @@ class DreamAnalyzerController extends Controller
 
         // Карта entity_slug → URL страницы символа (для ссылок в толковании)
         $symbolPageUrlBySlug = SymbolPageLinkHelper::getSymbolPageUrlByEntitySlug();
+
+        // Рекламные блоки (из админки → Реклама)
+        $dreamAnalyzerAdCode = (string) Setting::getValue('dream_analyzer_ad_code', '');
+        $dreamAnalyzerAdCodeResults = (string) Setting::getValue('dream_analyzer_ad_code_results', '');
         
-        return view('dream-analyzer.show', array_merge(compact('interpretation', 'request', 'similarInterpretations', 'structuredData', 'breadcrumbs', 'symbolPageUrlBySlug'), $layoutData, compact('seo')));
+        return view('dream-analyzer.show', array_merge(compact('interpretation', 'request', 'similarInterpretations', 'structuredData', 'breadcrumbs', 'symbolPageUrlBySlug', 'dreamAnalyzerAdCode', 'dreamAnalyzerAdCodeResults'), $layoutData, compact('seo')));
     }
 
     /**
@@ -623,6 +628,19 @@ class DreamAnalyzerController extends Controller
                 'trace' => $e->getTraceAsString(),
             ]);
         }
+    }
+
+    /**
+     * Возвращает статус обработки (для опроса без перезагрузки страницы).
+     */
+    public function status(string $hash)
+    {
+        $interpretation = DreamInterpretation::where('hash', $hash)
+            ->select('processing_status')
+            ->firstOrFail();
+        return response()->json([
+            'processing_status' => $interpretation->processing_status ?? 'pending',
+        ]);
     }
 
     /**

@@ -119,33 +119,49 @@
                         </div>
                     </div>
 
-                    <!-- Часовой пояс для статистики -->
+<!-- Часовой пояс для статистики и ID Метрики -->
                     <div class="form-group border-t border-gray-200 dark:border-gray-700 pt-6 mt-6">
                         <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                             <i class="fas fa-globe mr-2"></i>Часовой пояс для статистики
                         </h3>
-                        
-                        <div class="form-group">
-                            <label for="timezone" class="form-label">
-                                <i class="fas fa-clock"></i> Часовой пояс
-                            </label>
-                            <select id="timezone" 
-                                    name="timezone" 
-                                    class="form-select">
-                                <option value="UTC" {{ old('timezone', $settings['timezone']) === 'UTC' ? 'selected' : '' }}>UTC (время сервера)</option>
-                                <option value="Europe/Moscow" {{ old('timezone', $settings['timezone']) === 'Europe/Moscow' ? 'selected' : '' }}>Москва (MSK, UTC+3)</option>
-                                <option value="Europe/Kiev" {{ old('timezone', $settings['timezone']) === 'Europe/Kiev' ? 'selected' : '' }}>Киев (EET, UTC+2)</option>
-                                <option value="Europe/Minsk" {{ old('timezone', $settings['timezone']) === 'Europe/Minsk' ? 'selected' : '' }}>Минск (MSK, UTC+3)</option>
-                                <option value="Asia/Almaty" {{ old('timezone', $settings['timezone']) === 'Asia/Almaty' ? 'selected' : '' }}>Алматы (ALMT, UTC+6)</option>
-                                <option value="Asia/Tashkent" {{ old('timezone', $settings['timezone']) === 'Asia/Tashkent' ? 'selected' : '' }}>Ташкент (UZT, UTC+5)</option>
-                                <option value="Asia/Yekaterinburg" {{ old('timezone', $settings['timezone']) === 'Asia/Yekaterinburg' ? 'selected' : '' }}>Екатеринбург (YEKT, UTC+5)</option>
-                                <option value="Asia/Novosibirsk" {{ old('timezone', $settings['timezone']) === 'Asia/Novosibirsk' ? 'selected' : '' }}>Новосибирск (NOVT, UTC+7)</option>
-                                <option value="Asia/Krasnoyarsk" {{ old('timezone', $settings['timezone']) === 'Asia/Krasnoyarsk' ? 'selected' : '' }}>Красноярск (KRAT, UTC+7)</option>
-                                <option value="Asia/Irkutsk" {{ old('timezone', $settings['timezone']) === 'Asia/Irkutsk' ? 'selected' : '' }}>Иркутск (IRKT, UTC+8)</option>
-                                <option value="Asia/Vladivostok" {{ old('timezone', $settings['timezone']) === 'Asia/Vladivostok' ? 'selected' : '' }}>Владивосток (VLAT, UTC+10)</option>
-                            </select>
-                            <div class="form-hint">Выберите часовой пояс для отображения статистики толкований сновидений. Влияет на фильтрацию по датам в админ-панели.</div>
-                            <x-input-error class="mt-2" :messages="$errors->get('timezone')" />
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+                            <div class="form-group">
+                                <label for="timezone" class="form-label">
+                                    <i class="fas fa-clock"></i> Часовой пояс
+                                </label>
+                                <select id="timezone"
+                                        name="timezone"
+                                        class="form-select">
+                                    <option value="UTC" {{ old('timezone', $settings['timezone']) === 'UTC' ? 'selected' : '' }}>UTC (время сервера)</option>
+                                    <option value="Europe/Moscow" {{ old('timezone', $settings['timezone']) === 'Europe/Moscow' ? 'selected' : '' }}>Москва (MSK, UTC+3)</option>
+                                    <option value="Europe/Kiev" {{ old('timezone', $settings['timezone']) === 'Europe/Kiev' ? 'selected' : '' }}>Киев (EET, UTC+2)</option>
+                                    <option value="Europe/Minsk" {{ old('timezone', $settings['timezone']) === 'Europe/Minsk' ? 'selected' : '' }}>Минск (MSK, UTC+3)</option>
+                                    <option value="Asia/Almaty" {{ old('timezone', $settings['timezone']) === 'Asia/Almaty' ? 'selected' : '' }}>Алматы (ALMT, UTC+6)</option>
+                                    <option value="Asia/Tashkent" {{ old('timezone', $settings['timezone']) === 'Asia/Tashkent' ? 'selected' : '' }}>Ташкент (UZT, UTC+5)</option>
+                                    <option value="Asia/Yekaterinburg" {{ old('timezone', $settings['timezone']) === 'Asia/Yekaterinburg' ? 'selected' : '' }}>Екатеринбург (YEKT, UTC+5)</option>
+                                    <option value="Asia/Novosibirsk" {{ old('timezone', $settings['timezone']) === 'Asia/Novosibirsk' ? 'selected' : '' }}>Новосибирск (NOVT, UTC+7)</option>
+                                    <option value="Asia/Krasnoyarsk" {{ old('timezone', $settings['timezone']) === 'Asia/Krasnoyarsk' ? 'selected' : '' }}>Красноярск (KRAT, UTC+7)</option>
+                                    <option value="Asia/Irkutsk" {{ old('timezone', $settings['timezone']) === 'Asia/Irkutsk' ? 'selected' : '' }}>Иркутск (IRKT, UTC+8)</option>
+                                    <option value="Asia/Vladivostok" {{ old('timezone', $settings['timezone']) === 'Asia/Vladivostok' ? 'selected' : '' }}>Владивосток (VLAT, UTC+10)</option>
+                                </select>
+                                <div class="form-hint">Выберите часовой пояс для отображения статистики толкований сновидений. Влияет на фильтрацию по датам в админ-панели.</div>
+                                <x-input-error class="mt-2" :messages="$errors->get('timezone')" />
+                            </div>
+
+                            <div class="form-group">
+                                <label for="yandex_metrika_id" class="form-label">
+                                    <i class="fas fa-chart-line"></i> ID Метрики
+                                </label>
+                                <input type="text"
+                                       id="yandex_metrika_id"
+                                       name="yandex_metrika_id"
+                                       class="form-input"
+                                       value="{{ old('yandex_metrika_id', $settings['yandex_metrika_id'] ?? '') }}"
+                                       placeholder="89409547" />
+                                <div class="form-hint">ID счётчика Яндекс.Метрики (только цифры). Подставляется в код счётчика на всех страницах. Пусто — используется значение по умолчанию.</div>
+                                <x-input-error class="mt-2" :messages="$errors->get('yandex_metrika_id')" />
+                            </div>
                         </div>
                     </div>
 

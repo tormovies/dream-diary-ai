@@ -279,6 +279,7 @@ class AdminController extends Controller
             'deepseek_http_timeout' => Setting::getValue('deepseek_http_timeout', 600),
             'deepseek_php_execution_timeout' => Setting::getValue('deepseek_php_execution_timeout', 660),
             'timezone' => Setting::getValue('timezone', 'UTC'),
+            'yandex_metrika_id' => Setting::getValue('yandex_metrika_id', '89409547'),
         ];
 
         return view('admin.settings', compact('settings'));
@@ -297,6 +298,7 @@ class AdminController extends Controller
             'deepseek_http_timeout' => ['nullable', 'integer', 'min:60', 'max:1800'],
             'deepseek_php_execution_timeout' => ['nullable', 'integer', 'min:60', 'max:1800'],
             'timezone' => ['nullable', 'string', 'timezone'],
+            'yandex_metrika_id' => ['nullable', 'string', 'max:30', 'regex:/^\d*$/'],
         ]);
 
         Setting::setValue('allow_report_deletion', $request->boolean('allow_report_deletion', true));
@@ -337,7 +339,39 @@ class AdminController extends Controller
             Setting::setValue('timezone', 'UTC'); // Значение по умолчанию
         }
 
+        // ID счётчика Яндекс.Метрики (только цифры; пусто = счётчик не выводится)
+        $metrikaId = preg_replace('/\D/', '', (string) $request->input('yandex_metrika_id', ''));
+        if ($metrikaId !== '') {
+            Setting::setValue('yandex_metrika_id', $metrikaId);
+        } else {
+            Setting::setValue('yandex_metrika_id', '89409547'); // значение по умолчанию
+        }
+
         return back()->with('success', 'Настройки сохранены');
+    }
+
+    /**
+     * Страница настройки рекламы (блоки на странице толкования).
+     */
+    public function ad(): View
+    {
+        $adCode = (string) Setting::getValue('dream_analyzer_ad_code', '');
+        $adCodeResults = (string) Setting::getValue('dream_analyzer_ad_code_results', '');
+        return view('admin.ad', compact('adCode', 'adCodeResults'));
+    }
+
+    /**
+     * Сохранение рекламных кодов.
+     */
+    public function updateAd(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'dream_analyzer_ad_code' => ['nullable', 'string', 'max:50000'],
+            'dream_analyzer_ad_code_results' => ['nullable', 'string', 'max:50000'],
+        ]);
+        Setting::setValue('dream_analyzer_ad_code', $request->input('dream_analyzer_ad_code', ''));
+        Setting::setValue('dream_analyzer_ad_code_results', $request->input('dream_analyzer_ad_code_results', ''));
+        return back()->with('success', 'Рекламные коды сохранены.');
     }
 
     /**
