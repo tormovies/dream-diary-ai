@@ -50,6 +50,17 @@
                             <x-input-error class="mt-2" :messages="$errors->get('dream_analyzer_ad_code_results')" />
                         </div>
 
+                        <div class="form-group mb-6">
+                            <label for="global_head_ad_code" class="form-label">Рекламный код (в &lt;head&gt;)</label>
+                            <textarea id="global_head_ad_code"
+                                      name="global_head_ad_code"
+                                      rows="6"
+                                      class="form-input font-mono text-sm"
+                                      placeholder="<script>...</script>">{{ old('global_head_ad_code', $adCodeHead) }}</textarea>
+                            <div class="form-hint mt-1">Вставляется между тегами &lt;head&gt; и &lt;/head&gt; на всех страницах сайта, кроме админки. Подходит для счётчиков, тегов ремаркетинга и т.п. Оставьте пустым, чтобы не выводить.</div>
+                            <x-input-error class="mt-2" :messages="$errors->get('global_head_ad_code')" />
+                        </div>
+
                         <div class="flex gap-3 mt-6">
                             <button type="submit" class="btn-form-primary">
                                 <i class="fas fa-save mr-2"></i>Сохранить

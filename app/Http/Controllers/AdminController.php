@@ -357,7 +357,8 @@ class AdminController extends Controller
     {
         $adCode = (string) Setting::getValue('dream_analyzer_ad_code', '');
         $adCodeResults = (string) Setting::getValue('dream_analyzer_ad_code_results', '');
-        return view('admin.ad', compact('adCode', 'adCodeResults'));
+        $adCodeHead = (string) Setting::getValue('global_head_ad_code', '');
+        return view('admin.ad', compact('adCode', 'adCodeResults', 'adCodeHead'));
     }
 
     /**
@@ -368,9 +369,11 @@ class AdminController extends Controller
         $request->validate([
             'dream_analyzer_ad_code' => ['nullable', 'string', 'max:50000'],
             'dream_analyzer_ad_code_results' => ['nullable', 'string', 'max:50000'],
+            'global_head_ad_code' => ['nullable', 'string', 'max:50000'],
         ]);
         Setting::setValue('dream_analyzer_ad_code', $request->input('dream_analyzer_ad_code', ''));
         Setting::setValue('dream_analyzer_ad_code_results', $request->input('dream_analyzer_ad_code_results', ''));
+        Setting::setValue('global_head_ad_code', $request->input('global_head_ad_code', ''));
         return back()->with('success', 'Рекламные коды сохранены.');
     }
 

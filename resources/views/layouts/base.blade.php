@@ -47,6 +47,12 @@
         
         {{-- Яндекс.Метрика --}}
         <x-yandex-metrika :exclude-admin="true" />
+
+        @php $globalHeadAd = (string) \App\Models\Setting::getValue('global_head_ad_code', ''); @endphp
+        @if($globalHeadAd !== '')
+        {{-- Рекламный/аналитический код из настроек (Админка → Реклама) --}}
+        {!! $globalHeadAd !!}
+        @endif
     </head>
     <body class="font-sans antialiased bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
         {{-- Header --}}
