@@ -24,42 +24,6 @@
                         </a>
                     </div>
                     
-                    <!-- Карточка пользователя -->
-                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
-                        <div class="text-center">
-                            <div class="flex justify-center">
-                                <x-avatar :user="auth()->user()" size="lg" />
-                            </div>
-                            <div class="mt-4">
-                                <div class="font-semibold text-lg text-gray-900 dark:text-white">{{ auth()->user()->nickname }}</div>
-                                <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                                    @if($userStats)
-                                        {{ $userStats['reports'] }} {{ $userStats['reports'] == 1 ? 'запись' : ($userStats['reports'] < 5 ? 'записи' : 'записей') }}
-                                    @else
-                                        Пользователь
-                                    @endif
-                                </div>
-                            </div>
-                            
-                            @if($userStats)
-                            <div class="flex justify-between mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                                <div class="text-center flex-1">
-                                    <div class="text-xl font-bold text-purple-600 dark:text-purple-400">{{ $userStats['friends'] }}</div>
-                                    <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">друзей</div>
-                                </div>
-                                <div class="text-center flex-1">
-                                    <div class="text-xl font-bold text-purple-600 dark:text-purple-400">{{ $userStats['dreams'] }}</div>
-                                    <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">снов</div>
-                                </div>
-                                <div class="text-center flex-1">
-                                    <div class="text-xl font-bold text-purple-600 dark:text-purple-400">{{ $userStats['avg_per_month'] }}</div>
-                                    <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">снов/мес</div>
-                                </div>
-                            </div>
-                            @endif
-                        </div>
-                    </div>
-                    
                     <!-- Быстрое меню -->
                     <x-auth-sidebar-menu />
                 </aside>
@@ -76,9 +40,6 @@
                             <i class="fas fa-user-plus mr-2"></i>Регистрация
                         </a>
                     </div>
-                    
-                    <!-- Статистика проекта -->
-                    <x-project-statistics :stats="$globalStats" />
                     
                     <!-- Быстрые действия -->
                     <x-guest-quick-actions />

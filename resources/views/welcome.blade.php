@@ -19,9 +19,14 @@
                             @endif
                             Не забывайте записывать свои сны!
                         </p>
-                        <a href="{{ route('reports.create') }}" class="inline-block bg-white text-purple-600 px-4 py-2 rounded-lg font-semibold hover:bg-purple-50 transition-colors text-sm">
-                            <i class="fas fa-plus mr-2"></i>Добавить сон
-                        </a>
+                        <div class="flex flex-nowrap gap-2">
+                            <a href="{{ route('reports.create') }}" class="flex-1 min-w-0 inline-flex items-center justify-center bg-white text-purple-600 px-3 py-2 rounded-lg font-semibold hover:bg-purple-50 transition-colors text-sm">
+                                <i class="fas fa-plus mr-2 flex-shrink-0"></i><span class="truncate">Добавить сон</span>
+                            </a>
+                            <a href="https://www.snovidec.ru/tolkovanie-snov" class="flex-1 min-w-0 inline-flex items-center justify-center bg-white/90 text-purple-600 px-3 py-2 rounded-lg font-semibold hover:bg-white transition-colors text-sm">
+                                <i class="fas fa-magic mr-2 flex-shrink-0"></i><span class="truncate">Толкование</span>
+                            </a>
+                        </div>
                     </div>
                     
                     <!-- Быстрое меню -->
@@ -266,9 +271,14 @@
                         <p class="text-purple-100 mb-4 text-sm">
                             Присоединяйтесь к сообществу людей, которые записывают и анализируют свои сновидения.
                         </p>
-                        <a href="{{ route('register') }}" class="inline-block bg-white text-purple-600 px-4 py-2 rounded-lg font-semibold hover:bg-purple-50 transition-colors text-sm">
-                            <i class="fas fa-user-plus mr-2"></i>Регистрация
-                        </a>
+                        <div class="flex flex-nowrap gap-2">
+                            <a href="{{ route('register') }}" class="flex-1 min-w-0 inline-flex items-center justify-center bg-white text-purple-600 px-3 py-2 rounded-lg font-semibold hover:bg-purple-50 transition-colors text-sm">
+                                <i class="fas fa-user-plus mr-2 flex-shrink-0"></i><span class="truncate">Регистрация</span>
+                            </a>
+                            <a href="https://www.snovidec.ru/tolkovanie-snov" class="flex-1 min-w-0 inline-flex items-center justify-center bg-white/90 text-purple-600 px-3 py-2 rounded-lg font-semibold hover:bg-white transition-colors text-sm">
+                                <i class="fas fa-magic mr-2 flex-shrink-0"></i><span class="truncate">Толкование</span>
+                            </a>
+                        </div>
                     </div>
                     
                     <!-- Быстрые действия -->
