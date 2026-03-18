@@ -92,15 +92,18 @@ class InterpretationLinkHelper
         
         // Только лёгкие поля + result/report (без dream_description, analysis_data, raw_api_*)
         $interpretations = $query
-            ->select('id', 'hash', 'report_id', 'created_at', 'traditions')
-            ->with(['result', 'report'])
+            ->select('id', 'hash', 'report_id', 'created_at', 'traditions', 'allow_public_linking')
+            ->with(['result', 'report.user'])
             ->orderBy('created_at', 'desc')
             ->limit($limit * 3) // Берем больше, чтобы отфильтровать по SEO и дубликатам
             ->get()
             ->filter(function($interpretation) {
                 // Исключаем толкования, у которых report_id есть, но report удален
-                // Такие записи не должны попадать в перелинковку
                 if ($interpretation->report_id && !$interpretation->report) {
+                    return false;
+                }
+                // Анализы отчётов, скрытые настройками приватности, не участвуют в перелинковке
+                if (!self::isInterpretationAllowedForLinking($interpretation)) {
                     return false;
                 }
                 // Проверяем, что у толкования есть валидные SEO данные
@@ -207,15 +210,16 @@ class InterpretationLinkHelper
             ->whereHas('result')
             ->where('created_at', '>=', $minDate)
             ->where('id', '!=', $excludeId)
-            ->select('id', 'hash', 'report_id', 'created_at', 'traditions')
-            ->with(['result', 'report'])
+            ->select('id', 'hash', 'report_id', 'created_at', 'traditions', 'allow_public_linking')
+            ->with(['result', 'report.user'])
             ->orderBy('created_at', 'desc')
             ->limit(100)
             ->get()
             ->filter(function($interpretation) {
-                // Исключаем толкования, у которых report_id есть, но report удален
-                // Такие записи не должны попадать в перелинковку
                 if ($interpretation->report_id && !$interpretation->report) {
+                    return false;
+                }
+                if (!self::isInterpretationAllowedForLinking($interpretation)) {
                     return false;
                 }
                 return true;
@@ -302,9 +306,10 @@ class InterpretationLinkHelper
         
         return $interpretations->filter(function($interpretation) use (&$seenTitles, $excludeTitleNormalized) {
             try {
-                // Исключаем толкования, у которых report_id есть, но report удален
-                // Такие записи не должны попадать в перелинковку
                 if ($interpretation->report_id && !$interpretation->report) {
+                    return false;
+                }
+                if (!self::isInterpretationAllowedForLinking($interpretation)) {
                     return false;
                 }
                 
@@ -365,5 +370,38 @@ class InterpretationLinkHelper
         $title = trim($title);
         
         return $title;
+    }
+
+    /**
+     * Проверить, доступен ли отчёт для публичного просмотра (перелинковка только по таким).
+     * Учитываются: status отчёта, access_level, diary_privacy владельца.
+     *
+     * @param \App\Models\Report $report
+     * @return bool
+     */
+    private static function isReportPubliclyAccessible(\App\Models\Report $report): bool
+    {
+        if ($report->status !== 'published' || $report->access_level !== 'all') {
+            return false;
+        }
+        if (!$report->relationLoaded('user')) {
+            $report->load('user');
+        }
+        return $report->user && $report->user->diary_privacy === 'public';
+    }
+
+    /**
+     * Исключить из перелинковки толкования-анализы отчётов, скрытых настройками приватности.
+     *
+     * @param \App\Models\DreamInterpretation $interpretation
+     * @return bool true если толкование можно показывать в перелинковке
+     */
+    private static function isInterpretationAllowedForLinking(DreamInterpretation $interpretation): bool
+    {
+        if ($interpretation->report_id && $interpretation->report) {
+            return self::isReportPubliclyAccessible($interpretation->report);
+        }
+        // Толкование с формы: участвует в перелинковке только если разрешено (по умолчанию да, старые записи без поля — да)
+        return (bool) ($interpretation->allow_public_linking ?? true);
     }
 }

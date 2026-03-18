@@ -24,12 +24,14 @@ class DreamInterpretation extends Model
         'raw_api_request',
         'raw_api_response',
         'api_error',
+        'allow_public_linking',
     ];
 
     protected $casts = [
         'traditions' => 'array',
         'analysis_data' => 'array',
         'processing_started_at' => 'datetime',
+        'allow_public_linking' => 'boolean',
     ];
 
     protected static function booted(): void

@@ -170,21 +170,42 @@
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Хеш</th>
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Статус</th>
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Традиции</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Публикация</th>
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">IP адрес</th>
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Действия</th>
                                         </tr>
                                     </thead>
                                     <tbody class="bg-white divide-y divide-gray-200">
                                         @foreach($dayInterpretations as $interpretation)
-                                            <tr>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                            @php
+                                                // Подсветка: светло-серым отмечаем толкования, которые "запрещены к публикации"
+                                                // (не будут участвовать в перелинковке по публичным правилам).
+                                                $isForbiddenForPublic = false;
+                                                if ($interpretation->report_id) {
+                                                    if ($interpretation->report) {
+                                                        $report = $interpretation->report;
+                                                        $isReportPublic = $report->status === 'published'
+                                                            && $report->access_level === 'all'
+                                                            && ($report->user?->diary_privacy === 'public');
+                                                        $isForbiddenForPublic = !$isReportPublic;
+                                                    } else {
+                                                        // Анализ отчета без самого отчета не должен участвовать в перелинковке
+                                                        $isForbiddenForPublic = true;
+                                                    }
+                                                } else {
+                                                    $isForbiddenForPublic = !(bool) ($interpretation->allow_public_linking ?? true);
+                                                }
+                                                $rowBgAttr = $isForbiddenForPublic ? ' style="background-color: #f3f4f6;"' : '';
+                                            @endphp
+                                            <tr class="{{ $isForbiddenForPublic ? 'bg-gray-100' : '' }} hover:bg-gray-50"{!! $rowBgAttr !!}>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"{!! $rowBgAttr !!}>
                                                     @php
                                                         $timezone = $timezone ?? 'UTC';
                                                         $localTime = \Carbon\Carbon::parse($interpretation->created_at)->setTimezone($timezone);
                                                     @endphp
                                                     {{ $localTime->format('H:i:s') }}
                                                 </td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm"{!! $rowBgAttr !!}>
                                                     @if($interpretation->report_id && $interpretation->report)
                                                         <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800" title="Анализ отчета">
                                                             Анализ отчета
@@ -195,10 +216,10 @@
                                                         </span>
                                                     @endif
                                                 </td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-600">
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-600"{!! $rowBgAttr !!}>
                                                     {{ substr($interpretation->hash, 0, 12) }}...
                                                 </td>
-                                                <td class="px-6 py-4 whitespace-nowrap">
+                                                <td class="px-6 py-4 whitespace-nowrap"{!! $rowBgAttr !!}>
                                                     @if($interpretation->processing_status === 'completed')
                                                         <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Завершено</span>
                                                     @elseif($interpretation->processing_status === 'pending')
@@ -209,7 +230,7 @@
                                                         <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">{{ $interpretation->processing_status ?? 'Неизвестно' }}</span>
                                                     @endif
                                                 </td>
-                                                <td class="px-6 py-4 text-sm text-gray-900">
+                                                <td class="px-6 py-4 text-sm text-gray-900"{!! $rowBgAttr !!}>
                                                     @php
                                                         $traditions = $interpretation->traditions ?? [];
                                                         $traditionsCount = count($traditions);
@@ -230,10 +251,17 @@
                                                         <span class="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded mr-1 mb-1">Комплексная</span>
                                                     @endif
                                                 </td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm"{!! $rowBgAttr !!}>
+                                                    @if($isForbiddenForPublic)
+                                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-200 text-gray-700" title="Не участвует в перелинковке">Запрещено</span>
+                                                    @else
+                                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800" title="Участвует в перелинковке">Разрешено</span>
+                                                    @endif
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600"{!! $rowBgAttr !!}>
                                                     {{ $interpretation->ip_address ?? '-' }}
                                                 </td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium"{!! $rowBgAttr !!}>
                                                     <div class="flex items-center gap-3">
                                                         @php
                                                             // Определяем правильную ссылку в зависимости от типа

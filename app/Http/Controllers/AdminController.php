@@ -494,8 +494,16 @@ class AdminController extends Controller
             }
 
             $dayInterpretations = $dayQuery
-                ->select('id', 'hash', 'created_at', 'processing_status', 'traditions', 'report_id', 'ip_address')
-                ->with('report:id')
+                ->select('id', 'hash', 'created_at', 'processing_status', 'traditions', 'report_id', 'ip_address', 'allow_public_linking')
+                ->with([
+                    // Для подсветки "запрещено публиковать" в админ таблице
+                    'report' => function ($q) {
+                        $q->select('id', 'status', 'access_level', 'user_id');
+                    },
+                    'report.user' => function ($q) {
+                        $q->select('id', 'diary_privacy');
+                    },
+                ])
                 ->orderBy('created_at', 'desc')
                 ->paginate(50)
                 ->withQueryString();

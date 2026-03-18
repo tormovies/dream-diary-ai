@@ -106,6 +106,7 @@ class DreamAnalyzerController extends Controller
                 },
             ],
             'force_series' => 'nullable|boolean', // Явно указать, что это серия снов
+            'allow_public_linking' => 'nullable|boolean',
         ]);
 
         // Санитизируем текст описания сна и контекста
@@ -161,6 +162,8 @@ class DreamAnalyzerController extends Controller
 
             // Старая система для серий (пока оставляем как есть)
             $hash = DreamInterpretation::generateHash();
+            // Чекбокс при снятии не отправляется в запросе — отсутствие ключа = «запрещено»
+            $allowLinking = $request->boolean('allow_public_linking', false);
             $interpretation = DreamInterpretation::create([
                 'hash' => $hash,
                 'user_id' => auth()->id(),
@@ -170,6 +173,7 @@ class DreamAnalyzerController extends Controller
                 'context' => $context,
                 'traditions' => $traditionsForHash,
                 'analysis_type' => $analysisType,
+                'allow_public_linking' => $allowLinking,
             ]);
 
             $deepSeekService = new DeepSeekService();
@@ -230,6 +234,8 @@ class DreamAnalyzerController extends Controller
         // Генерируем уникальный хеш
         $hash = DreamInterpretation::generateHash();
 
+        // Чекбокс при снятии не отправляется в запросе — отсутствие ключа = «запрещено»
+        $allowLinking = $request->boolean('allow_public_linking', false);
         // Создаем запись со статусом pending (анализ запустится асинхронно на странице результата)
         $interpretation = DreamInterpretation::create([
             'hash' => $hash,
@@ -241,6 +247,7 @@ class DreamAnalyzerController extends Controller
             'traditions' => $traditions,
             'analysis_type' => $analysisMode,
             'processing_status' => 'pending',
+            'allow_public_linking' => $allowLinking,
         ]);
 
         // Сразу редиректим на страницу результата (анализ запустится там асинхронно)

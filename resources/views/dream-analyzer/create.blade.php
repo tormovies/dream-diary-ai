@@ -122,7 +122,18 @@
                                     <x-input-error :messages="$errors->get('analysis_type')" class="mt-2" />
                                 </div>
 
-                                <div class="flex items-center justify-center md:justify-end space-x-4">
+                                <div class="flex flex-wrap items-center justify-center md:justify-end gap-3">
+                                    <label class="flex items-start gap-2 cursor-pointer text-sm text-gray-700 dark:text-gray-300">
+                                        <input type="checkbox"
+                                               name="allow_public_linking"
+                                               value="1"
+                                               {{ old('allow_public_linking', true) ? 'checked' : '' }}
+                                               class="rounded border-gray-300 mt-0.5 text-purple-600 shadow-sm focus:ring-purple-500">
+                                        <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                                            <span>Разрешаю опубликовать сон анонимно</span>
+                                            <a href="/article/pravila-publikatsii-snov" target="_blank" rel="noopener" class="text-purple-600 dark:text-purple-400 hover:underline">что это значит?</a>
+                                        </div>
+                                    </label>
                                     <button type="submit" 
                                             id="submitBtn"
                                             class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
