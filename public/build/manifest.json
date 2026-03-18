@@ -32,7 +32,7 @@
     "src": "node_modules/@fortawesome/fontawesome-free/webfonts/fa-solid-900.woff2"
   },
   "resources/css/app.css": {
-    "file": "assets/app-BKbmKclD.css",
+    "file": "assets/app-mR-5t9_F.css",
     "src": "resources/css/app.css",
     "isEntry": true,
     "name": "app",
@@ -41,7 +41,7 @@
     ]
   },
   "resources/css/articles.css": {
-    "file": "assets/articles-QJrw4zta.css",
+    "file": "assets/articles-Cf7kJzdq.css",
     "src": "resources/css/articles.css",
     "isEntry": true,
     "name": "articles",
