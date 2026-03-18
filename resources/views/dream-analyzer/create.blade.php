@@ -131,7 +131,7 @@
                                                class="rounded border-gray-300 mt-0.5 text-purple-600 shadow-sm focus:ring-purple-500">
                                         <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
                                             <span>Разрешаю опубликовать сон анонимно</span>
-                                            <a href="/article/pravila-publikatsii-snov" target="_blank" rel="noopener" class="text-purple-600 dark:text-purple-400 hover:underline">что это значит?</a>
+                                            <a href="/articles/pravila-publikatsii-snov" target="_blank" rel="noopener" class="text-purple-600 dark:text-purple-400 hover:underline">что это значит?</a>
                                         </div>
                                     </label>
                                     <button type="submit" 
