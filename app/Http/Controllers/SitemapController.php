@@ -98,6 +98,18 @@ class SitemapController extends Controller
                 ->whereNull('api_error')
                 ->whereHas('result')
                 ->where('created_at', '>=', $minDate)
+                ->where(function ($q) {
+                    // Только разрешённые к публикации: с формы — allow_public_linking, по отчёту — отчёт открыт
+                    $q->whereNull('report_id')
+                        ->where(function ($q2) {
+                            $q2->where('allow_public_linking', true)->orWhereNull('allow_public_linking');
+                        })
+                        ->orWhereHas('report', function ($r) {
+                            $r->where('status', 'published')
+                                ->where('access_level', 'all')
+                                ->whereHas('user', fn ($u) => $u->where('diary_privacy', 'public'));
+                        });
+                })
                 ->count();
             
             // Всегда добавляем в index, даже если контента нет
@@ -108,15 +120,11 @@ class SitemapController extends Controller
             }
         }
         
-        // Публичные отчеты (включаем в index, даже если контента нет)
+        // Публичные отчеты (включаем в index, даже если контента нет). Только отчёты с открытым дневником.
         if (\App\Models\Setting::getValue('sitemap.reports.enabled', true)) {
             $publicReportsCount = Report::where('status', 'published')
                 ->where('access_level', 'all')
-                ->with('user')
-                ->get()
-                ->filter(function($r) {
-                    return $r->user && $r->user->diary_privacy === 'public';
-                })
+                ->whereHas('user', fn ($u) => $u->where('diary_privacy', 'public'))
                 ->count();
             
             // Всегда добавляем в index, даже если контента нет
@@ -127,16 +135,14 @@ class SitemapController extends Controller
             }
         }
         
-        // Анализы отчетов (включаем в index, даже если контента нет)
+        // Анализы отчетов (включаем в index, даже если контента нет). Только отчёты с открытым дневником.
         if (\App\Models\Setting::getValue('sitemap.report_analyses.enabled', true)) {
             $reportsWithAnalysis = Report::where('status', 'published')
                 ->where('access_level', 'all')
                 ->whereNotNull('analysis_id')
-                ->with('user')
+                ->whereHas('user', fn ($u) => $u->where('diary_privacy', 'public'))
                 ->get()
-                ->filter(function($r) {
-                    return $r->user && $r->user->diary_privacy === 'public' && $r->hasAnalysis();
-                })
+                ->filter(fn ($r) => $r->hasAnalysis())
                 ->count();
             
             // Всегда добавляем в index, даже если контента нет
@@ -335,10 +341,22 @@ class SitemapController extends Controller
             $offset = ($page - 1) * $limit;
             
             // Только лёгкие поля + result для проверки title (без dream_description, analysis_data, raw_api_*)
+            // В sitemap только толкования, разрешённые к публикации: с формы — allow_public_linking, по отчёту — отчёт открыт
             $interpretations = DreamInterpretation::where('processing_status', 'completed')
                 ->whereNull('api_error')
                 ->whereHas('result')
                 ->where('created_at', '>=', $minDate)
+                ->where(function ($q) {
+                    $q->whereNull('report_id')
+                        ->where(function ($q2) {
+                            $q2->where('allow_public_linking', true)->orWhereNull('allow_public_linking');
+                        })
+                        ->orWhereHas('report', function ($r) {
+                            $r->where('status', 'published')
+                                ->where('access_level', 'all')
+                                ->whereHas('user', fn ($u) => $u->where('diary_privacy', 'public'));
+                        });
+                })
                 ->select('id', 'hash', 'updated_at', 'created_at')
                 ->with('result.seriesDreams')
                 ->orderBy('created_at', 'desc')
@@ -403,8 +421,10 @@ class SitemapController extends Controller
             $limit = $this->getPaginationLimit();
             $offset = ($page - 1) * $limit;
             
+            // Только отчёты с открытым дневником (diary_privacy = public)
             $publicReports = Report::where('status', 'published')
                 ->where('access_level', 'all')
+                ->whereHas('user', fn ($u) => $u->where('diary_privacy', 'public'))
                 ->with('user')
                 ->orderBy('created_at', 'desc')
                 ->offset($offset)
@@ -412,14 +432,12 @@ class SitemapController extends Controller
                 ->get();
             
             foreach ($publicReports as $report) {
-                if ($report->user && $report->user->diary_privacy === 'public') {
-                    $xml .= $this->url(
-                        route('reports.show', ['report' => $report->id]),
-                        $report->updated_at ?? $report->created_at,
-                        'weekly',
-                        0.5
-                    );
-                }
+                $xml .= $this->url(
+                    route('reports.show', ['report' => $report->id]),
+                    $report->updated_at ?? $report->created_at,
+                    'weekly',
+                    0.5
+                );
             }
             
             $xml .= '</urlset>';
@@ -452,9 +470,11 @@ class SitemapController extends Controller
             $limit = $this->getPaginationLimit();
             $offset = ($page - 1) * $limit;
             
+            // Только отчёты с открытым дневником (diary_privacy = public)
             $publicReports = Report::where('status', 'published')
                 ->where('access_level', 'all')
                 ->whereNotNull('analysis_id')
+                ->whereHas('user', fn ($u) => $u->where('diary_privacy', 'public'))
                 ->with(['user', 'analysis'])
                 ->orderBy('created_at', 'desc')
                 ->offset($offset)
@@ -462,7 +482,7 @@ class SitemapController extends Controller
                 ->get();
             
             foreach ($publicReports as $report) {
-                if ($report->user && $report->user->diary_privacy === 'public' && $report->hasAnalysis() && $report->analysis) {
+                if ($report->hasAnalysis() && $report->analysis) {
                     try {
                         $analysisSeo = SeoHelper::forReportAnalysis($report, $report->analysis);
                         
