@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Str;
 
 class Report extends Model
 {
@@ -95,5 +96,46 @@ class Report extends Model
             \Log::warning('hasAnalysis() error - possibly missing migration', ['error' => $e->getMessage()]);
             return false;
         }
+    }
+
+    /**
+     * Краткая строка для админки: заголовки снов (через « · »), иначе первые строки текста отчёта.
+     */
+    public function adminDashboardPreview(int $limit = 220): string
+    {
+        $dreams = $this->relationLoaded('dreams')
+            ? $this->dreams->sortBy('order')->values()
+            : $this->dreams()->orderBy('order')->get();
+
+        $titles = $dreams->map(fn (Dream $d) => trim((string) $d->title))->filter()->values();
+        if ($titles->isNotEmpty()) {
+            return Str::limit($titles->implode(' · '), $limit);
+        }
+
+        foreach ($dreams as $dream) {
+            $line = $this->plainFirstLine((string) ($dream->description ?? ''));
+            if ($line !== '') {
+                return Str::limit($line, $limit);
+            }
+        }
+
+        foreach ([$this->user_context ?? '', $this->current_context ?? ''] as $text) {
+            $line = $this->plainFirstLine((string) $text);
+            if ($line !== '') {
+                return Str::limit($line, $limit);
+            }
+        }
+
+        return '—';
+    }
+
+    private function plainFirstLine(string $htmlOrText): string
+    {
+        $text = trim(preg_replace('/\s+/u', ' ', strip_tags($htmlOrText)));
+        if ($text === '') {
+            return '';
+        }
+
+        return $text;
     }
 }

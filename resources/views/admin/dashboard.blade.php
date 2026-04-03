@@ -75,16 +75,27 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
                 <div class="p-6">
                     <h3 class="text-lg font-semibold mb-4">Последние отчеты</h3>
-                    <div class="space-y-2">
+                    <div>
                         @foreach($recentReports as $report)
-                            <div class="flex justify-between items-center p-2 hover:bg-gray-50 rounded">
-                                <div>
-                                    <a href="{{ route('reports.show', $report) }}" class="text-blue-600 hover:text-blue-800">
-                                        {{ $report->report_date->format('d.m.Y') }} - {{ $report->user->nickname }}
-                                    </a>
-                                    <span class="text-sm text-gray-500 ml-2">Снов: {{ $report->dreams->count() }}</span>
-                                </div>
-                                <span class="text-xs text-gray-400">{{ $report->created_at->diffForHumans() }}</span>
+                            @php($preview = $report->adminDashboardPreview())
+                            <div class="flex items-center gap-2 sm:gap-3 w-full min-h-[2.25rem] px-2 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded border-b border-gray-100 dark:border-gray-700 last:border-b-0">
+                                <a href="{{ route('reports.show', $report) }}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 shrink-0 whitespace-nowrap text-sm font-medium tabular-nums">
+                                    {{ $report->report_date->format('d.m.Y') }}
+                                </a>
+                                <span class="text-gray-300 dark:text-gray-600 shrink-0" aria-hidden="true">|</span>
+                                <span class="text-gray-800 dark:text-gray-200 shrink-0 max-w-[10rem] sm:max-w-xs truncate text-sm" title="{{ $report->user->nickname }}">
+                                    {{ $report->user->nickname }}
+                                </span>
+                                <span class="text-gray-500 dark:text-gray-400 shrink-0 text-sm whitespace-nowrap tabular-nums">Снов: {{ $report->dreams->count() }}</span>
+                                @if($preview !== '—')
+                                    <span class="text-gray-400 dark:text-gray-500 shrink-0" aria-hidden="true">·</span>
+                                    <span class="min-w-0 flex-1 text-sm text-gray-600 dark:text-gray-300 truncate" title="{{ $preview }}">{{ $preview }}</span>
+                                @else
+                                    <span class="min-w-0 flex-1"></span>
+                                @endif
+                                <time class="text-xs text-gray-400 dark:text-gray-500 shrink-0 whitespace-nowrap text-right" datetime="{{ $report->created_at->toIso8601String() }}">
+                                    {{ $report->created_at->diffForHumans() }}
+                                </time>
                             </div>
                         @endforeach
                     </div>
@@ -95,16 +106,18 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6">
                     <h3 class="text-lg font-semibold mb-4">Последние пользователи</h3>
-                    <div class="space-y-2">
+                    <div>
                         @foreach($recentUsers as $user)
-                            <div class="flex justify-between items-center p-2 hover:bg-gray-50 rounded">
-                                <div>
-                                    <a href="{{ route('admin.users.edit', $user) }}" class="text-blue-600 hover:text-blue-800">
-                                        {{ $user->nickname }} ({{ $user->name }})
-                                    </a>
-                                    <span class="text-sm text-gray-500 ml-2">{{ $user->email }}</span>
-                                </div>
-                                <span class="text-xs text-gray-400">{{ $user->created_at->diffForHumans() }}</span>
+                            <div class="flex items-center gap-2 sm:gap-3 w-full min-h-[2.25rem] px-2 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded border-b border-gray-100 dark:border-gray-700 last:border-b-0">
+                                <a href="{{ route('admin.users.edit', $user) }}" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 shrink-0 text-sm font-medium max-w-[12rem] sm:max-w-[16rem] truncate" title="{{ $user->nickname }}">
+                                    {{ $user->nickname }}
+                                </a>
+                                <span class="text-gray-300 dark:text-gray-600 shrink-0" aria-hidden="true">|</span>
+                                <span class="text-gray-600 dark:text-gray-300 shrink-0 text-sm max-w-[10rem] truncate hidden sm:inline" title="{{ $user->name }}">{{ $user->name }}</span>
+                                <span class="min-w-0 flex-1 text-sm text-gray-500 dark:text-gray-400 truncate" title="{{ $user->email }}">{{ $user->email }}</span>
+                                <time class="text-xs text-gray-400 dark:text-gray-500 shrink-0 whitespace-nowrap" datetime="{{ $user->created_at->toIso8601String() }}">
+                                    {{ $user->created_at->diffForHumans() }}
+                                </time>
                             </div>
                         @endforeach
                     </div>
