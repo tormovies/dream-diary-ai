@@ -24,6 +24,15 @@
             @if(session('warning'))
                 <div class="mb-4 p-4 rounded bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-200">{{ session('warning') }}</div>
             @endif
+            @if ($errors->any())
+                <div class="mb-4 p-4 rounded bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200">
+                    <ul class="list-disc list-inside text-sm">
+                        @foreach ($errors->all() as $err)
+                            <li>{{ $err }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
             <!-- Поиск -->
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
                 <div class="p-6">
@@ -115,13 +124,15 @@
                                                     </button>
                                                 @endif
                                                 
-                                                <form method="POST" action="{{ route('admin.users.delete', $user) }}" class="inline">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="text-red-600 hover:text-red-800 dark:text-red-400" onclick="return confirm('Удалить пользователя {{ $user->nickname }} и весь его контент? Это действие необратимо!')">
-                                                        Удалить
-                                                    </button>
-                                                </form>
+                                                <button
+                                                    type="button"
+                                                    class="text-red-600 hover:text-red-800 dark:text-red-400"
+                                                    data-action-url="{{ route('admin.users.purge', $user) }}"
+                                                    data-nickname="{{ $user->nickname }}"
+                                                    onclick="showPurgeModal(this)"
+                                                >
+                                                    Удалить…
+                                                </button>
                                             @endif
                                         </div>
                                     </td>
@@ -134,6 +145,51 @@
                         {{ $users->links() }}
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно: удаление контента и/или пользователя -->
+    <div id="purgeModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div class="relative top-12 mx-auto p-5 border w-full max-w-lg shadow-lg rounded-md bg-white dark:bg-gray-800">
+            <div class="mt-1">
+                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">Удаление: пользователь <span id="purgeModalNickname" class="font-semibold"></span></h3>
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    Выберите режим. Это действие нельзя отменить.
+                </p>
+                <form id="purgeForm" method="POST" action="">
+                    @csrf
+                    <div class="space-y-3 mb-4">
+                        <label class="flex items-start gap-3 cursor-pointer p-3 rounded border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                            <input type="radio" name="purge_mode" value="content_only" class="mt-1" required>
+                            <span>
+                                <span class="font-medium text-gray-900 dark:text-gray-100">Только материалы и активность</span>
+                                <span class="block text-sm text-gray-600 dark:text-gray-400 mt-1">Отчёты, сны, толкования, комментарии, друзья, уведомления. Аккаунт останется: email, ник, блокировка (если была).</span>
+                            </span>
+                        </label>
+                        <label class="flex items-start gap-3 cursor-pointer p-3 rounded border border-red-200 dark:border-red-900/50 hover:bg-red-50 dark:hover:bg-red-900/20">
+                            <input type="radio" name="purge_mode" value="full" class="mt-1">
+                            <span>
+                                <span class="font-medium text-red-800 dark:text-red-200">Пользователя и весь контент</span>
+                                <span class="block text-sm text-gray-600 dark:text-gray-400 mt-1">Полное удаление учётной записи из базы. Email сможет зарегистрироваться снова.</span>
+                            </span>
+                        </label>
+                    </div>
+                    <div class="mb-4">
+                        <label class="flex items-start gap-2 cursor-pointer text-sm">
+                            <input type="checkbox" name="purge_confirm" value="1" class="rounded border-gray-300 dark:border-gray-600" required>
+                            <span class="text-gray-700 dark:text-gray-300">Я понимаю, что это действие необратимо.</span>
+                        </label>
+                    </div>
+                    <div class="flex gap-3 justify-end flex-wrap">
+                        <button type="button" onclick="closePurgeModal()" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200 rounded hover:bg-gray-400 dark:hover:bg-gray-500">
+                            Отмена
+                        </button>
+                        <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
+                            Выполнить
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -178,6 +234,26 @@
     </div>
 
     <script>
+        function showPurgeModal(btn) {
+            const modal = document.getElementById('purgeModal');
+            const form = document.getElementById('purgeForm');
+            document.getElementById('purgeModalNickname').textContent = btn.getAttribute('data-nickname');
+            form.reset();
+            form.action = btn.getAttribute('data-action-url');
+            modal.classList.remove('hidden');
+        }
+
+        function closePurgeModal() {
+            document.getElementById('purgeModal').classList.add('hidden');
+            document.getElementById('purgeForm').reset();
+        }
+
+        document.getElementById('purgeModal').addEventListener('click', function (e) {
+            if (e.target === this) {
+                closePurgeModal();
+            }
+        });
+
         function showBanModal(userId, nickname) {
             const modal = document.getElementById('banModal');
             const form = document.getElementById('banForm');

@@ -96,6 +96,30 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Заблокировать пользователя (из админки).
+     */
+    public function ban(?string $reason = null): void
+    {
+        $this->forceFill([
+            'is_banned' => true,
+            'banned_at' => now(),
+            'ban_reason' => $reason,
+        ])->save();
+    }
+
+    /**
+     * Снять блокировку.
+     */
+    public function unban(): void
+    {
+        $this->forceFill([
+            'is_banned' => false,
+            'banned_at' => null,
+            'ban_reason' => null,
+        ])->save();
+    }
+
+    /**
      * Scope для получения незаблокированных пользователей
      */
     public function scopeNotBanned($query)

@@ -161,57 +161,67 @@ class AdminController extends Controller
     }
 
     /**
-     * Удаление пользователя со всем контентом
+     * Удаление контента пользователя и/или самого аккаунта (из админки).
+     *
+     * purge_mode: content_only — только материалы и активность, аккаунт (email, бан и т.д.) сохраняется;
+     *             full — контент + запись пользователя в БД.
      */
-    public function deleteUser(User $user): RedirectResponse
+    public function purgeUser(Request $request, User $user): RedirectResponse
     {
-        // Нельзя удалить самого себя
         if ($user->id === auth()->id()) {
-            return back()->with('error', 'Вы не можете удалить самого себя');
+            return back()->with('error', 'Вы не можете выполнить это действие для своей учётной записи');
         }
 
-        // Нельзя удалить другого администратора
         if ($user->isAdmin()) {
-            return back()->with('error', 'Нельзя удалить администратора');
+            return back()->with('error', 'Нельзя применить к администратору');
         }
+
+        $validated = $request->validate([
+            'purge_mode' => ['required', 'in:content_only,full'],
+            'purge_confirm' => ['required', 'accepted'],
+        ], [
+            'purge_confirm.accepted' => 'Нужно подтвердить, что вы понимаете необратимость действия.',
+        ]);
 
         $nickname = $user->nickname;
 
-        // Удаление всего контента пользователя вручную
-        // (на случай если каскадное удаление не настроено в миграциях)
-        
-        // 1. Удаляем анализы снов и связанные результаты
+        $this->purgeUserContent($user);
+
+        if ($validated['purge_mode'] === 'full') {
+            $user->delete();
+
+            return redirect()->route('admin.users')->with('success', "Пользователь {$nickname} и весь его контент удалены.");
+        }
+
+        return redirect()->route('admin.users')->with('success', "Материалы и активность пользователя {$nickname} удалены. Аккаунт сохранён (email, статус блокировки и т.д.).");
+    }
+
+    /**
+     * Удалить весь контент и связи пользователя (отчёты, толкования, комментарии, друзья, уведомления).
+     */
+    protected function purgeUserContent(User $user): void
+    {
         foreach ($user->dreamInterpretations()->get() as $interpretation) {
-            // Удаляем результат анализа и связанные сны серии
             if ($interpretation->result) {
                 $interpretation->result->seriesDreams()->delete();
                 $interpretation->result->delete();
             }
             $interpretation->delete();
         }
-        
-        // 2. Удаляем отчеты и связанные сны
+
         foreach ($user->reports as $report) {
-            $report->dreams()->delete(); // Сны в отчете
-            $report->tags()->detach(); // Связи с тегами
-            $report->comments()->delete(); // Комментарии к отчету
+            $report->dreams()->delete();
+            $report->tags()->detach();
+            $report->comments()->delete();
             $report->delete();
         }
-        
-        // 3. Удаляем комментарии пользователя
+
         $user->comments()->delete();
-        
-        // 4. Удаляем дружеские связи
+
         $user->friendships()->delete();
         \App\Models\Friendship::where('friend_id', $user->id)->delete();
-        
-        // 5. Удаляем уведомления
-        $user->notifications()->delete();
-        
-        // 6. Удаляем самого пользователя
-        $user->delete();
 
-        return redirect()->route('admin.users')->with('success', "Пользователь {$nickname} и весь его контент удалены");
+        $user->notifications()->delete();
     }
 
     /**
