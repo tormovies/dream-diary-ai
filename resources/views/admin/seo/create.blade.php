@@ -46,7 +46,7 @@
                                 <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Или введите ID вручную ниже</p>
                             </div>
                             
-                            <x-text-input id="page_id" name="page_id" type="number" class="mt-1 block w-full" :value="old('page_id')" />
+                            <x-text-input id="page_id" name="page_id" type="number" class="mt-1 block w-full" value="{{ old('page_id') }}" />
                             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Оставьте пустым для применения ко всем страницам этого типа</p>
                             <x-input-error class="mt-2" :messages="$errors->get('page_id')" />
                         </div>
@@ -80,7 +80,7 @@
 
                         <div class="mb-6">
                             <x-input-label for="title" :value="__('Title (шаблон)')" />
-                            <x-text-input id="title" name="title" type="text" class="mt-1 block w-full" :value="old('title')" placeholder="Например: {dream_title} — {date} | {site_name}" />
+                            <x-text-input id="title" name="title" type="text" class="mt-1 block w-full" value="{{ old('title') }}" placeholder="Например: {dream_title} — {date} | {site_name}" />
                             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Используйте плейсхолдеры: {dream_title}, {date}, {nickname}, {site_name}, etc.</p>
                             <x-input-error class="mt-2" :messages="$errors->get('title')" />
                         </div>
@@ -93,7 +93,7 @@
 
                         <div class="mb-6">
                             <x-input-label for="h1" :value="__('H1 (шаблон)')" />
-                            <x-text-input id="h1" name="h1" type="text" class="mt-1 block w-full" :value="old('h1')" />
+                            <x-text-input id="h1" name="h1" type="text" class="mt-1 block w-full" value="{{ old('h1') }}" />
                             <x-input-error class="mt-2" :messages="$errors->get('h1')" />
                         </div>
 
@@ -105,7 +105,7 @@
 
                         <div class="mb-6">
                             <x-input-label for="keywords" :value="__('Keywords (опционально)')" />
-                            <x-text-input id="keywords" name="keywords" type="text" class="mt-1 block w-full" :value="old('keywords')" placeholder="ключевое слово 1, ключевое слово 2" />
+                            <x-text-input id="keywords" name="keywords" type="text" class="mt-1 block w-full" value="{{ old('keywords') }}" placeholder="ключевое слово 1, ключевое слово 2" />
                             <x-input-error class="mt-2" :messages="$errors->get('keywords')" />
                         </div>
 
@@ -115,7 +115,7 @@
 
                         <div class="mb-6">
                             <x-input-label for="og_title" :value="__('OG Title (опционально)')" />
-                            <x-text-input id="og_title" name="og_title" type="text" class="mt-1 block w-full" :value="old('og_title')" />
+                            <x-text-input id="og_title" name="og_title" type="text" class="mt-1 block w-full" value="{{ old('og_title') }}" />
                             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Если пусто, будет использован обычный title</p>
                             <x-input-error class="mt-2" :messages="$errors->get('og_title')" />
                         </div>
@@ -129,7 +129,7 @@
 
                         <div class="mb-6">
                             <x-input-label for="og_image" :value="__('OG Image URL (опционально)')" />
-                            <x-text-input id="og_image" name="og_image" type="text" class="mt-1 block w-full" :value="old('og_image')" placeholder="https://example.com/image.jpg" />
+                            <x-text-input id="og_image" name="og_image" type="text" class="mt-1 block w-full" value="{{ old('og_image') }}" placeholder="https://example.com/image.jpg" />
                             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Или загрузите файл ниже</p>
                             <x-input-error class="mt-2" :messages="$errors->get('og_image')" />
                         </div>
@@ -145,7 +145,7 @@
 
                         <div class="mb-6">
                             <x-input-label for="priority" :value="__('Приоритет')" />
-                            <x-text-input id="priority" name="priority" type="number" min="0" max="100" value="0" class="mt-1 block w-full" :value="old('priority', 0)" />
+                            <x-text-input id="priority" name="priority" type="number" min="0" max="100" class="mt-1 block w-full" value="{{ old('priority', 0) }}" />
                             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Чем выше число, тем выше приоритет (0-100)</p>
                             <x-input-error class="mt-2" :messages="$errors->get('priority')" />
                         </div>

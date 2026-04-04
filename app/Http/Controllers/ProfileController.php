@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Models\BlockedEmail;
+use App\Services\SeoGoneRecorder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -124,9 +126,15 @@ class ProfileController extends Controller
 
         $user = $request->user();
 
+        SeoGoneRecorder::recordAllPublicContentForUser($user, SeoGoneRecorder::SOURCE_USER_DELETE);
+
+        $deletedEmail = $user->email;
+
         Auth::logout();
 
         $user->delete();
+
+        BlockedEmail::markPermanent($deletedEmail);
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();

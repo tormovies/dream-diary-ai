@@ -116,6 +116,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/users/{user}/unban', [\App\Http\Controllers\AdminController::class, 'unbanUser'])->name('users.unban');
         Route::post('/users/{user}/verify-email', [\App\Http\Controllers\AdminController::class, 'verifyUserEmail'])->name('users.verify-email');
         Route::post('/users/{user}/purge', [\App\Http\Controllers\AdminController::class, 'purgeUser'])->name('users.purge');
+        Route::get('/blocked-emails', [\App\Http\Controllers\Admin\BlockedEmailController::class, 'index'])->name('blocked-emails.index');
         Route::get('/reports', [\App\Http\Controllers\AdminController::class, 'reports'])->name('reports');
         Route::get('/comments', [\App\Http\Controllers\AdminController::class, 'comments'])->name('comments');
         Route::delete('/comments/{comment}', [\App\Http\Controllers\AdminController::class, 'deleteComment'])->name('comments.destroy');
@@ -156,6 +157,12 @@ Route::middleware('auth')->group(function () {
         Route::get('seo/redirects/{redirect}/edit', [\App\Http\Controllers\Admin\RedirectController::class, 'edit'])->name('seo.redirects.edit');
         Route::put('seo/redirects/{redirect}', [\App\Http\Controllers\Admin\RedirectController::class, 'update'])->name('seo.redirects.update');
         Route::delete('seo/redirects/{redirect}', [\App\Http\Controllers\Admin\RedirectController::class, 'destroy'])->name('seo.redirects.destroy');
+
+        // 410 Gone (удалённые публичные URL)
+        Route::get('seo/gone', [\App\Http\Controllers\Admin\SeoGoneUrlController::class, 'index'])->name('seo.gone.index');
+        Route::get('seo/gone/create', [\App\Http\Controllers\Admin\SeoGoneUrlController::class, 'create'])->name('seo.gone.create');
+        Route::post('seo/gone', [\App\Http\Controllers\Admin\SeoGoneUrlController::class, 'store'])->name('seo.gone.store');
+        Route::delete('seo/gone/{gone}', [\App\Http\Controllers\Admin\SeoGoneUrlController::class, 'destroy'])->name('seo.gone.destroy');
 
         // Управление статьями
         Route::resource('articles', \App\Http\Controllers\Admin\ArticleController::class);

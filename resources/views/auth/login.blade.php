@@ -32,7 +32,7 @@
                                    id="email" 
                                    name="email" 
                                    class="form-input" 
-                                   :value="old('email')" 
+                                   value="{{ old('email') }}" 
                                    required 
                                    autofocus 
                                    autocomplete="username" 

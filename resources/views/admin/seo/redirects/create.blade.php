@@ -19,14 +19,14 @@
 
                         <div class="mb-4">
                             <x-input-label for="from_path" :value="__('Откуда (путь)')" />
-                            <x-text-input id="from_path" name="from_path" type="text" class="mt-1 block w-full" :value="old('from_path')" placeholder="/старая-страница" required />
+                            <x-text-input id="from_path" name="from_path" type="text" class="mt-1 block w-full" value="{{ old('from_path') }}" placeholder="/старая-страница" required />
                             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Например: /diaries/night/123.html или /old-page</p>
                             <x-input-error class="mt-2" :messages="$errors->get('from_path')" />
                         </div>
 
                         <div class="mb-4">
                             <x-input-label for="to_url" :value="__('Куда (URL или путь)')" />
-                            <x-text-input id="to_url" name="to_url" type="text" class="mt-1 block w-full" :value="old('to_url')" placeholder="/новая-страница или https://..." required />
+                            <x-text-input id="to_url" name="to_url" type="text" class="mt-1 block w-full" value="{{ old('to_url') }}" placeholder="/новая-страница или https://..." required />
                             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Относительный путь (/reports/123) или полный URL</p>
                             <x-input-error class="mt-2" :messages="$errors->get('to_url')" />
                         </div>

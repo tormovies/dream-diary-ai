@@ -29,7 +29,7 @@
                                    id="name" 
                                    name="name" 
                                    class="form-input" 
-                                   :value="old('name')" 
+                                   value="{{ old('name') }}" 
                                    required 
                                    autofocus 
                                    autocomplete="name" 
@@ -46,7 +46,7 @@
                                    id="nickname" 
                                    name="nickname" 
                                    class="form-input" 
-                                   :value="old('nickname')" 
+                                   value="{{ old('nickname') }}" 
                                    required 
                                    autocomplete="nickname" 
                                    placeholder="Придумайте уникальный никнейм" />
@@ -62,7 +62,7 @@
                                    id="email" 
                                    name="email" 
                                    class="form-input" 
-                                   :value="old('email')" 
+                                   value="{{ old('email') }}" 
                                    required 
                                    autocomplete="username" 
                                    placeholder="example@mail.com" />

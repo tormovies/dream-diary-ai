@@ -101,6 +101,10 @@ class DiaryController extends Controller
      */
     private function canViewDiary($currentUser, $diaryOwner): bool
     {
+        if ($diaryOwner->isBanned()) {
+            return $currentUser && $currentUser->isAdmin();
+        }
+
         // Если не авторизован
         if (!$currentUser) {
             return $diaryOwner->diary_privacy === 'public';

@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Auth;
 
 use App\Helpers\SeoHelper;
 use App\Http\Controllers\Controller;
+use App\Models\SeoGoneUrl;
 use App\Models\User;
+use App\Rules\EmailNotBlocked;
 use App\Rules\NoSpam;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
@@ -93,7 +95,7 @@ class RegisteredUserController extends Controller
                 'unique:users,nickname',
                 new NoSpam()
             ],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class, new EmailNotBlocked],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
@@ -124,6 +126,11 @@ class RegisteredUserController extends Controller
             $existingUser = User::where('public_link', $normalized)->first();
             if ($existingUser) {
                 $validator->errors()->add('nickname', 'Этот никнейм уже занят (после нормализации совпадает с существующим).');
+            }
+
+            $diaryPath = SeoGoneUrl::normalizePath('diary/'.$normalized);
+            if (SeoGoneUrl::where('path', $diaryPath)->exists()) {
+                $validator->errors()->add('nickname', 'Этот адрес дневника ранее был удалён; выберите другой никнейм.');
             }
         });
 

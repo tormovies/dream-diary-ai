@@ -24,8 +24,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
         ]);
 
-        // 301 редиректы из БД — до маршрутизации
+        // 301 редиректы из БД — до маршрутизации (prepend идёт в начало стека)
         $middleware->prepend(\App\Http\Middleware\RedirectFromDatabase::class);
+        // 410 Gone — раньше редиректов: удалённые URL не должны уходить по 301
+        $middleware->prepend(\App\Http\Middleware\RespondGoneUrl::class);
 
         // Проверка бана для всех авторизованных пользователей
         $middleware->web(append: [

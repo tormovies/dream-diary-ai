@@ -96,6 +96,12 @@ class ActivityController extends Controller
                     }
                 }
             })
+            ->whereHas('user', function ($q) {
+                $q->notBanned();
+            })
+            ->whereHas('report.user', function ($q) {
+                $q->notBanned();
+            })
             ->orderBy('created_at', 'desc')
             ->limit(20);
 
@@ -105,7 +111,10 @@ class ActivityController extends Controller
         // Оптимизация: добавлен eager loading для comments
         // Учитываем иерархию: diary_privacy (главное) -> access_level
         $reportsQuery = Report::with(['user', 'dreams', 'tags', 'comments'])
-            ->where('status', 'published');
+            ->where('status', 'published')
+            ->whereHas('user', function ($q) {
+                $q->notBanned();
+            });
         
         // Применяем фильтры по доступу с учетом diary_privacy
         if ($user && $filter === 'friends') {

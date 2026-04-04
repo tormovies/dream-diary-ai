@@ -7,6 +7,7 @@ use App\Helpers\SymbolPageLinkHelper;
 use App\Helpers\TraditionHelper;
 use App\Http\Requests\StoreReportRequest;
 use App\Http\Requests\UpdateReportRequest;
+use App\Services\SeoGoneRecorder;
 use App\Services\TextSanitizer;
 use App\Models\Article;
 use App\Models\Report;
@@ -884,6 +885,8 @@ class ReportController extends Controller
     public function destroy(Report $report): RedirectResponse
     {
         $this->authorize('delete', $report);
+
+        SeoGoneRecorder::recordPublicReportIfNeeded($report, SeoGoneRecorder::SOURCE_USER_DELETE);
 
         $report->delete();
 

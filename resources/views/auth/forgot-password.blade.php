@@ -36,7 +36,7 @@
                                    id="email" 
                                    name="email" 
                                    class="form-input" 
-                                   :value="old('email')" 
+                                   value="{{ old('email') }}" 
                                    required 
                                    autofocus 
                                    placeholder="example@mail.com" />

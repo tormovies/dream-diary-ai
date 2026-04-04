@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Models\SeoGoneUrl;
 use App\Models\User;
+use App\Rules\EmailNotBlocked;
 use App\Rules\NoSpam;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -84,6 +86,7 @@ class ProfileUpdateRequest extends FormRequest
                 'email',
                 'max:255',
                 Rule::unique(User::class)->ignore($this->user()->id),
+                new EmailNotBlocked($this->user()),
             ],
             'bio' => ['nullable', 'string', 'max:1000', new NoSpam()],
             'avatar' => ['nullable', 'string', 'max:255'],
@@ -132,6 +135,11 @@ class ProfileUpdateRequest extends FormRequest
                     ->first();
                 if ($existingUser) {
                     $validator->errors()->add('nickname', 'Этот никнейм уже занят (после нормализации совпадает с существующим).');
+                }
+
+                $diaryPath = SeoGoneUrl::normalizePath('diary/'.$normalized);
+                if (SeoGoneUrl::where('path', $diaryPath)->exists()) {
+                    $validator->errors()->add('nickname', 'Этот адрес дневника ранее был удалён; выберите другой никнейм.');
                 }
             }
             

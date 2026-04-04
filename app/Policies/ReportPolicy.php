@@ -31,6 +31,11 @@ class ReportPolicy
     {
         // Загружаем владельца отчета
         $owner = $report->user;
+
+        // Заблокированный владелец: публично не показываем (админ — может)
+        if ($owner && $owner->isBanned() && (! $user || ! $user->isAdmin())) {
+            return false;
+        }
         
         // Админ может видеть все
         if ($user && $user->isAdmin()) {

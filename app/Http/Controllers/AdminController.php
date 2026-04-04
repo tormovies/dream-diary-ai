@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BlockedEmail;
 use App\Models\Comment;
 use App\Models\DreamInterpretation;
 use App\Models\DreamEntityDaily;
@@ -14,6 +15,7 @@ use App\Models\Report;
 use App\Models\SeoMeta;
 use App\Models\Setting;
 use App\Models\User;
+use App\Rules\EmailNotBlocked;
 use App\Rules\NoSpam;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -21,6 +23,7 @@ use Illuminate\Http\Response;
 use App\Helpers\MarkdownHelper;
 use App\Helpers\SymbolPageLinkHelper;
 use App\Services\DeepSeekService;
+use App\Services\SeoGoneRecorder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\View\View;
@@ -88,7 +91,7 @@ class AdminController extends Controller
         $request->validate([
             'name' => ['required', 'string', 'max:255', new NoSpam()],
             'nickname' => ['required', 'string', 'max:255', 'unique:users,nickname,' . $user->id, new NoSpam()],
-            'email' => ['required', 'email', 'unique:users,email,' . $user->id],
+            'email' => ['required', 'email', 'unique:users,email,' . $user->id, new EmailNotBlocked($user)],
             'role' => ['required', 'in:admin,user'],
             'diary_privacy' => ['required', 'in:public,private,friends'],
             'bio' => ['nullable', 'string', 'max:1000', new NoSpam()],
@@ -120,6 +123,8 @@ class AdminController extends Controller
 
         $user->ban($request->ban_reason);
 
+        BlockedEmail::addForBan($user->email);
+
         return back()->with('success', "Пользователь {$user->nickname} заблокирован");
     }
 
@@ -129,6 +134,8 @@ class AdminController extends Controller
     public function unbanUser(User $user): RedirectResponse
     {
         $user->unban();
+
+        BlockedEmail::removeIfTemporary($user->email);
 
         return back()->with('success', "Пользователь {$user->nickname} разблокирован");
     }
@@ -185,10 +192,23 @@ class AdminController extends Controller
 
         $nickname = $user->nickname;
 
+        if ($validated['purge_mode'] === 'full') {
+            SeoGoneRecorder::recordAllPublicContentForUser($user, SeoGoneRecorder::SOURCE_ADMIN_PURGE);
+        } else {
+            foreach ($user->dreamInterpretations()->get() as $interpretation) {
+                SeoGoneRecorder::recordInterpretationIfNeeded($interpretation, SeoGoneRecorder::SOURCE_ADMIN_PURGE);
+            }
+            foreach ($user->reports as $report) {
+                SeoGoneRecorder::recordPublicReportIfNeeded($report, SeoGoneRecorder::SOURCE_ADMIN_PURGE);
+            }
+        }
+
         $this->purgeUserContent($user);
 
         if ($validated['purge_mode'] === 'full') {
+            $deletedEmail = $user->email;
             $user->delete();
+            BlockedEmail::markPermanent($deletedEmail);
 
             return redirect()->route('admin.users')->with('success', "Пользователь {$nickname} и весь его контент удалены.");
         }
@@ -1160,6 +1180,8 @@ class AdminController extends Controller
      */
     public function deleteInterpretation(Request $request, DreamInterpretation $interpretation): RedirectResponse
     {
+        SeoGoneRecorder::recordInterpretationIfNeeded($interpretation, SeoGoneRecorder::SOURCE_ADMIN_DELETE);
+
         // Удаляем связанный результат (если есть) - каскадное удаление должно сработать автоматически,
         // но на всякий случай удаляем вручную для надежности
         if ($interpretation->result) {

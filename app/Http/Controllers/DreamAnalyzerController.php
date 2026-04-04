@@ -320,7 +320,8 @@ class DreamAnalyzerController extends Controller
         // Или если debug=1, загружаем все JSON поля
         if (!$needsJson) {
             $fields = [
-                'id', 
+                'id',
+                'user_id',
                 'hash', 
                 'dream_description', 
                 'context', 
@@ -351,6 +352,13 @@ class DreamAnalyzerController extends Controller
         // Это означает, что все поля будут загружены автоматически
         
         $interpretation = $query->firstOrFail();
+
+        if ($interpretation->user_id) {
+            $owner = \App\Models\User::find($interpretation->user_id);
+            if ($owner && $owner->isBanned() && (! auth()->check() || ! auth()->user()->isAdmin())) {
+                abort(404);
+            }
+        }
         
         // Загружаем результаты отдельно (если используем select(), связи могут не работать)
         if (method_exists($interpretation, 'results')) {

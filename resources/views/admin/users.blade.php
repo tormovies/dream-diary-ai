@@ -4,9 +4,18 @@
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
                 {{ __('Управление пользователями') }}
             </h2>
-            <a href="{{ route('admin.dashboard') }}" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
-                Назад
-            </a>
+            <div class="flex gap-2 flex-wrap">
+                <a href="{{ route('admin.blocked-emails.index') }}"
+                   class="inline-block font-bold py-2 px-4 rounded no-underline hover:opacity-90"
+                   style="background-color:#d97706;color:#fff;">
+                    Чёрный список email
+                </a>
+                <a href="{{ route('admin.dashboard') }}"
+                   class="inline-block font-bold py-2 px-4 rounded no-underline hover:opacity-90"
+                   style="background-color:#6b7280;color:#fff;">
+                    Назад
+                </a>
+            </div>
         </div>
     </x-slot>
 

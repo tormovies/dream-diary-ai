@@ -15,19 +15,19 @@
 
                         <div class="mb-4">
                             <x-input-label for="name" :value="__('Имя')" />
-                            <x-text-input id="name" name="name" type="text" class="mt-1 block w-full" :value="old('name', $user->name)" required />
+                            <x-text-input id="name" name="name" type="text" class="mt-1 block w-full" value="{{ old('name', $user->name) }}" required />
                             <x-input-error class="mt-2" :messages="$errors->get('name')" />
                         </div>
 
                         <div class="mb-4">
                             <x-input-label for="nickname" :value="__('Никнейм')" />
-                            <x-text-input id="nickname" name="nickname" type="text" class="mt-1 block w-full" :value="old('nickname', $user->nickname)" required />
+                            <x-text-input id="nickname" name="nickname" type="text" class="mt-1 block w-full" value="{{ old('nickname', $user->nickname) }}" required />
                             <x-input-error class="mt-2" :messages="$errors->get('nickname')" />
                         </div>
 
                         <div class="mb-4">
                             <x-input-label for="email" :value="__('Email')" />
-                            <x-text-input id="email" name="email" type="email" class="mt-1 block w-full" :value="old('email', $user->email)" required />
+                            <x-text-input id="email" name="email" type="email" class="mt-1 block w-full" value="{{ old('email', $user->email) }}" required />
                             <x-input-error class="mt-2" :messages="$errors->get('email')" />
                         </div>
 

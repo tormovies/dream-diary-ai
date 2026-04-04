@@ -379,6 +379,26 @@ class InterpretationLinkHelper
      * @param \App\Models\Report $report
      * @return bool
      */
+    /**
+     * Публичный отчёт для SEO/перелинковки (опубликован, access all, дневник public).
+     */
+    public static function isReportPubliclyListed(\App\Models\Report $report): bool
+    {
+        return self::isReportPubliclyAccessible($report);
+    }
+
+    /**
+     * Толкование в публичной выдаче (форма или открытый отчёт).
+     */
+    public static function isInterpretationPubliclyListed(DreamInterpretation $interpretation): bool
+    {
+        if ($interpretation->report_id && ! $interpretation->relationLoaded('report')) {
+            $interpretation->load('report.user');
+        }
+
+        return self::isInterpretationAllowedForLinking($interpretation);
+    }
+
     private static function isReportPubliclyAccessible(\App\Models\Report $report): bool
     {
         if ($report->status !== 'published' || $report->access_level !== 'all') {
