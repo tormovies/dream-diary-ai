@@ -46,18 +46,16 @@ class UpdateGuideArticlesFormat extends Command
 
     private function getCategoryContentBySlug(string $slug, CreateGuideArticles $createCommand): ?string
     {
-        $telegramLink = 'https://t.me/snovidec_ru';
-        
         $categoryMap = [
             'nachalo-raboty' => fn() => $createCommand->getCategory1Content(),
-            'tolkovanie-snov' => fn() => $createCommand->getCategory2Content($telegramLink),
+            'tolkovanie-snov' => fn() => $createCommand->getCategory2Content(),
             'otchety-i-sny' => fn() => $createCommand->getCategory3Content(),
             'analiz-otchetov' => fn() => $createCommand->getCategory4Content(),
             'dnevnik-i-profil' => fn() => $createCommand->getCategory5Content(),
             'druzya-i-soobshchestvo' => fn() => $createCommand->getCategory6Content(),
             'kommentarii-i-vzaimodeystvie' => fn() => $createCommand->getCategory7Content(),
             'poisk-i-navigatsiya' => fn() => $createCommand->getCategory8Content(),
-            'tehnicheskaya-podderzhka' => fn() => $createCommand->getCategory9Content($telegramLink),
+            'tehnicheskaya-podderzhka' => fn() => $createCommand->getCategory9Content(),
             'bezopasnost-i-privatnost' => fn() => $createCommand->getCategory10Content(),
         ];
 

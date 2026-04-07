@@ -71,6 +71,9 @@
                 <a href="{{ route('reports.search') }}" class="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors">
                     <i class="fas fa-search mr-2"></i>Поиск
                 </a>
+                <a href="{{ route('feedback.index') }}" class="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors {{ request()->routeIs('feedback.*') ? 'text-purple-600 dark:text-purple-400' : '' }}">
+                    <i class="fas fa-comment-dots mr-2"></i>Обратная связь
+                </a>
                 @auth
                     <a href="{{ route('statistics.index') }}" class="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors">
                         <i class="fas fa-chart-bar mr-2"></i>Статистика
@@ -120,6 +123,9 @@
                 </a>
                 <a href="{{ route('reports.search') }}" class="block px-3 py-2 text-base font-medium text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors">
                     <i class="fas fa-search mr-2"></i>Поиск
+                </a>
+                <a href="{{ route('feedback.index') }}" class="block px-3 py-2 text-base font-medium text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors">
+                    <i class="fas fa-comment-dots mr-2"></i>Обратная связь
                 </a>
                 @auth
                     <a href="{{ route('statistics.index') }}" class="block px-3 py-2 text-base font-medium text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors">

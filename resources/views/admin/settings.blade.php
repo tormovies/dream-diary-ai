@@ -165,6 +165,60 @@
                         </div>
                     </div>
 
+                    <div class="form-group border-t border-gray-200 dark:border-gray-700 pt-6 mt-6">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                            <i class="fas fa-envelope-open-text mr-2"></i>Страница «Обратная связь» (/obratnaya-svyaz)
+                        </h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                            SEO (title, description, h1) настраивается в разделе <a href="{{ route('admin.seo.index') }}" class="text-purple-600 dark:text-purple-400 hover:underline">Управление SEO</a> — тип страницы «Обратная связь».
+                        </p>
+
+                        <div class="form-group">
+                            <label for="feedback_mail_to" class="form-label">
+                                <i class="fas fa-at"></i> Email для писем с формы
+                            </label>
+                            <input type="email"
+                                   id="feedback_mail_to"
+                                   name="feedback_mail_to"
+                                   class="form-input"
+                                   value="{{ old('feedback_mail_to', $settings['feedback_mail_to'] ?? '') }}"
+                                   placeholder="оставьте пустым — будет mail.from.address из .env" />
+                            <div class="form-hint">Сюда приходят сообщения из формы. Если пусто, используется адрес из настроек почты приложения.</div>
+                            <x-input-error class="mt-2" :messages="$errors->get('feedback_mail_to')" />
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div class="form-group">
+                                <label for="feedback_contact_telegram" class="form-label">Telegram</label>
+                                <input type="text" id="feedback_contact_telegram" name="feedback_contact_telegram" class="form-input"
+                                       value="{{ old('feedback_contact_telegram', $settings['feedback_contact_telegram'] ?? '') }}"
+                                       placeholder="@username или https://t.me/..." />
+                            </div>
+                            <div class="form-group">
+                                <label for="feedback_contact_vk" class="form-label cursor-help" title="Числовой id — на сайте ссылка «написать» (vk.com/write…). Полный URL или ник (например durov) — обычная ссылка на ВК.">ВКонтакте</label>
+                                <input type="text" id="feedback_contact_vk" name="feedback_contact_vk" class="form-input cursor-help"
+                                       value="{{ old('feedback_contact_vk', $settings['feedback_contact_vk'] ?? '') }}"
+                                       placeholder="только ID, например 123456789"
+                                       title="Числовой id — на сайте ссылка «написать» (vk.com/write…). Полный URL или ник (например durov) — обычная ссылка на ВК." />
+                            </div>
+                            <div class="form-group">
+                                <label for="feedback_contact_email" class="form-label">Публичный email</label>
+                                <input type="text" id="feedback_contact_email" name="feedback_contact_email" class="form-input"
+                                       value="{{ old('feedback_contact_email', $settings['feedback_contact_email'] ?? '') }}"
+                                       placeholder="показать на странице" />
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="feedback_page_html" class="form-label">
+                                <i class="fas fa-code"></i> Дополнительный HTML-текст на странице
+                            </label>
+                            <textarea id="feedback_page_html" name="feedback_page_html" rows="8" class="form-input font-mono text-sm">{{ old('feedback_page_html', $settings['feedback_page_html'] ?? '') }}</textarea>
+                            <div class="form-hint">Простая разметка: ссылки, параграфы, &lt;strong&gt;. Редактируют только администраторы.</div>
+                            <x-input-error class="mt-2" :messages="$errors->get('feedback_page_html')" />
+                        </div>
+                    </div>
+
                     <div class="form-actions">
                         <a href="{{ route('admin.dashboard') }}" class="btn-form-secondary">
                             <i class="fas fa-arrow-left mr-2"></i>Отмена

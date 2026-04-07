@@ -22,7 +22,9 @@ class RestoreArticleStructure extends Command
         }
 
         $this->info("Восстановление статьи: {$article->title} (ID: {$article->id})");
-        
+
+        $feedbackUrl = e(rtrim((string) config('app.url'), '/') . '/obratnaya-svyaz');
+
         // Восстанавливаем структуру статьи с h2
         // Это примерная структура для статьи tolkovanie-snov
         $content = '<h2>Содержание</h2>
@@ -74,7 +76,7 @@ class RestoreArticleStructure extends Command
 <li><strong>Проверьте описание сна</strong> - убедитесь, что поле не пустое и содержит хотя бы несколько слов.</li>
 <li><strong>Попробуйте позже</strong> - возможно, временные проблемы с сервером.</li>
 </ol>
-<p>Если проблема сохраняется, обратитесь в <a href="https://t.me/snovidec_ru" rel="noopener noreferrer" target="_blank">поддержку</a>.</p>
+<p>Если проблема сохраняется, напишите через <a href="'.$feedbackUrl.'">обратную связь</a>.</p>
 <h2>Какие традиции анализа доступны?</h2>
 <p>На платформе доступны несколько традиций толкования снов:</p>
 <ul>
@@ -101,7 +103,7 @@ class RestoreArticleStructure extends Command
 <li>Нажмите кнопку "Толковать сон" снова.</li>
 </ol>
 <p>Все ваши данные сохраняются автоматически, поэтому вам не нужно вводить их заново.</p>
-<p>Если ошибка повторяется несколько раз, обратитесь в <a href="https://t.me/snovidec_ru" rel="noopener noreferrer" target="_blank">поддержку</a>.</p>';
+<p>Если ошибка повторяется несколько раз, напишите через <a href="'.$feedbackUrl.'">обратную связь</a>.</p>';
 
         // Обновляем статью
         DB::table('articles')

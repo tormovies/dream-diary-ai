@@ -128,7 +128,7 @@
                                     <ul class="text-sm list-disc list-inside space-y-1">
                                         <li>Попробуйте повторить анализ через несколько минут</li>
                                         <li>Используйте кнопку "Повторить анализ" ниже</li>
-                                        <li>Если проблема сохраняется, обратитесь в службу поддержки</li>
+                                        <li>Если проблема сохраняется, напишите через страницу <a href="{{ route('feedback.index') }}" class="underline font-medium">обратной связи</a></li>
                                     </ul>
                                 </div>
                                 <div class="flex flex-col sm:flex-row gap-3 mt-4">
@@ -138,8 +138,8 @@
                                             <i class="fas fa-redo mr-2"></i>Повторить анализ
                                         </button>
                                     </form>
-                                    <a href="https://t.me/snovidec_ru" target="_blank" rel="noopener noreferrer" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors inline-flex items-center justify-center">
-                                        <i class="fab fa-telegram mr-2"></i>Служба поддержки
+                                    <a href="{{ route('feedback.index') }}" class="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors inline-flex items-center justify-center">
+                                        <i class="fas fa-comment-dots mr-2"></i>Обратная связь
                                     </a>
                                 </div>
                             </div>
@@ -170,7 +170,7 @@
                                     Это может занять до 3 минут. Страница обновится автоматически.
                                 </p>
                                 <p class="text-blue-700 dark:text-blue-300 text-sm mt-2">
-                                    Если вам кажется что анализ затянулся, вы всегда можете вернуться на данную страницу, как только она будет обновлена - анализ будет продолжен, если видите ошибки - сообщите <a href="https://t.me/snovidec_ru" target="_blank" rel="noopener noreferrer" class="text-blue-900 dark:text-blue-100 underline font-semibold hover:text-blue-600 dark:hover:text-blue-300">Службе поддержки</a>.
+                                    Если вам кажется что анализ затянулся, вы всегда можете вернуться на данную страницу, как только она будет обновлена - анализ будет продолжен, если видите ошибки — напишите через <a href="{{ route('feedback.index') }}" class="text-blue-900 dark:text-blue-100 underline font-semibold hover:text-blue-600 dark:hover:text-blue-300">обратную связь</a>.
                                 </p>
                                 <div class="mt-3">
                                     <button onclick="copyAnalysisLink()" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-800 dark:hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors">

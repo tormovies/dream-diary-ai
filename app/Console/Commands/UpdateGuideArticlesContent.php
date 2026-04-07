@@ -35,12 +35,7 @@ class UpdateGuideArticlesContent extends Command
                     $method = $reflection->getMethod($methodName);
                     $method->setAccessible(true);
                     
-                    // Вызываем метод с правильными параметрами
-                    if ($methodName === 'getCategory2Content' || $methodName === 'getCategory9Content') {
-                        $content = $method->invoke($createCommand, 'https://t.me/snovidec_ru');
-                    } else {
-                        $content = $method->invoke($createCommand);
-                    }
+                    $content = $method->invoke($createCommand);
                     
                     $article->content = $content;
                     $article->save();

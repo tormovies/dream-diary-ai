@@ -121,7 +121,11 @@
                                         case 'activity':
                                             $pageLink = route('activity.index');
                                             break;
-                                            
+
+                                        case 'feedback':
+                                            $pageLink = route('feedback.index');
+                                            break;
+
                                         case 'users':
                                             $pageLink = route('users.search');
                                             break;

@@ -97,13 +97,16 @@ class CreateGuideArticles extends Command
         return 0;
     }
 
+    private function feedbackPageUrl(): string
+    {
+        return rtrim((string) config('app.url'), '/') . '/obratnaya-svyaz';
+    }
+
     /**
      * Получить данные для всех категорий
      */
     private function getCategoriesData(): array
     {
-        $telegramLink = 'https://t.me/snovidec_ru';
-
         return [
             // Категория 1: Начало работы
             [
@@ -128,7 +131,7 @@ class CreateGuideArticles extends Command
                 'slug' => 'tolkovanie-snov',
                 'order' => 20,
                 'questions_preview' => "Как работает толкование снов?\nМожно ли толковать без регистрации?\nСколько времени занимает анализ?\nЧто делать, если анализ не работает?\nКакие традиции анализа доступны?\nЧто такое контекст и зачем он нужен?\nКак повторить анализ, если произошла ошибка?",
-                'content' => $this->getCategory2Content($telegramLink),
+                'content' => $this->getCategory2Content(),
                 'seo' => [
                     'title' => 'Толкование снов — Сновидец.ру',
                     'description' => 'Как работает толкование снов на платформе. Доступные традиции анализа, контекст, решение проблем и повторный анализ.',
@@ -246,8 +249,8 @@ class CreateGuideArticles extends Command
                 'title' => 'Техническая поддержка',
                 'slug' => 'tehnicheskaya-podderzhka',
                 'order' => 90,
-                'questions_preview' => "Проблемы с загрузкой страницы\nАнализ не работает / ошибка\nНе приходит письмо подтверждения\nКак сменить тему (светлая/темная)?\nКак связаться с поддержкой?",
-                'content' => $this->getCategory9Content($telegramLink),
+                'questions_preview' => "Проблемы с загрузкой страницы\nАнализ не работает / ошибка\nНе приходит письмо подтверждения\nКак сменить тему (светлая/темная)?\nОбратная связь",
+                'content' => $this->getCategory9Content(),
                 'seo' => [
                     'title' => 'Техническая поддержка — Сновидец.ру',
                     'description' => 'Решение технических проблем на платформе. Ошибки анализа, проблемы с регистрацией, смена темы, контакты поддержки.',
@@ -406,7 +409,7 @@ class CreateGuideArticles extends Command
     /**
      * Категория 2: Толкование снов
      */
-    private function getCategory2Content(string $telegramLink): string
+    private function getCategory2Content(): string
     {
         $questions = [
             'Как работает толкование снов?',
@@ -467,7 +470,7 @@ class CreateGuideArticles extends Command
             <li><strong class="text-purple-600 dark:text-purple-300">Попробуйте обновить страницу</strong> — иногда помогает простая перезагрузка</li>
             <li><strong class="text-purple-600 dark:text-purple-300">Повторите анализ</strong> — нажмите кнопку "Повторить анализ" на странице с ошибкой</li>
             <li><strong class="text-purple-600 dark:text-purple-300">Проверьте длину текста</strong> — очень длинные описания могут вызывать проблемы</li>
-            <li><strong class="text-purple-600 dark:text-purple-300">Обратитесь в поддержку</strong> — если проблема повторяется, свяжитесь с нами через <a href="' . $telegramLink . '" target="_blank" class="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 font-medium underline">Telegram</a></li>
+            <li><strong class="text-purple-600 dark:text-purple-300">Напишите нам</strong> — если проблема повторяется, заполните <a href="' . $this->feedbackPageUrl() . '" class="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 font-medium underline">форму обратной связи</a> на сайте</li>
         </ol>
         <p class="text-gray-700 dark:text-gray-200 mt-4 leading-relaxed">Большинство ошибок носят временный характер и решаются повторным анализом.</p>
     </div>
@@ -509,7 +512,7 @@ class CreateGuideArticles extends Command
             <li>Дождитесь завершения анализа</li>
         </ol>
         <p class="text-gray-700 dark:text-gray-200 mt-4 leading-relaxed">Повторный анализ использует те же данные (описание сна, контекст, традицию), которые вы вводили ранее, поэтому вам не нужно вводить их заново.</p>
-        <p class="text-gray-700 dark:text-gray-200 mt-4 leading-relaxed">Если ошибка повторяется несколько раз, обратитесь в <a href="' . $telegramLink . '" target="_blank" class="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 font-medium underline">поддержку</a>.</p>
+        <p class="text-gray-700 dark:text-gray-200 mt-4 leading-relaxed">Если ошибка повторяется несколько раз, напишите через <a href="' . $this->feedbackPageUrl() . '" class="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 font-medium underline">обратную связь</a>.</p>
     </div>
 </div>';
 
@@ -1092,14 +1095,14 @@ class CreateGuideArticles extends Command
     /**
      * Категория 9: Техническая поддержка
      */
-    private function getCategory9Content(string $telegramLink): string
+    private function getCategory9Content(): string
     {
         $questions = [
             'Проблемы с загрузкой страницы',
             'Анализ не работает / ошибка',
             'Не приходит письмо подтверждения',
             'Как сменить тему (светлая/темная)?',
-            'Как связаться с поддержкой?'
+            'Обратная связь',
         ];
         
         return $this->formatQuestionsList($questions) . '
@@ -1115,7 +1118,7 @@ class CreateGuideArticles extends Command
             <li><strong class="text-purple-600 dark:text-purple-300">Отключите расширения браузера</strong> — некоторые расширения могут мешать загрузке</li>
             <li><strong class="text-purple-600 dark:text-purple-300">Проверьте, не блокирует ли антивирус</strong> — некоторые антивирусы блокируют сайты</li>
         </ol>
-        <p class="text-gray-700 dark:text-gray-200 mt-4 leading-relaxed">Если проблема повторяется, это может быть временная проблема на сервере. Попробуйте зайти позже или обратитесь в <a href="' . $telegramLink . '" target="_blank" class="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 font-medium underline">поддержку</a>.</p>
+        <p class="text-gray-700 dark:text-gray-200 mt-4 leading-relaxed">Если проблема повторяется, это может быть временная проблема на сервере. Попробуйте зайти позже или напишите через <a href="' . $this->feedbackPageUrl() . '" class="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 font-medium underline">обратную связь</a>.</p>
     </div>
 
 ' . $this->formatQuestionHeader('question-2', 'Анализ не работает / ошибка') . '
@@ -1132,7 +1135,7 @@ class CreateGuideArticles extends Command
         <ul class="list-disc list-inside space-y-2 text-gray-700 dark:text-gray-200 ml-4">
             <li>Сохраните текст ошибки (если он отображается)</li>
             <li>Запишите время, когда произошла ошибка</li>
-            <li>Обратитесь в <a href="' . $telegramLink . '" target="_blank" class="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 font-medium underline">поддержку</a> с этой информацией</li>
+            <li>Напишите через <a href="' . $this->feedbackPageUrl() . '" class="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 font-medium underline">обратную связь</a> с этой информацией</li>
         </ul>
     </div>
 
@@ -1150,7 +1153,7 @@ class CreateGuideArticles extends Command
         <ul class="list-disc list-inside space-y-2 text-gray-700 dark:text-gray-200 ml-4">
             <li>Проверьте, не заблокирован ли адрес отправителя</li>
             <li>Попробуйте использовать другой email адрес</li>
-            <li>Обратитесь в <a href="' . $telegramLink . '" target="_blank" class="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 font-medium underline">поддержку</a> — мы поможем подтвердить аккаунт вручную</li>
+            <li>Напишите через <a href="' . $this->feedbackPageUrl() . '" class="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 font-medium underline">обратную связь</a> — мы поможем подтвердить аккаунт вручную</li>
         </ul>
     </div>
 
@@ -1173,13 +1176,13 @@ class CreateGuideArticles extends Command
         </div>
     </div>
 
-' . $this->formatQuestionHeader('question-5', 'Как связаться с поддержкой?') . '
+' . $this->formatQuestionHeader('question-5', 'Обратная связь') . '
     <div class="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
-        <p class="text-gray-700 dark:text-gray-200 mb-4 leading-relaxed">Если у вас возникли проблемы или вопросы, вы можете связаться с поддержкой:</p>
+        <p class="text-gray-700 dark:text-gray-200 mb-4 leading-relaxed">Если у вас возникли проблемы, вопросы или предложения, заполните <a href="' . $this->feedbackPageUrl() . '" class="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 font-medium underline">форму обратной связи</a> на сайте.</p>
         <ul class="list-disc list-inside space-y-2 text-gray-700 dark:text-gray-200 ml-4">
-            <li><strong class="text-purple-600 dark:text-purple-300">Telegram:</strong> <a href="' . $telegramLink . '" target="_blank" class="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 font-medium underline">@snovidec_ru</a></li>
+            <li><strong class="text-purple-600 dark:text-purple-300">Telegram (по желанию):</strong> <a href="https://t.me/snovidec_ru" target="_blank" rel="noopener noreferrer" class="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 font-medium underline">@snovidec_ru</a></li>
         </ul>
-        <p class="text-gray-700 dark:text-gray-200 mt-4 leading-relaxed">При обращении в поддержку укажите:</p>
+        <p class="text-gray-700 dark:text-gray-200 mt-4 leading-relaxed">В сообщении укажите:</p>
         <ul class="list-disc list-inside space-y-2 text-gray-700 dark:text-gray-200 ml-4">
             <li>Ваш email или никнейм (если зарегистрированы)</li>
             <li>Описание проблемы</li>
@@ -1277,7 +1280,7 @@ class CreateGuideArticles extends Command
                 <li>Если email не подтвержден, восстановление пароля может быть недоступно</li>
             </ul>
         </div>
-        <p class="text-gray-700 dark:text-gray-200 mt-4 leading-relaxed">Если у вас проблемы с восстановлением пароля, обратитесь в <a href="https://t.me/snovidec_ru" target="_blank" class="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 font-medium underline">поддержку</a>.</p>
+        <p class="text-gray-700 dark:text-gray-200 mt-4 leading-relaxed">Если у вас проблемы с восстановлением пароля, напишите через <a href="' . $this->feedbackPageUrl() . '" class="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 font-medium underline">обратную связь</a>.</p>
     </div>
 
 ' . $this->formatQuestionHeader('question-4', 'Как удалить аккаунт?') . '
@@ -1300,7 +1303,7 @@ class CreateGuideArticles extends Command
             </ul>
         </div>
         <p class="text-gray-700 dark:text-gray-200 mt-4 leading-relaxed">Перед удалением аккаунта убедитесь, что вы действительно хотите это сделать. Если вы просто хотите скрыть свой дневник, лучше измените настройки приватности на "Приватный" вместо удаления аккаунта.</p>
-        <p class="text-gray-700 dark:text-gray-200 mt-4 leading-relaxed">Если у вас проблемы с удалением аккаунта или вы хотите восстановить удаленный аккаунт, обратитесь в <a href="https://t.me/snovidec_ru" target="_blank" class="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 font-medium underline">поддержку</a>.</p>
+        <p class="text-gray-700 dark:text-gray-200 mt-4 leading-relaxed">Если у вас проблемы с удалением аккаунта или вы хотите восстановить удаленный аккаунт, напишите через <a href="' . $this->feedbackPageUrl() . '" class="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 font-medium underline">обратную связь</a>.</p>
     </div>
 </div>';
 

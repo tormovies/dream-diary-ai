@@ -277,6 +277,8 @@ class SeoHelper
                 return $baseUrl . '/articles';
             case 'symbol-index':
                 return $baseUrl . '/symbol';
+            case 'feedback':
+                return $baseUrl . '/obratnaya-svyaz';
             default:
                 return $baseUrl;
         }
@@ -289,7 +291,12 @@ class SeoHelper
     {
         return self::get('dream-analyzer');
     }
-    
+
+    public static function forFeedback(): array
+    {
+        return self::get('feedback');
+    }
+
     /**
      * Получить SEO для анализа отчёта
      */

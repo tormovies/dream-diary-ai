@@ -310,6 +310,11 @@ class AdminController extends Controller
             'deepseek_php_execution_timeout' => Setting::getValue('deepseek_php_execution_timeout', 660),
             'timezone' => Setting::getValue('timezone', 'UTC'),
             'yandex_metrika_id' => Setting::getValue('yandex_metrika_id', '89409547'),
+            'feedback_mail_to' => Setting::getValue('feedback_mail_to', ''),
+            'feedback_contact_telegram' => Setting::getValue('feedback_contact_telegram', ''),
+            'feedback_contact_vk' => Setting::getValue('feedback_contact_vk', ''),
+            'feedback_contact_email' => Setting::getValue('feedback_contact_email', ''),
+            'feedback_page_html' => Setting::getValue('feedback_page_html', ''),
         ];
 
         return view('admin.settings', compact('settings'));
@@ -320,6 +325,10 @@ class AdminController extends Controller
      */
     public function updateSettings(Request $request): RedirectResponse
     {
+        $request->merge([
+            'feedback_mail_to' => trim((string) $request->input('feedback_mail_to', '')) ?: null,
+        ]);
+
         $request->validate([
             'allow_report_deletion' => ['nullable', 'boolean'],
             'edit_dreams_after_days' => ['nullable', 'integer', 'min:0'],
@@ -329,6 +338,11 @@ class AdminController extends Controller
             'deepseek_php_execution_timeout' => ['nullable', 'integer', 'min:60', 'max:1800'],
             'timezone' => ['nullable', 'string', 'timezone'],
             'yandex_metrika_id' => ['nullable', 'string', 'max:30', 'regex:/^\d*$/'],
+            'feedback_mail_to' => ['nullable', 'string', 'max:255', 'email'],
+            'feedback_contact_telegram' => ['nullable', 'string', 'max:255'],
+            'feedback_contact_vk' => ['nullable', 'string', 'max:500'],
+            'feedback_contact_email' => ['nullable', 'string', 'max:255'],
+            'feedback_page_html' => ['nullable', 'string', 'max:65000'],
         ]);
 
         Setting::setValue('allow_report_deletion', $request->boolean('allow_report_deletion', true));
@@ -376,6 +390,17 @@ class AdminController extends Controller
         } else {
             Setting::setValue('yandex_metrika_id', '89409547'); // значение по умолчанию
         }
+
+        if ($request->filled('feedback_mail_to')) {
+            Setting::setValue('feedback_mail_to', trim($request->feedback_mail_to));
+        } else {
+            Setting::where('key', 'feedback_mail_to')->delete();
+        }
+
+        Setting::setValue('feedback_contact_telegram', trim((string) $request->input('feedback_contact_telegram', '')));
+        Setting::setValue('feedback_contact_vk', trim((string) $request->input('feedback_contact_vk', '')));
+        Setting::setValue('feedback_contact_email', trim((string) $request->input('feedback_contact_email', '')));
+        Setting::setValue('feedback_page_html', (string) $request->input('feedback_page_html', ''));
 
         return back()->with('success', 'Настройки сохранены');
     }

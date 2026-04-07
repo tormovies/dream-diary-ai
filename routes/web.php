@@ -5,6 +5,11 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', [\App\Http\Controllers\HomeController::class, 'index'])->name('home');
 
+Route::get('/obratnaya-svyaz', [\App\Http\Controllers\FeedbackController::class, 'index'])->name('feedback.index');
+Route::post('/obratnaya-svyaz', [\App\Http\Controllers\FeedbackController::class, 'store'])
+    ->middleware('throttle:8,10')
+    ->name('feedback.store');
+
 // Публичные дневники (без авторизации)
 Route::get('/diary/{publicLink}', [\App\Http\Controllers\DiaryController::class, 'public'])->name('diary.public');
 
