@@ -72,8 +72,8 @@
                             Присоединяйтесь к сообществу людей, которые записывают и анализируют свои сновидения.
                         </p>
                         <div class="flex flex-nowrap gap-2">
-                            <a href="{{ route('register') }}" class="flex-1 min-w-0 inline-flex items-center justify-center bg-white text-purple-600 px-3 py-2 rounded-lg font-semibold hover:bg-purple-50 transition-colors text-sm">
-                                <i class="fas fa-user-plus mr-2 flex-shrink-0"></i><span class="truncate">Регистрация</span>
+                            <a href="{{ route('login') }}" class="flex-1 min-w-0 inline-flex items-center justify-center bg-white text-purple-600 px-3 py-2 rounded-lg font-semibold hover:bg-purple-50 transition-colors text-sm">
+                                <i class="fas fa-sign-in-alt mr-2 flex-shrink-0"></i><span class="truncate">Войти</span>
                             </a>
                             <a href="https://www.snovidec.ru/tolkovanie-snov" class="flex-1 min-w-0 inline-flex items-center justify-center bg-white/90 text-purple-600 px-3 py-2 rounded-lg font-semibold hover:bg-white transition-colors text-sm">
                                 <i class="fas fa-magic mr-2 flex-shrink-0"></i><span class="truncate">Толкование</span>

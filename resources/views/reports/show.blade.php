@@ -1,4 +1,4 @@
-@extends('layouts.base')
+﻿@extends('layouts.base')
 
 @section('content')
     <!-- Основной контент -->
@@ -66,13 +66,15 @@
                         <p class="text-purple-100 mb-4 text-sm">
                             Присоединяйтесь к сообществу людей, которые записывают и анализируют свои сновидения.
                         </p>
-                        <a href="{{ route('register') }}" class="inline-block bg-white text-purple-600 px-4 py-2 rounded-lg font-semibold hover:bg-purple-50 transition-colors text-sm">
-                            <i class="fas fa-user-plus mr-2"></i>Регистрация
+                        <a href="{{ route('login') }}" class="inline-block bg-white text-purple-600 px-4 py-2 rounded-lg font-semibold hover:bg-purple-50 transition-colors text-sm">
+                            <i class="fas fa-sign-in-alt mr-2"></i>Войти
                         </a>
                     </div>
                     
                     <!-- Статистика проекта -->
-                    <x-project-statistics :stats="$globalStats" />
+                    <div class="hidden lg:block">
+                        <x-project-statistics :stats="$globalStats" />
+                    </div>
                     
                     <!-- Быстрые действия -->
                     <x-guest-quick-actions />
@@ -343,6 +345,13 @@
                         </div>
                     </div>
                 </main>
+
+                @guest
+                    <!-- Статистика проекта (для мобильной версии после отчёта) -->
+                    <div class="lg:hidden mt-6">
+                        <x-project-statistics :stats="$globalStats" />
+                    </div>
+                @endguest
             </div>
         </div>
 
