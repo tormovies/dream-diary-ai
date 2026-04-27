@@ -8,7 +8,7 @@
                 @auth
                 <aside class="space-y-6">
                     <!-- Приветственная карточка -->
-                    <div class="gradient-primary rounded-2xl p-6 text-white card-shadow">
+                    <div class="hidden lg:block gradient-primary rounded-2xl p-6 text-white card-shadow">
                         <h3 class="text-xl font-bold mb-2">Добро пожаловать, {{ auth()->user()->nickname }}!</h3>
                         <p class="text-purple-100 mb-4 text-sm">
                             Просмотр отчета
@@ -19,7 +19,7 @@
                     </div>
                     
                     <!-- Карточка пользователя -->
-                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
+                    <div class="hidden lg:block bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
                         <div class="text-center">
                             <div class="flex justify-center">
                                 <x-avatar :user="auth()->user()" size="lg" />

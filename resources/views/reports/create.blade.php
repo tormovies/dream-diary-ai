@@ -5,9 +5,9 @@
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <main class="space-y-6">
                 <!-- Заголовок -->
-                <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700 flex justify-between items-center">
-                    <h2 class="text-2xl font-bold text-purple-600 dark:text-purple-400">Создать отчет</h2>
-                    <a href="{{ route('dashboard') }}" class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
+                <div class="report-create-header bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                    <h2 class="report-create-title text-2xl font-bold text-purple-600 dark:text-purple-400">Создать отчет</h2>
+                    <a href="{{ route('dashboard') }}" class="report-create-back-link text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
                         <i class="fas fa-arrow-left mr-2"></i>Назад к списку
                     </a>
                 </div>
@@ -101,11 +101,11 @@
                             <div class="form-hint">Введите тег и нажмите Enter или выберите из предложенных</div>
                         </div>
 
-                        <div class="form-actions">
-                            <a href="{{ route('dashboard') }}" class="btn-form-secondary">
+                        <div class="form-actions report-create-actions">
+                            <a href="{{ route('dashboard') }}" class="btn-form-secondary report-create-action-btn">
                                 Отмена
                             </a>
-                            <button type="submit" class="btn-form-primary">
+                            <button type="submit" class="btn-form-primary report-create-action-btn">
                                 <i class="fas fa-save mr-2"></i>Создать отчет
                             </button>
                         </div>

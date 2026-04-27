@@ -583,7 +583,7 @@ class ReportController extends Controller
             });
 
             return redirect()->route('dashboard')
-                ->with('success', 'Отчет успешно создан');
+                ->with('success', 'Отчёт успешно создан. Опубликуйте свой отчёт/сон для того чтобы его проанализировать. Доступен он будет только тем кто указан в настройках отчёта.');
         } catch (\Exception $e) {
             \Log::error('Ошибка при создании отчета: ' . $e->getMessage());
             return redirect()->back()

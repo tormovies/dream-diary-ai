@@ -841,6 +841,44 @@
     background-color: #2d2d44;
 }
 
+/* Report create page: keep header controls and action buttons aligned on mobile */
+.report-create-header {
+    gap: 12px;
+    flex-wrap: nowrap;
+}
+
+.report-create-title,
+.report-create-back-link,
+.report-create-action-btn {
+    white-space: nowrap;
+}
+
+.report-create-action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1.2;
+}
+
+@media (max-width: 640px) {
+    .report-create-title {
+        font-size: 1.125rem;
+    }
+
+    .report-create-back-link {
+        font-size: 0.875rem;
+    }
+
+    .report-create-actions {
+        gap: 12px;
+        flex-wrap: nowrap;
+    }
+
+    .report-create-actions .report-create-action-btn {
+        flex: 1 1 0;
+    }
+}
+
 /* Auth / регистрация (login, register, forgot-password и т.д.) */
 .registration-card {
     background-color: white;
