@@ -22,7 +22,7 @@ class RespondGoneUrl
 
         $path = Redirect::normalizePath($request->path() ?: '/');
 
-        if ($path !== '/' && SeoGoneUrl::query()->where('path', $path)->exists()) {
+        if ($path !== '/' && SeoGoneUrl::pathExistsCached($path)) {
             return response()->view('errors.410', [], 410);
         }
 

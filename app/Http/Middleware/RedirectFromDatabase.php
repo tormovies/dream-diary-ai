@@ -13,17 +13,14 @@ class RedirectFromDatabase
     {
         $path = Redirect::normalizePath($request->path() ?: '/');
 
-        $redirect = Redirect::query()
-            ->where('is_active', true)
-            ->where('from_path', $path)
-            ->first();
+        $redirect = Redirect::findActiveCached($path);
 
         if ($redirect) {
-            $to = $redirect->to_url;
+            $to = $redirect['to_url'];
             if (!str_starts_with($to, 'http://') && !str_starts_with($to, 'https://')) {
                 $to = '/' . ltrim($to, '/');
             }
-            return redirect()->to($to, $redirect->status_code);
+            return redirect()->to($to, $redirect['status_code']);
         }
 
         return $next($request);

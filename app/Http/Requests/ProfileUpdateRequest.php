@@ -138,7 +138,7 @@ class ProfileUpdateRequest extends FormRequest
                 }
 
                 $diaryPath = SeoGoneUrl::normalizePath('diary/'.$normalized);
-                if (SeoGoneUrl::where('path', $diaryPath)->exists()) {
+                if (SeoGoneUrl::pathExistsCached($diaryPath)) {
                     $validator->errors()->add('nickname', 'Этот адрес дневника ранее был удалён; выберите другой никнейм.');
                 }
             }
