@@ -10,6 +10,15 @@ Route::post('/obratnaya-svyaz', [\App\Http\Controllers\FeedbackController::class
     ->middleware('throttle:8,10')
     ->name('feedback.store');
 
+Route::get('/politika-personalnyh-dannyh', [\App\Http\Controllers\LegalController::class, 'personalData'])
+    ->name('legal.personal-data');
+Route::get('/politika-cookie', [\App\Http\Controllers\LegalController::class, 'cookies'])
+    ->name('legal.cookies');
+
+Route::post('/consent', [\App\Http\Controllers\CookieConsentController::class, 'store'])
+    ->middleware('throttle:60,1')
+    ->name('consent.store');
+
 // Публичные дневники (без авторизации)
 Route::get('/diary/{publicLink}', [\App\Http\Controllers\DiaryController::class, 'public'])->name('diary.public');
 

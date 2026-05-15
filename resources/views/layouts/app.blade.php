@@ -34,7 +34,7 @@
         
         @stack('styles')
 
-        <x-yandex-metrika :exclude-admin="true" />
+        <x-analytics-consent-bootstrap :exclude-admin="true" />
     </head>
     <body class="font-sans antialiased bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
         <div class="min-h-screen bg-gray-100 dark:bg-gray-900">
@@ -54,7 +54,9 @@
                 {{ $slot }}
             </main>
         </div>
-        
+
+        <x-cookie-consent />
+
         @stack('scripts')
     </body>
 </html>

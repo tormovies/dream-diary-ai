@@ -186,7 +186,9 @@ class SitemapController extends Controller
             $xml .= $this->url($baseUrl . '/articles', now(), 'weekly', 0.8);
             $xml .= $this->url($baseUrl . '/activity', now(), 'daily', 0.7);
             $xml .= $this->url($baseUrl . '/obratnaya-svyaz', now(), 'monthly', 0.5);
-            
+            $xml .= $this->url($baseUrl . route('legal.personal-data', [], false), now(), 'monthly', 0.3);
+            $xml .= $this->url($baseUrl . route('legal.cookies', [], false), now(), 'monthly', 0.3);
+
             $xml .= '</urlset>';
             
             return $xml;

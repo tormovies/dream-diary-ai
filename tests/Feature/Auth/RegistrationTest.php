@@ -19,13 +19,30 @@ class RegistrationTest extends TestCase
     public function test_new_users_can_register(): void
     {
         $response = $this->post('/register', [
-            'name' => 'Test User',
+            'name' => 'Alex Smith',
+            'nickname' => 'dreamer42',
             'email' => 'test@example.com',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
+            'personal_data_consent' => '1',
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $this->assertAuthenticated();
+        $response->assertRedirect(route('notifications.index', absolute: false));
+    }
+
+    public function test_registration_requires_personal_data_consent(): void
+    {
+        $response = $this->post('/register', [
+            'name' => 'Alex Smith',
+            'nickname' => 'dreamer99',
+            'email' => 'test2@example.com',
             'password' => 'password',
             'password_confirmation' => 'password',
         ]);
 
-        $this->assertAuthenticated();
-        $response->assertRedirect(route('dashboard', absolute: false));
+        $response->assertSessionHasErrors('personal_data_consent');
+        $this->assertGuest();
     }
 }

@@ -24,6 +24,7 @@ class RegisteredUserController extends Controller
     public function create(): View
     {
         $seo = SeoHelper::get('register');
+
         return view('auth.register', compact('seo'));
     }
 
@@ -38,7 +39,7 @@ class RegisteredUserController extends Controller
             'moderator', 'модератор', 'mod',
             'root', 'суперпользователь', 'superuser',
             'owner', 'владелец', 'собственник',
-            
+
             // Служебные
             'system', 'система', 'системный',
             'support', 'поддержка', 'техподдержка',
@@ -47,7 +48,7 @@ class RegisteredUserController extends Controller
             'manager', 'менеджер', 'управляющий',
             'official', 'официальный',
             'verified', 'верифицированный', 'проверенный',
-            
+
             // Тестовые
             'test', 'тест', 'testing', 'тестирование',
             'user', 'пользователь',
@@ -63,18 +64,18 @@ class RegisteredUserController extends Controller
     {
         $valueLower = mb_strtolower($value, 'UTF-8');
         $forbiddenWords = $this->getForbiddenWords();
-        
+
         foreach ($forbiddenWords as $word) {
             // Проверяем точное совпадение или вхождение слова
             $wordLower = mb_strtolower($word, 'UTF-8');
-            if ($valueLower === $wordLower || 
+            if ($valueLower === $wordLower ||
                 str_contains($valueLower, $wordLower) ||
                 str_contains($valueLower, str_replace(' ', '', $wordLower)) ||
                 str_contains($valueLower, str_replace(' ', '_', $wordLower))) {
                 return true;
             }
         }
-        
+
         return false;
     }
 
@@ -86,14 +87,15 @@ class RegisteredUserController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
-            'name' => ['required', 'string', 'max:255', new NoSpam()],
+            'personal_data_consent' => ['accepted'],
+            'name' => ['required', 'string', 'max:255', new NoSpam],
             'nickname' => [
-                'required', 
-                'string', 
-                'max:255', 
+                'required',
+                'string',
+                'max:255',
                 'regex:/^[a-zA-Zа-яА-ЯёЁ0-9_.-]+$/u', // Только буквы, цифры, точка, дефис и подчеркивание
                 'unique:users,nickname',
-                new NoSpam()
+                new NoSpam,
             ],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class, new EmailNotBlocked],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
@@ -102,6 +104,7 @@ class RegisteredUserController extends Controller
         // Кастомные сообщения об ошибках
         $validator->setCustomMessages([
             'nickname.regex' => 'Никнейм может содержать только буквы, цифры, точку (.), дефис (-) и подчеркивание (_).',
+            'personal_data_consent.accepted' => 'Необходимо согласие на обработку персональных данных.',
         ]);
 
         // Дополнительная проверка на запрещенные слова
@@ -110,18 +113,18 @@ class RegisteredUserController extends Controller
             if ($this->containsForbiddenWord($request->name)) {
                 $validator->errors()->add('name', 'Имя не может содержать служебные слова (админ, модератор и т.д.).');
             }
-            
+
             // Проверяем никнейм
             if ($this->containsForbiddenWord($request->nickname)) {
                 $validator->errors()->add('nickname', 'Никнейм не может содержать служебные слова (админ, модератор и т.д.).');
             }
-            
+
             // Проверяем, что после нормализации nickname не пустой
             $normalized = User::normalizeNickname($request->nickname);
             if (empty($normalized)) {
                 $validator->errors()->add('nickname', 'Никнейм должен содержать хотя бы одну букву или цифру.');
             }
-            
+
             // Проверяем уникальность нормализованного варианта для public_link
             $existingUser = User::where('public_link', $normalized)->first();
             if ($existingUser) {

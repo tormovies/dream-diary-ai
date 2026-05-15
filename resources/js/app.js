@@ -1,6 +1,7 @@
 import './bootstrap';
 
 import Alpine from 'alpinejs';
+import { initCookieConsent } from './cookie-consent';
 
 window.Alpine = Alpine;
 
@@ -16,6 +17,12 @@ window.Alpine = Alpine;
 })();
 
 Alpine.start();
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => initCookieConsent());
+} else {
+    initCookieConsent();
+}
 
 // Переключение темы
 window.toggleTheme = function() {

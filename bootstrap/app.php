@@ -13,6 +13,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('interpretations:index-entities', ['--only-new' => true])->daily();
         // Агрегация сущностей по дням в dream_entity_daily (для статистики за день и сравнений)
         $schedule->command('interpretations:aggregate-entity-daily', ['--yesterday' => true])->dailyAt('01:00');
+        // Журнал cookie-согласий и условные HTTP-логи
+        $schedule->command('consent:prune-logs', ['--days' => 730])->dailyAt('02:15');
+        $schedule->command('logs:prune-requests', ['--days' => 90])->dailyAt('02:30');
     })
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
@@ -43,6 +46,7 @@ return Application::configure(basePath: dirname(__DIR__))
             if ($status === 404) {
                 return response()->view('errors.404', ['exception' => $e], 404);
             }
+
             return null;
         });
     })->create();

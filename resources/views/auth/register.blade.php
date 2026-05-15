@@ -113,6 +113,23 @@
                             <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
                         </div>
 
+                        <div class="form-group">
+                            <label class="flex cursor-pointer items-start gap-3 text-sm text-gray-700 dark:text-gray-300">
+                                <input type="checkbox"
+                                       name="personal_data_consent"
+                                       value="1"
+                                       class="mt-1 h-4 w-4 shrink-0 rounded border-gray-300 text-purple-600 focus:ring-purple-500 dark:border-gray-600 dark:bg-gray-700"
+                                       {{ old('personal_data_consent') ? 'checked' : '' }}
+                                       required />
+                                <span>
+                                    Ознакомлен(а) с
+                                    <a href="{{ route('legal.personal-data') }}" target="_blank" rel="noopener noreferrer" class="text-purple-600 underline hover:text-purple-700 dark:text-purple-400">политикой обработки персональных данных</a>
+                                    и даю согласие на обработку моих персональных данных в целях регистрации и использования сервиса.
+                                </span>
+                            </label>
+                            <x-input-error :messages="$errors->get('personal_data_consent')" class="mt-2" />
+                        </div>
+
                         <button type="submit" class="btn-primary">
                             <i class="fas fa-user-plus mr-2"></i>{{ __('Зарегистрироваться') }}
                         </button>

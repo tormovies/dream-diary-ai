@@ -13,7 +13,9 @@ return new class extends Migration
             $table->foreignId('entity_group_id')->nullable()->after('author_id')->constrained('entity_groups')->nullOnDelete();
         });
 
-        DB::statement("ALTER TABLE articles MODIFY COLUMN type ENUM('guide', 'article', 'entity_group') NOT NULL");
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement("ALTER TABLE articles MODIFY COLUMN type ENUM('guide', 'article', 'entity_group') NOT NULL");
+        }
     }
 
     public function down(): void
@@ -22,6 +24,8 @@ return new class extends Migration
             $table->dropForeign(['entity_group_id']);
         });
 
-        DB::statement("ALTER TABLE articles MODIFY COLUMN type ENUM('guide', 'article') NOT NULL");
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement("ALTER TABLE articles MODIFY COLUMN type ENUM('guide', 'article') NOT NULL");
+        }
     }
 };
