@@ -11,7 +11,7 @@
     </x-slot>
 
     <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+        <div class="max-w-[1600px] mx-auto sm:px-6 lg:px-8">
             <form action="{{ route('admin.entities.compare') }}" method="get" class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6 p-6 flex flex-wrap items-end gap-4">
                 <div class="flex items-end gap-2">
                     <label class="text-sm text-gray-600">День 1:</label>

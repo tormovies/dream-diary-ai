@@ -20,7 +20,7 @@
     </x-slot>
 
     <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+        <div class="max-w-[1600px] mx-auto sm:px-6 lg:px-8">
             @if(session('success'))
                 <div class="mb-4 p-4 rounded bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200">{{ session('success') }}</div>
             @endif
@@ -45,7 +45,7 @@
             <!-- Поиск -->
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
                 <div class="p-6">
-                    <form method="GET" action="{{ route('admin.users') }}" class="flex gap-4">
+                    <form method="GET" action="{{ route('admin.users') }}" class="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4">
                         <input type="text" 
                                name="search" 
                                value="{{ request('search') }}"
@@ -67,21 +67,47 @@
                 </div>
             </div>
 
+            @php
+                $currentOrder = $order ?? request('order', 'desc');
+                $toggleOrder = $currentOrder === 'desc' ? 'asc' : 'desc';
+            @endphp
+
             <!-- Список пользователей -->
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6">
-                    <table class="min-w-full divide-y divide-gray-200">
+            <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg">
+                <div class="p-4 sm:p-6">
+                    <div class="lg:hidden divide-y divide-gray-200 dark:divide-gray-700">
+                        @foreach($users as $user)
+                            <div @class(['p-4 space-y-3', 'bg-red-50 dark:bg-red-900/20' => $user->is_banned])>
+                                <div class="flex flex-wrap items-start justify-between gap-2">
+                                    <div class="min-w-0 flex-1">
+                                        <a href="{{ route('admin.users.edit', $user) }}" class="font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400">
+                                            {{ $user->nickname }}
+                                        </a>
+                                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400 truncate" title="{{ $user->email }}">{{ $user->email }}</p>
+                                    </div>
+                                    <span class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{{ $user->created_at?->format('d.m.Y') ?? '—' }}</span>
+                                </div>
+                                <div class="flex flex-wrap items-center gap-2 text-sm">
+                                    <span class="px-2 py-0.5 text-xs rounded {{ $user->role === 'admin' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200' }}">
+                                        {{ $user->role === 'admin' ? 'Админ' : 'Пользователь' }}
+                                    </span>
+                                    @include('admin.partials.user-status-badge', ['user' => $user])
+                                    <span class="text-gray-500 dark:text-gray-400">Отчётов: {{ $user->reports_count }}</span>
+                                </div>
+                                @include('admin.partials.user-actions', ['user' => $user])
+                            </div>
+                        @endforeach
+                    </div>
+
+                    <div class="hidden lg:block">
+                    <table class="w-full table-fixed divide-y divide-gray-200 dark:divide-gray-700">
                         <thead class="bg-gray-50 dark:bg-gray-800">
                             <tr>
-                                @php
-                                    $currentOrder = $order ?? request('order', 'desc');
-                                    $toggleOrder = $currentOrder === 'desc' ? 'asc' : 'desc';
-                                @endphp
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Никнейм</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Email</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Роль</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Статус</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                                <th class="w-[13%] px-2 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Никнейм</th>
+                                <th class="w-[21%] px-2 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Email</th>
+                                <th class="w-[5%] px-1 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Роль</th>
+                                <th class="w-[15%] px-2 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Статус</th>
+                                <th class="w-[9%] px-2 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase whitespace-nowrap">
                                     <a href="{{ route('admin.users', array_merge(request()->only(['search', 'role']), ['order' => $toggleOrder])) }}"
                                        class="inline-flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200"
                                        title="Сортировка по дате регистрации">
@@ -93,85 +119,39 @@
                                         @endif
                                     </a>
                                 </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Отчетов</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Действия</th>
+                                <th class="w-[4%] px-1 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Отч.</th>
+                                <th class="w-[33%] px-2 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Действия</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
                             @foreach($users as $user)
                                 <tr class="{{ $user->is_banned ? 'bg-red-50 dark:bg-red-900/20' : '' }}">
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <a href="{{ route('admin.users.edit', $user) }}" class="text-blue-600 hover:text-blue-800 dark:text-blue-400">
+                                    <td class="px-2 py-3 align-top">
+                                        <a href="{{ route('admin.users.edit', $user) }}" class="text-sm font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 break-words">
                                             {{ $user->nickname }}
                                         </a>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ $user->email }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="px-2 py-1 text-xs rounded {{ $user->role === 'admin' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200' }}">
-                                            {{ $user->role === 'admin' ? 'Админ' : 'Пользователь' }}
+                                    <td class="px-2 py-3 align-top text-sm text-gray-500 dark:text-gray-400 break-all">{{ $user->email }}</td>
+                                    <td class="px-1 py-3 align-top text-center whitespace-nowrap">
+                                        <span class="inline-block px-1.5 py-0.5 text-xs rounded {{ $user->role === 'admin' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200' }}">
+                                            {{ $user->role === 'admin' ? 'Админ' : 'Польз.' }}
                                         </span>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        @if($user->is_banned)
-                                            <span class="px-2 py-1 text-xs rounded bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200" title="{{ $user->ban_reason ?? 'Причина не указана' }}">
-                                                Заблокирован
-                                            </span>
-                                        @elseif(!$user->hasVerifiedEmail())
-                                            <span class="px-2 py-1 text-xs rounded bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200" title="Email не подтверждён">
-                                                Почта не подтверждена
-                                            </span>
-                                        @else
-                                            <span class="px-2 py-1 text-xs rounded bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                                                Активен
-                                            </span>
-                                        @endif
+                                    <td class="px-2 py-3 align-top">
+                                        @include('admin.partials.user-status-badge', ['user' => $user])
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                        {{ $user->created_at?->format('d.m.Y H:i') ?? '—' }}
+                                    <td class="px-2 py-3 align-top text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                                        {{ $user->created_at?->format('d.m.Y') ?? '—' }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ $user->reports_count }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                        <div class="flex gap-2 flex-wrap">
-                                            <a href="{{ route('admin.users.edit', $user) }}" class="text-blue-600 hover:text-blue-800 dark:text-blue-400">Редактировать</a>
-                                            <a href="{{ route('users.profile', $user) }}" class="text-green-600 hover:text-green-800 dark:text-green-400">Профиль</a>
-                                            @if(!$user->hasVerifiedEmail() && !$user->is_banned)
-                                                <form method="POST" action="{{ route('admin.users.verify-email', $user) }}" class="inline">
-                                                    @csrf
-                                                    <button type="submit" class="text-teal-600 hover:text-teal-800 dark:text-teal-400" onclick="return confirm('Подтвердить email пользователя {{ $user->nickname }}? На его почту будет отправлено уведомление.')">
-                                                        Подтвердить почту
-                                                    </button>
-                                                </form>
-                                            @endif
-                                            @if(!$user->isAdmin() && $user->id !== auth()->id())
-                                                @if($user->is_banned)
-                                                    <form method="POST" action="{{ route('admin.users.unban', $user) }}" class="inline">
-                                                        @csrf
-                                                        <button type="submit" class="text-green-600 hover:text-green-800 dark:text-green-400" onclick="return confirm('Разблокировать пользователя {{ $user->nickname }}?')">
-                                                            Разблокировать
-                                                        </button>
-                                                    </form>
-                                                @else
-                                                    <button type="button" onclick="showBanModal({{ $user->id }}, '{{ $user->nickname }}')" class="text-orange-600 hover:text-orange-800 dark:text-orange-400">
-                                                        Заблокировать
-                                                    </button>
-                                                @endif
-                                                
-                                                <button
-                                                    type="button"
-                                                    class="text-red-600 hover:text-red-800 dark:text-red-400"
-                                                    data-action-url="{{ route('admin.users.purge', $user) }}"
-                                                    data-nickname="{{ $user->nickname }}"
-                                                    onclick="showPurgeModal(this)"
-                                                >
-                                                    Удалить…
-                                                </button>
-                                            @endif
-                                        </div>
+                                    <td class="px-1 py-3 align-top text-sm text-gray-500 dark:text-gray-400 text-center tabular-nums">{{ $user->reports_count }}</td>
+                                    <td class="px-2 py-3 align-top overflow-visible">
+                                        @include('admin.partials.user-actions', ['user' => $user, 'variant' => 'table'])
                                     </td>
                                 </tr>
                             @endforeach
                         </tbody>
                     </table>
+                    </div>
 
                     <div class="mt-4">
                         {{ $users->links() }}

@@ -16,7 +16,7 @@
     </x-slot>
 
     <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+        <div class="max-w-[1600px] mx-auto sm:px-6 lg:px-8">
             <div class="mb-6 p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-sm text-amber-900 dark:text-amber-100">
                 <p class="font-medium mb-1">Как попадает в список</p>
                 <ul class="list-disc list-inside space-y-1 text-amber-800 dark:text-amber-200">
