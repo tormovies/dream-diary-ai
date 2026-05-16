@@ -23,6 +23,9 @@
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                         {{ __('Мои отчёты') }}
                     </x-nav-link>
+                    <x-nav-link :href="route('dream-interpretations.index')" :active="request()->routeIs('dream-interpretations.*')">
+                        {{ __('Мои толкования') }}
+                    </x-nav-link>
                     <x-nav-link :href="route('statistics.index')" :active="request()->routeIs('statistics.*')">
                         {{ __('Статистика') }}
                     </x-nav-link>
@@ -141,6 +144,9 @@
             @auth
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                 {{ __('Мои отчёты') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('dream-interpretations.index')" :active="request()->routeIs('dream-interpretations.*')">
+                {{ __('Мои толкования') }}
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('statistics.index')" :active="request()->routeIs('statistics.*')">
                 {{ __('Статистика') }}

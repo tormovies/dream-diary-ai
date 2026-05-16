@@ -25,9 +25,10 @@ Route::get('/diary/{publicLink}', [\App\Http\Controllers\DiaryController::class,
 // 301 редирект со старого формата /diaries/{id} на новый /diary/{public_link}
 Route::get('/diaries/{id}', function ($id) {
     $user = \App\Models\User::find($id);
-    if (!$user || !$user->public_link) {
+    if (! $user || ! $user->public_link) {
         abort(404);
     }
+
     return redirect()->route('diary.public', ['publicLink' => $user->public_link], 301);
 })->where('id', '[0-9]+');
 
@@ -62,48 +63,56 @@ Route::get('/reports/{report}/analysis', [\App\Http\Controllers\ReportController
 Route::get('/dashboard', [\App\Http\Controllers\ReportController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
+    Route::get('/moi-tolkovaniya', [\App\Http\Controllers\MyDreamInterpretationsController::class, 'index'])->name('dream-interpretations.index');
+    Route::get('/moi-tolkovaniya/{hash}/v-dnevnik', [\App\Http\Controllers\MyDreamInterpretationsController::class, 'transferCreate'])
+        ->where('hash', '[A-Za-z0-9]{16,64}')
+        ->name('dream-interpretations.transfer');
+    Route::post('/moi-tolkovaniya/{hash}/v-dnevnik', [\App\Http\Controllers\MyDreamInterpretationsController::class, 'transferStore'])
+        ->where('hash', '[A-Za-z0-9]{16,64}')
+        ->name('dream-interpretations.transfer.store');
+
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-    
+
     // Отчеты (кроме show, который публичный)
     Route::resource('reports', \App\Http\Controllers\ReportController::class)->except(['index', 'show']); // index теперь на dashboard
     Route::post('/reports/{report}/publish', [\App\Http\Controllers\ReportController::class, 'publish'])->name('reports.publish');
     Route::post('/reports/{report}/unpublish', [\App\Http\Controllers\ReportController::class, 'unpublish'])->name('reports.unpublish');
-    
+
     // Анализ отчётов (создание и управление - только для авторизованных)
     Route::post('/reports/{report}/analyze', [\App\Http\Controllers\ReportController::class, 'analyze'])->name('reports.analyze');
     Route::post('/reports/{report}/analysis/process', [\App\Http\Controllers\ReportController::class, 'processAnalysis'])->name('reports.analysis.process');
     Route::post('/reports/{report}/analysis/retry', [\App\Http\Controllers\ReportController::class, 'retryAnalysis'])->name('reports.analysis.retry');
     Route::delete('/reports/{report}/analysis', [\App\Http\Controllers\ReportController::class, 'detachAnalysis'])->name('reports.analysis.detach');
-    
+
     // Редирект со старой страницы отчетов на dashboard
     Route::get('/reports', function () {
         return redirect()->route('dashboard');
     })->name('reports.index');
-    
+
     // Теги (автодополнение)
     Route::get('/tags/autocomplete', [\App\Http\Controllers\TagController::class, 'autocomplete'])->name('tags.autocomplete');
-    
+
     // Друзья
     Route::post('/friends', [\App\Http\Controllers\FriendshipController::class, 'store'])->name('friends.store');
     Route::post('/friends/{friendship}/accept', [\App\Http\Controllers\FriendshipController::class, 'accept'])->name('friends.accept');
     Route::post('/friends/{friendship}/reject', [\App\Http\Controllers\FriendshipController::class, 'reject'])->name('friends.reject');
     Route::delete('/friends/{friendship}', [\App\Http\Controllers\FriendshipController::class, 'destroy'])->name('friends.destroy');
-    
+
     // Дневники
     Route::get('/diary/user/{user}', [\App\Http\Controllers\DiaryController::class, 'show'])->name('diary.show');
-    
+
     // Комментарии
     Route::post('/reports/{report}/comments', [\App\Http\Controllers\CommentController::class, 'store'])->name('comments.store');
     Route::delete('/comments/{comment}', [\App\Http\Controllers\CommentController::class, 'destroy'])->name('comments.destroy');
-    
+
     // Поиск пользователей
     Route::get('/users', [\App\Http\Controllers\UserController::class, 'search'])->name('users.search');
-    
+
     // Статистика
     Route::get('/statistics', [\App\Http\Controllers\StatisticsController::class, 'index'])->name('statistics.index');
-    
+
     // Переключение темы
     Route::post('/theme/toggle', function (\Illuminate\Http\Request $request) {
         $user = auth()->user();
@@ -111,15 +120,16 @@ Route::middleware('auth')->group(function () {
             $user->theme = $request->theme;
             $user->save();
         }
+
         return response()->json(['success' => true]);
     })->name('theme.toggle');
-    
+
     // Уведомления
     Route::get('/notifications', [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/{notification}/read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.read');
     Route::post('/notifications/read-all', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
     Route::get('/notifications/unread-count', [\App\Http\Controllers\NotificationController::class, 'unreadCount'])->name('notifications.unread-count');
-    
+
     // Админ-панель
     Route::prefix('admin')->name('admin.')->middleware('admin')->group(function () {
         Route::get('/dashboard', [\App\Http\Controllers\AdminController::class, 'dashboard'])->name('dashboard');
@@ -157,7 +167,7 @@ Route::middleware('auth')->group(function () {
         Route::patch('/settings', [\App\Http\Controllers\AdminController::class, 'updateSettings'])->name('settings.update');
         Route::get('/ad', [\App\Http\Controllers\AdminController::class, 'ad'])->name('ad');
         Route::patch('/ad', [\App\Http\Controllers\AdminController::class, 'updateAd'])->name('ad.update');
-        
+
         // SEO управление
         Route::resource('seo', \App\Http\Controllers\Admin\SeoController::class)->except(['show']);
         Route::get('/seo/sitemap', [\App\Http\Controllers\Admin\SeoController::class, 'sitemap'])->name('seo.sitemap');

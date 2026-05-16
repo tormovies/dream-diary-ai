@@ -61,6 +61,9 @@
                     <a href="{{ route('dashboard') }}" class="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors">
                         <i class="fas fa-book mr-2"></i>Мой дневник
                     </a>
+                    <a href="{{ route('dream-interpretations.index') }}" class="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors {{ request()->routeIs('dream-interpretations.*') ? 'text-purple-600 dark:text-purple-400' : '' }}">
+                        <i class="fas fa-scroll mr-2"></i>Мои толкования
+                    </a>
                 @endauth
                 <a href="{{ route('dream-analyzer.create') }}" class="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors">
                     <i class="fas fa-magic mr-2"></i>Толкование снов
@@ -113,6 +116,9 @@
                     </a>
                     <a href="{{ route('dashboard') }}" class="block px-3 py-2 text-base font-medium text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors">
                         <i class="fas fa-book mr-2"></i>Мой дневник
+                    </a>
+                    <a href="{{ route('dream-interpretations.index') }}" class="block px-3 py-2 text-base font-medium text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors {{ request()->routeIs('dream-interpretations.*') ? 'text-purple-600 dark:text-purple-400' : '' }}">
+                        <i class="fas fa-scroll mr-2"></i>Мои толкования
                     </a>
                 @endauth
                 <a href="{{ route('dream-analyzer.create') }}" class="block px-3 py-2 text-base font-medium text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors">

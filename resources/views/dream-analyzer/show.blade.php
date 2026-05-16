@@ -112,6 +112,36 @@
                     </div>
                 @endif
 
+                @auth
+                    @if((int)($interpretation->user_id ?? 0) === (int)auth()->id())
+                        <div class="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-xl p-4 mb-4">
+                            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+                                <div class="text-sm text-gray-700 dark:text-gray-300">
+                                    <a href="{{ route('dream-interpretations.index') }}" class="font-semibold text-purple-700 dark:text-purple-300 hover:underline">
+                                        Мои толкования
+                                    </a>
+                                    <span class="text-gray-600 dark:text-gray-400">— история ваших запросов к анализатору.</span>
+                                </div>
+                                @if($processingStatus === 'completed')
+                                    @if(!empty($linkedReport))
+                                        <a href="{{ route('reports.show', $linkedReport) }}" class="inline-flex items-center justify-center rounded-lg bg-purple-600 text-white px-4 py-2 text-sm font-medium hover:bg-purple-700 shrink-0">
+                                            <i class="fas fa-book-open mr-2"></i>Открыть запись в дневнике
+                                        </a>
+                                    @else
+                                        <a href="{{ route('dream-interpretations.transfer', ['hash' => $interpretation->hash]) }}" class="inline-flex items-center justify-center rounded-lg bg-purple-600 text-white px-4 py-2 text-sm font-medium hover:bg-purple-700 shrink-0">
+                                            <i class="fas fa-save mr-2"></i>Перенести в дневник
+                                        </a>
+                                    @endif
+                                @elseif($processingStatus === 'failed' || $interpretation->api_error)
+                                    <span class="text-sm text-purple-900 dark:text-purple-100">
+                                        Запись запроса в истории сохранена; после исправления снова откройте это толкование через <a href="{{ route('dream-interpretations.index') }}" class="font-medium underline">Мои толкования</a>.
+                                    </span>
+                                @endif
+                            </div>
+                        </div>
+                    @endif
+                @endauth
+
                 @if($processingStatus === 'failed' || $interpretation->api_error)
                     <!-- Ошибка API -->
                     <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-400 dark:border-yellow-700 text-yellow-800 dark:text-yellow-200 px-6 py-6 rounded-lg">
@@ -129,6 +159,11 @@
                                         <li>Попробуйте повторить анализ через несколько минут</li>
                                         <li>Используйте кнопку "Повторить анализ" ниже</li>
                                         <li>Если проблема сохраняется, напишите через страницу <a href="{{ route('feedback.index') }}" class="underline font-medium">обратной связи</a></li>
+                                        @auth
+                                            @if((int)($interpretation->user_id ?? 0) === (int)auth()->id())
+                                                <li>История запросов — в разделе <a href="{{ route('dream-interpretations.index') }}" class="underline font-medium">Мои толкования</a> (удобно вернуться к этой попытке).</li>
+                                            @endif
+                                        @endauth
                                     </ul>
                                 </div>
                                 <div class="flex flex-col sm:flex-row gap-3 mt-4">

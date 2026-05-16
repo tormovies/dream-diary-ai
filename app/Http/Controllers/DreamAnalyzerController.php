@@ -5,22 +5,17 @@ namespace App\Http\Controllers;
 use App\Helpers\SeoHelper;
 use App\Helpers\SymbolPageLinkHelper;
 use App\Helpers\TraditionHelper;
-use App\Models\Comment;
 use App\Models\DreamInterpretation;
 use App\Models\DreamInterpretationResult;
 use App\Models\DreamInterpretationSeriesDream;
 use App\Models\Report;
 use App\Models\SeoMeta;
 use App\Models\Setting;
-use App\Models\Tag;
-use App\Models\User;
 use App\Services\DeepSeekService;
 use App\Services\DreamAnalysisAdapters\DreamAnalysisAdapterFactory;
 use App\Services\TextSanitizer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class DreamAnalyzerController extends Controller
@@ -31,17 +26,17 @@ class DreamAnalyzerController extends Controller
     private function getLayoutData(): array
     {
         $user = auth()->user();
-        
+
         // Статистика проекта
         $stats = \App\Helpers\StatisticsHelper::getGlobalStatistics();
-        
+
         $userStats = null;
         $todayReportsCount = 0;
-        
+
         if ($user) {
             $userReportsCount = $user->reports()->count();
             $userDreamsCount = $user->reports()->withCount('dreams')->get()->sum('dreams_count');
-            
+
             $friendships = \App\Models\Friendship::where(function ($query) use ($user) {
                 $query->where('user_id', $user->id)->where('status', 'accepted');
             })->orWhere(function ($query) use ($user) {
@@ -51,27 +46,27 @@ class DreamAnalyzerController extends Controller
             $friendIds = $friendships->map(function ($friendship) use ($user) {
                 return $friendship->user_id === $user->id ? $friendship->friend_id : $friendship->user_id;
             })->toArray();
-            
+
             $friendsCount = count($friendIds);
-            
+
             $firstReport = $user->reports()->orderBy('report_date')->first();
             $monthsDiff = $firstReport ? $firstReport->report_date->diffInMonths(now()) : 0;
             $avgDreamsPerMonth = $monthsDiff > 0 ? round($userDreamsCount / max($monthsDiff, 1), 1) : $userDreamsCount;
-            
+
             $userStats = [
                 'reports' => $userReportsCount,
                 'dreams' => $userDreamsCount,
                 'friends' => $friendsCount,
                 'avg_per_month' => $avgDreamsPerMonth,
             ];
-            
+
             $todayReportsCount = Report::where('status', 'published')
                 ->where('access_level', 'all')
                 ->whereDate('created_at', today())
                 ->where('user_id', '!=', $user->id)
                 ->count();
         }
-        
+
         return compact('stats', 'userStats', 'todayReportsCount');
     }
 
@@ -82,6 +77,7 @@ class DreamAnalyzerController extends Controller
     {
         $layoutData = $this->getLayoutData();
         $seo = \App\Helpers\SeoHelper::forDreamAnalyzer();
+
         return view('dream-analyzer.create', array_merge($layoutData, compact('seo')));
     }
 
@@ -94,7 +90,7 @@ class DreamAnalyzerController extends Controller
             'dream_description' => 'required|string|min:10|max:10000',
             'context' => 'nullable|string|max:2000',
             'traditions' => 'nullable|array',
-            'traditions.*' => 'in:' . TraditionHelper::validationKeys(),
+            'traditions.*' => 'in:'.TraditionHelper::validationKeys(),
             'analysis_type' => [
                 'nullable',
                 'in:integrated,comparative,parallel',
@@ -112,7 +108,7 @@ class DreamAnalyzerController extends Controller
         // Санитизируем текст описания сна и контекста
         $dreamDescription = TextSanitizer::clean($validated['dream_description']) ?? '';
         $context = isset($validated['context']) ? TextSanitizer::clean($validated['context']) : null;
-        
+
         // Проверяем минимальную длину после санитизации
         if (strlen(trim($dreamDescription)) < 10) {
             return redirect()
@@ -120,13 +116,13 @@ class DreamAnalyzerController extends Controller
                 ->with('error', 'Описание сна слишком короткое после очистки от недопустимых символов')
                 ->withInput();
         }
-        
+
         // Явное указание на серию имеет приоритет над автоопределением
         if (isset($validated['force_series'])) {
             // Если параметр передан (true или false), используем его значение
             $isSeries = (bool) $validated['force_series'];
             $dreams = [];
-            
+
             if ($isSeries) {
                 // Для явно указанной серии разбиваем по разделителям
                 $dreams = $this->splitDreams($dreamDescription);
@@ -135,7 +131,7 @@ class DreamAnalyzerController extends Controller
             // Автоопределение по разделителям (только если force_series не указан)
             $isSeries = $this->isDreamSeries($dreamDescription);
             $dreams = [];
-            
+
             if ($isSeries) {
                 // Разбиваем на отдельные сны
                 $dreams = $this->splitDreams($dreamDescription);
@@ -155,6 +151,7 @@ class DreamAnalyzerController extends Controller
                     'failed' => 'Предыдущее толкование завершилось с ошибкой. На этой странице вы можете повторить попытку.',
                     default => 'Толкование уже начато, дождитесь его окончания',
                 };
+
                 return redirect()->route('dream-analyzer.show', $existing->hash)
                     ->with('info', $message)
                     ->setStatusCode(301);
@@ -176,7 +173,7 @@ class DreamAnalyzerController extends Controller
                 'allow_public_linking' => $allowLinking,
             ]);
 
-            $deepSeekService = new DeepSeekService();
+            $deepSeekService = new DeepSeekService;
             $result = $deepSeekService->analyzeDream(
                 $dreamDescription,
                 $context,
@@ -192,14 +189,14 @@ class DreamAnalyzerController extends Controller
                 'api_error' => $result['success'] ? null : ($result['error'] ?? 'Неизвестная ошибка'),
             ]);
 
-            if (!$result['success']) {
+            if (! $result['success']) {
                 return redirect()
                     ->route('dream-analyzer.create')
-                    ->with('error', 'Ошибка при анализе: ' . ($result['error'] ?? 'Неизвестная ошибка'))
+                    ->with('error', 'Ошибка при анализе: '.($result['error'] ?? 'Неизвестная ошибка'))
                     ->withInput();
             }
 
-            if (!empty($result['analysis_data'])) {
+            if (! empty($result['analysis_data'])) {
                 $this->saveNormalizedData($interpretation, $result['analysis_data']);
             }
 
@@ -209,11 +206,11 @@ class DreamAnalyzerController extends Controller
         // НОВАЯ СИСТЕМА для single/comparative/parallel/integrated
         $traditions = $validated['traditions'] ?? [];
         $traditionsCount = count($traditions);
-        
+
         // Определяем режим анализа
         if ($traditionsCount <= 1) {
             $analysisMode = 'single';
-            $tradition = !empty($traditions) ? $traditions[0] : 'complex_analysis';
+            $tradition = ! empty($traditions) ? $traditions[0] : 'complex_analysis';
         } else {
             $analysisMode = $validated['analysis_type'] ?? 'integrated'; // comparative | parallel | integrated
         }
@@ -226,6 +223,7 @@ class DreamAnalyzerController extends Controller
                 'failed' => 'Предыдущее толкование завершилось с ошибкой. На этой странице вы можете повторить попытку.',
                 default => 'Толкование уже начато, дождитесь его окончания',
             };
+
             return redirect()->route('dream-analyzer.show', $existing->hash)
                 ->with('info', $message)
                 ->setStatusCode(301);
@@ -261,38 +259,38 @@ class DreamAnalyzerController extends Controller
     {
         // Сначала проверяем, нужны ли нам JSON-поля (они большие и редко используются)
         $needsJson = false;
-        
+
         // 1. Проверяем наличие ошибки API и статус обработки (минимальный запрос)
         $preview = DreamInterpretation::where('hash', $hash)
             ->select(['id', 'api_error', 'processing_status', 'processing_started_at'])
             ->first();
-        
-        if (!$preview) {
+
+        if (! $preview) {
             abort(404);
         }
-        
+
         // Если есть ошибка API, нужны JSON-поля для отладки
         if ($preview->api_error) {
             $needsJson = true;
         }
-        
+
         // 2. Админ - всегда загружаем отладочную информацию (без необходимости добавлять ?debug=1)
         if (auth()->check() && auth()->user()->isAdmin()) {
             $needsJson = true;
         }
-        
+
         // Проверяем наличие нормализованных данных (нужно для определения, загружать ли analysis_data)
         $result = null;
         $hasNormalizedData = false;
-        if (!$needsJson) {
+        if (! $needsJson) {
             $result = \App\Models\DreamInterpretationResult::where('dream_interpretation_id', $preview->id)->first();
-            
+
             // Проверяем, есть ли реальные данные в result
             // Новая система: проверяем analysis_data
             // Старая система: проверяем отдельные поля
             if ($result) {
                 // Проверяем новую систему (analysis_data)
-                if (!empty($result->analysis_data) && is_array($result->analysis_data)) {
+                if (! empty($result->analysis_data) && is_array($result->analysis_data)) {
                     $hasNormalizedData = true;
                 }
                 // Проверяем старую систему (отдельные поля)
@@ -305,52 +303,52 @@ class DreamAnalyzerController extends Controller
                     $hasNormalizedData = true;
                 }
             }
-            
+
             // Если нормализованных данных нет, загружаем analysis_data (может быть parse_error)
-            if (!$hasNormalizedData) {
+            if (! $hasNormalizedData) {
                 $needsJson = true;
             }
         }
-        
+
         // Формируем основной запрос
         $query = DreamInterpretation::where('hash', $hash);
-        
+
         // Если JSON не нужен, загружаем только необходимые поля (экономия ~20-50 KB на запрос)
         // Но если есть нормализованные данные, нужно загрузить analysis_data для dream_tradition
         // Или если debug=1, загружаем все JSON поля
-        if (!$needsJson) {
+        if (! $needsJson) {
             $fields = [
                 'id',
                 'user_id',
-                'hash', 
-                'dream_description', 
-                'context', 
-                'traditions', 
+                'hash',
+                'dream_description',
+                'context',
+                'traditions',
                 'api_error',
                 'processing_status',
                 'processing_started_at',
-                'created_at', 
-                'updated_at'
+                'created_at',
+                'updated_at',
             ];
-            
+
             // Если есть нормализованные данные, добавляем analysis_data для dream_tradition
             // (может быть в старой системе в interpretation->analysis_data)
             if ($hasNormalizedData) {
                 $fields[] = 'analysis_data';
             }
-            
+
             // Админ - всегда добавляем raw_api_request и raw_api_response
             if (auth()->check() && auth()->user()->isAdmin()) {
                 $fields[] = 'raw_api_request';
                 $fields[] = 'raw_api_response';
             }
-            
+
             $query->select($fields);
         }
-        // При debug=1 ($needsJson = true) не используем select(), 
+        // При debug=1 ($needsJson = true) не используем select(),
         // чтобы загрузить все поля, включая raw_api_request и raw_api_response
         // Это означает, что все поля будут загружены автоматически
-        
+
         $interpretation = $query->firstOrFail();
 
         if ($interpretation->user_id) {
@@ -359,49 +357,49 @@ class DreamAnalyzerController extends Controller
                 abort(404);
             }
         }
-        
+
         // Загружаем результаты отдельно (если используем select(), связи могут не работать)
         if (method_exists($interpretation, 'results')) {
-            $interpretation->load(['results' => function($q) {
+            $interpretation->load(['results' => function ($q) {
                 $q->orderBy('id');
             }]);
         }
-        
+
         // Если обработка застряла (более 5 минут в processing) - сбрасываем на pending
-        if ($interpretation->processing_status === 'processing' && 
-            $interpretation->processing_started_at && 
+        if ($interpretation->processing_status === 'processing' &&
+            $interpretation->processing_started_at &&
             $interpretation->processing_started_at->diffInMinutes(now()) > 5) {
             \Log::warning('Analysis processing timeout', [
                 'interpretation_id' => $interpretation->id,
-                'started_at' => $interpretation->processing_started_at
+                'started_at' => $interpretation->processing_started_at,
             ]);
             $interpretation->update(['processing_status' => 'pending', 'processing_started_at' => null]);
         }
-        
+
         // Для совместимости со старым view, создаем виртуальное свойство result
         // из первого результата новой системы
         $results = $interpretation->relationLoaded('results') ? $interpretation->results : collect();
-        if ($results->count() > 0 && !$interpretation->relationLoaded('result')) {
+        if ($results->count() > 0 && ! $interpretation->relationLoaded('result')) {
             // Создаем виртуальный результат для совместимости
             $firstResult = $results->first();
             $interpretation->setRelation('result', $firstResult);
         } else {
             // Загружаем старый результат если нет новых
-            if (!$interpretation->relationLoaded('result')) {
+            if (! $interpretation->relationLoaded('result')) {
                 $interpretation->load('result.seriesDreams');
             }
         }
-        
+
         $layoutData = $this->getLayoutData();
         $seo = \App\Helpers\SeoHelper::forDreamAnalyzerResult($interpretation);
-        
+
         // Получаем похожие толкования для перелинковки (лимит из настроек)
         $similarInterpretations = \App\Helpers\InterpretationLinkHelper::getSimilarInterpretations($interpretation);
 
         // Структурированные данные для SEO (Article + Organization)
         $structuredData = [
             SeoHelper::getStructuredDataForDreamInterpretation($interpretation, $seo),
-            SeoHelper::getStructuredDataForOrganization()
+            SeoHelper::getStructuredDataForOrganization(),
         ];
 
         // Breadcrumbs
@@ -413,8 +411,18 @@ class DreamAnalyzerController extends Controller
         // Рекламные блоки (из админки → Реклама)
         $dreamAnalyzerAdCode = (string) Setting::getValue('dream_analyzer_ad_code', '');
         $dreamAnalyzerAdCodeResults = (string) Setting::getValue('dream_analyzer_ad_code_results', '');
-        
-        return view('dream-analyzer.show', array_merge(compact('interpretation', 'request', 'similarInterpretations', 'structuredData', 'breadcrumbs', 'symbolPageUrlBySlug', 'dreamAnalyzerAdCode', 'dreamAnalyzerAdCodeResults'), $layoutData, compact('seo')));
+
+        $linkedReport = null;
+        if (auth()->check() && (int) $interpretation->user_id === (int) auth()->id()) {
+            if ($interpretation->report_id) {
+                $linkedReport = Report::query()
+                    ->whereKey($interpretation->report_id)
+                    ->where('user_id', auth()->id())
+                    ->first();
+            }
+        }
+
+        return view('dream-analyzer.show', array_merge(compact('interpretation', 'request', 'similarInterpretations', 'structuredData', 'breadcrumbs', 'symbolPageUrlBySlug', 'dreamAnalyzerAdCode', 'dreamAnalyzerAdCodeResults', 'linkedReport'), $layoutData, compact('seo')));
     }
 
     /**
@@ -427,7 +435,7 @@ class DreamAnalyzerController extends Controller
         if (preg_match('/(?:^|\n)\s*---{2,}\s*(?:\n|$)/m', $text)) {
             return true;
         }
-        
+
         // Проверяем наличие одной или более пустых строк между блоками текста
         // Это означает минимум два переноса строки подряд (\n\n) - одна пустая строка
         // Или больше (\n\n\n, \n\n\n\n и т.д.) - две и более пустых строк
@@ -436,7 +444,7 @@ class DreamAnalyzerController extends Controller
         if (preg_match('/[^\n]\s*\n\s*\n\s*[^\n]/', $text)) {
             return true;
         }
-        
+
         return false;
     }
 
@@ -446,32 +454,32 @@ class DreamAnalyzerController extends Controller
     private function splitDreams(string $text): array
     {
         $dreams = [];
-        
+
         // Сначала пробуем разделить по минусам (3 и более)
         // Может быть на отдельной строке или между переносами строк
         if (preg_match('/(?:^|\n)\s*---{2,}\s*(?:\n|$)/m', $text)) {
             $parts = preg_split('/(?:^|\n)\s*---{2,}\s*(?:\n|$)/m', $text);
             foreach ($parts as $part) {
                 $part = trim($part);
-                if (!empty($part)) {
+                if (! empty($part)) {
                     $dreams[] = $part;
                 }
             }
-        } 
+        }
         // Если минусов нет, разделяем по одной или более пустым строкам
         // Это означает два или более переноса строки подряд (\n\n, \n\n\n и т.д.)
-        else if (preg_match('/[^\n]\s*\n\s*\n\s*[^\n]/', $text)) {
+        elseif (preg_match('/[^\n]\s*\n\s*\n\s*[^\n]/', $text)) {
             // Разбиваем по двум или более переносам строки подряд (одна или более пустых строк)
             // Учитываем возможные пробелы/табы в пустых строках
             $parts = preg_split('/\n\s*\n+/', $text);
             foreach ($parts as $part) {
                 $part = trim($part);
-                if (!empty($part)) {
+                if (! empty($part)) {
                     $dreams[] = $part;
                 }
             }
         }
-        
+
         return $dreams;
     }
 
@@ -480,7 +488,7 @@ class DreamAnalyzerController extends Controller
      */
     private function buildUserProfile($user): array
     {
-        if (!$user) {
+        if (! $user) {
             return [];
         }
 
@@ -506,7 +514,7 @@ class DreamAnalyzerController extends Controller
         try {
             // Определяем версию формата
             $version = DreamAnalysisAdapterFactory::detectVersion($rawAnalysisData);
-            
+
             // Получаем адаптер и нормализуем данные
             $adapter = DreamAnalysisAdapterFactory::getAdapter($version);
             $normalized = $adapter->normalize($rawAnalysisData);
@@ -561,7 +569,7 @@ class DreamAnalyzerController extends Controller
                     ]);
                 }
             }
-            
+
             // Сохраняем SEO метаданные, если они есть в ответе
             $this->saveSeoMetadata($interpretation, $rawAnalysisData);
         } catch (\Exception $e) {
@@ -573,7 +581,7 @@ class DreamAnalyzerController extends Controller
             ]);
         }
     }
-    
+
     /**
      * Сохраняет SEO метаданные из ответа DeepSeek
      */
@@ -581,28 +589,28 @@ class DreamAnalyzerController extends Controller
     {
         try {
             // Проверяем наличие seo_metadata в ответе
-            if (!isset($rawAnalysisData['seo_metadata']) || !is_array($rawAnalysisData['seo_metadata'])) {
+            if (! isset($rawAnalysisData['seo_metadata']) || ! is_array($rawAnalysisData['seo_metadata'])) {
                 return; // Нет SEO данных - ничего не делаем
             }
-            
+
             $seoData = $rawAnalysisData['seo_metadata'];
-            
+
             // Очищаем все поля от HTML
-            $metaTitle = !empty($seoData['meta_title']) ? strip_tags($seoData['meta_title']) : null;
-            $metaDescription = !empty($seoData['meta_description']) ? strip_tags($seoData['meta_description']) : null;
-            $h1 = !empty($seoData['h1']) ? strip_tags($seoData['h1']) : null;
-            $introText = !empty($seoData['intro_text']) ? strip_tags($seoData['intro_text']) : null;
-            
+            $metaTitle = ! empty($seoData['meta_title']) ? strip_tags($seoData['meta_title']) : null;
+            $metaDescription = ! empty($seoData['meta_description']) ? strip_tags($seoData['meta_description']) : null;
+            $h1 = ! empty($seoData['h1']) ? strip_tags($seoData['h1']) : null;
+            $introText = ! empty($seoData['intro_text']) ? strip_tags($seoData['intro_text']) : null;
+
             // Если все поля пустые - не создаем запись
             if (empty($metaTitle) && empty($metaDescription) && empty($h1) && empty($introText)) {
                 return;
             }
-            
+
             // Ищем существующую SEO запись для этого толкования
             $seoMeta = SeoMeta::where('page_type', 'dream-analyzer-result')
                 ->where('page_id', $interpretation->id)
                 ->first();
-            
+
             // Подготавливаем данные для сохранения (только непустые поля)
             $seoDataToSave = [
                 'page_type' => 'dream-analyzer-result',
@@ -610,25 +618,25 @@ class DreamAnalyzerController extends Controller
                 'is_active' => true,
                 'priority' => 0,
             ];
-            
-            if (!empty($metaTitle)) {
+
+            if (! empty($metaTitle)) {
                 $seoDataToSave['title'] = $metaTitle;
                 $seoDataToSave['og_title'] = $metaTitle; // OG Title из meta_title
             }
-            
-            if (!empty($metaDescription)) {
+
+            if (! empty($metaDescription)) {
                 $seoDataToSave['description'] = $metaDescription;
                 $seoDataToSave['og_description'] = $metaDescription; // OG Description из meta_description
             }
-            
-            if (!empty($h1)) {
+
+            if (! empty($h1)) {
                 $seoDataToSave['h1'] = $h1;
             }
-            
-            if (!empty($introText)) {
+
+            if (! empty($introText)) {
                 $seoDataToSave['h1_description'] = $introText;
             }
-            
+
             // Создаем или обновляем запись
             if ($seoMeta) {
                 $seoMeta->update($seoDataToSave);
@@ -653,6 +661,7 @@ class DreamAnalyzerController extends Controller
         $interpretation = DreamInterpretation::where('hash', $hash)
             ->select('processing_status')
             ->firstOrFail();
+
         return response()->json([
             'processing_status' => $interpretation->processing_status ?? 'pending',
         ]);
@@ -664,58 +673,58 @@ class DreamAnalyzerController extends Controller
     public function processAnalysis(Request $request, string $hash)
     {
         $interpretation = DreamInterpretation::where('hash', $hash)->firstOrFail();
-        
+
         // Проверяем права доступа
         // Если user_id NULL - это неавторизованный пользователь, разрешаем обработку
         // Если user_id установлен - проверяем, что это владелец или админ
         if ($interpretation->user_id !== null) {
-            if (!auth()->check()) {
+            if (! auth()->check()) {
                 return response()->json([
                     'status' => 'error',
-                    'error' => 'Требуется авторизация'
+                    'error' => 'Требуется авторизация',
                 ], 401);
             }
-            
-            if ($interpretation->user_id !== auth()->id() && !auth()->user()->isAdmin()) {
+
+            if ($interpretation->user_id !== auth()->id() && ! auth()->user()->isAdmin()) {
                 return response()->json([
                     'status' => 'error',
-                    'error' => 'У вас нет прав для обработки этого анализа'
+                    'error' => 'У вас нет прав для обработки этого анализа',
                 ], 403);
             }
         }
-        
+
         // Проверяем, не обрабатывается ли уже
         if ($interpretation->processing_status === 'processing') {
             return response()->json([
                 'status' => 'processing',
-                'message' => 'Analysis is already being processed'
+                'message' => 'Analysis is already being processed',
             ]);
         }
-        
+
         // Запускаем обработку синхронно (но с увеличенным таймаутом)
         // В реальном приложении лучше использовать очереди, но для простоты делаем синхронно
         try {
             // Увеличиваем лимит времени выполнения
             // Получаем таймаут из настроек
-        $phpTimeout = (int) \App\Models\Setting::getValue('deepseek_php_execution_timeout', 660);
-        set_time_limit($phpTimeout);
-            
+            $phpTimeout = (int) \App\Models\Setting::getValue('deepseek_php_execution_timeout', 660);
+            set_time_limit($phpTimeout);
+
             $this->processAnalysisAsync($interpretation);
-            
+
             return response()->json([
                 'status' => 'completed',
-                'message' => 'Analysis processing completed'
+                'message' => 'Analysis processing completed',
             ]);
         } catch (\Exception $e) {
             \Log::error('AJAX analysis processing failed', [
                 'interpretation_id' => $interpretation->id,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
-            
+
             return response()->json([
                 'status' => 'failed',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -728,37 +737,37 @@ class DreamAnalyzerController extends Controller
         $interpretation = DreamInterpretation::where('hash', $hash)
             ->select('id', 'hash', 'user_id', 'processing_status')
             ->firstOrFail();
-        
+
         // Проверяем права доступа
         if ($interpretation->user_id !== null) {
-            if (!auth()->check()) {
+            if (! auth()->check()) {
                 return redirect()->route('dream-analyzer.show', $hash)
                     ->with('error', 'Требуется авторизация для повторного анализа');
             }
-            
-            if ($interpretation->user_id !== auth()->id() && !auth()->user()->isAdmin()) {
+
+            if ($interpretation->user_id !== auth()->id() && ! auth()->user()->isAdmin()) {
                 return redirect()->route('dream-analyzer.show', $hash)
                     ->with('error', 'У вас нет прав для повторного анализа');
             }
         }
-        
+
         // Сбрасываем статус и ошибки для повторной попытки
         $interpretation->update([
             'processing_status' => 'pending',
             'api_error' => null,
             'processing_started_at' => null,
         ]);
-        
+
         // Удаляем старые результаты, если есть
         if ($interpretation->result) {
             $interpretation->result->delete();
         }
-        
+
         // Удаляем старые SEO записи для этого толкования
         SeoMeta::where('page_type', 'dream-analyzer-result')
             ->where('page_id', $interpretation->id)
             ->delete();
-        
+
         // Редиректим на страницу результата (анализ запустится автоматически)
         return redirect()->route('dream-analyzer.show', $hash)
             ->with('success', 'Анализ запущен повторно. Пожалуйста, подождите...');
@@ -774,33 +783,33 @@ class DreamAnalyzerController extends Controller
             if ($interpretation->processing_status === 'processing') {
                 return;
             }
-            
+
             // Устанавливаем статус processing
             $interpretation->update([
                 'processing_status' => 'processing',
-                'processing_started_at' => now()
+                'processing_started_at' => now(),
             ]);
-            
+
             \Log::info('Starting async analysis', [
                 'interpretation_id' => $interpretation->id,
-                'hash' => $interpretation->hash
+                'hash' => $interpretation->hash,
             ]);
-            
+
             // Загружаем пользователя
             $interpretation->load('user');
-            
+
             // Получаем данные для анализа
             $dreamDescription = $interpretation->dream_description;
             $context = $interpretation->context;
             $traditions = $interpretation->traditions ?? [];
             $analysisMode = $interpretation->analysis_type;
-            
+
             // Используем старую систему DeepSeekService
             // Получаем таймаут из настроек
-        $phpTimeout = (int) \App\Models\Setting::getValue('deepseek_php_execution_timeout', 660);
-        set_time_limit($phpTimeout);
-            $deepSeekService = new DeepSeekService();
-            
+            $phpTimeout = (int) \App\Models\Setting::getValue('deepseek_php_execution_timeout', 660);
+            set_time_limit($phpTimeout);
+            $deepSeekService = new DeepSeekService;
+
             $result = $deepSeekService->analyzeDream(
                 $dreamDescription,
                 $context,
@@ -808,7 +817,7 @@ class DreamAnalyzerController extends Controller
                 $analysisMode,
                 null // dreams для серии
             );
-            
+
             // Логируем что получили от DeepSeekService
             \Log::info('DeepSeekService result keys', [
                 'interpretation_id' => $interpretation->id,
@@ -818,7 +827,7 @@ class DreamAnalyzerController extends Controller
                 'raw_request_length' => isset($result['raw_request']) ? strlen($result['raw_request']) : 0,
                 'raw_response_length' => isset($result['raw_response']) ? strlen($result['raw_response']) : 0,
             ]);
-            
+
             // Обновляем запись с результатами
             $isCompleted = $result['success'] ?? false;
             $updateData = [
@@ -828,16 +837,16 @@ class DreamAnalyzerController extends Controller
                 'api_error' => $isCompleted ? null : ($result['error'] ?? 'Неизвестная ошибка'),
                 'processing_status' => $isCompleted ? 'completed' : 'failed',
             ];
-            
+
             // Очищаем кеш статистики, если толкование завершено
             if ($isCompleted) {
                 \App\Helpers\StatisticsHelper::clearCache();
             }
-            
+
             \Log::info('Updating interpretation with data', [
                 'interpretation_id' => $interpretation->id,
-                'has_raw_api_request' => !empty($updateData['raw_api_request']),
-                'has_raw_api_response' => !empty($updateData['raw_api_response']),
+                'has_raw_api_request' => ! empty($updateData['raw_api_request']),
+                'has_raw_api_response' => ! empty($updateData['raw_api_response']),
                 'raw_request_type' => gettype($updateData['raw_api_request']),
                 'raw_response_type' => gettype($updateData['raw_api_response']),
                 'raw_request_is_null' => is_null($updateData['raw_api_request']),
@@ -845,47 +854,46 @@ class DreamAnalyzerController extends Controller
                 'raw_request_length' => $updateData['raw_api_request'] ? strlen($updateData['raw_api_request']) : 0,
                 'raw_response_length' => $updateData['raw_api_response'] ? strlen($updateData['raw_api_response']) : 0,
             ]);
-            
+
             $interpretation->update($updateData);
-            
+
             // Проверяем что сохранилось
             $interpretation->refresh();
             \Log::info('Interpretation after update', [
                 'interpretation_id' => $interpretation->id,
-                'has_raw_api_request' => !empty($interpretation->raw_api_request),
-                'has_raw_api_response' => !empty($interpretation->raw_api_response),
+                'has_raw_api_request' => ! empty($interpretation->raw_api_request),
+                'has_raw_api_response' => ! empty($interpretation->raw_api_response),
                 'raw_api_request_length' => $interpretation->raw_api_request ? strlen($interpretation->raw_api_request) : 0,
                 'raw_api_response_length' => $interpretation->raw_api_response ? strlen($interpretation->raw_api_response) : 0,
             ]);
-            
+
             // Сохраняем нормализованные данные если есть
-            if ($result['success'] && !empty($result['analysis_data'])) {
+            if ($result['success'] && ! empty($result['analysis_data'])) {
                 $this->saveNormalizedData($interpretation, $result['analysis_data']);
             }
-            
+
             \Log::info('Async analysis completed', [
                 'interpretation_id' => $interpretation->id,
-                'success' => $result['success'] ?? false
+                'success' => $result['success'] ?? false,
             ]);
-            
+
         } catch (\Exception $e) {
             \Log::error('Async analysis failed', [
                 'interpretation_id' => $interpretation->id,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
-            
+
             // Ограничиваем длину сообщения об ошибке
             $errorMessage = $e->getMessage();
             if (strlen($errorMessage) > 500) {
-                $errorMessage = substr($errorMessage, 0, 497) . '...';
+                $errorMessage = substr($errorMessage, 0, 497).'...';
             }
-            
+
             $interpretation->update([
                 'processing_status' => 'failed',
-                'api_error' => $errorMessage
+                'api_error' => $errorMessage,
             ]);
         }
     }
 }
-

@@ -195,7 +195,7 @@
                                     <div class="flex-1 min-w-0">
                                         @if(!empty($dream->title))
                                             <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                                                {{ $dream->title }}
+                                                {{ strip_tags(html_entity_decode($dream->title, ENT_QUOTES | ENT_HTML5, 'UTF-8')) }}
                                             </h3>
                                         @endif
                                     </div>
