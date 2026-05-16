@@ -56,6 +56,10 @@
                             <option value="admin" {{ request('role') === 'admin' ? 'selected' : '' }}>Админы</option>
                             <option value="user" {{ request('role') === 'user' ? 'selected' : '' }}>Пользователи</option>
                         </select>
+                        <select name="order" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" title="Сортировка по дате регистрации">
+                            <option value="desc" {{ ($order ?? 'desc') === 'desc' ? 'selected' : '' }}>Сначала новые</option>
+                            <option value="asc" {{ ($order ?? 'desc') === 'asc' ? 'selected' : '' }}>Сначала старые</option>
+                        </select>
                         <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
                             Найти
                         </button>
@@ -69,10 +73,26 @@
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50 dark:bg-gray-800">
                             <tr>
+                                @php
+                                    $currentOrder = $order ?? request('order', 'desc');
+                                    $toggleOrder = $currentOrder === 'desc' ? 'asc' : 'desc';
+                                @endphp
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Никнейм</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Email</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Роль</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Статус</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                                    <a href="{{ route('admin.users', array_merge(request()->only(['search', 'role']), ['order' => $toggleOrder])) }}"
+                                       class="inline-flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200"
+                                       title="Сортировка по дате регистрации">
+                                        Регистрация
+                                        @if($currentOrder === 'desc')
+                                            <i class="fas fa-sort-down text-indigo-600 dark:text-indigo-400" aria-hidden="true"></i>
+                                        @else
+                                            <i class="fas fa-sort-up text-indigo-600 dark:text-indigo-400" aria-hidden="true"></i>
+                                        @endif
+                                    </a>
+                                </th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Отчетов</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Действия</th>
                             </tr>
@@ -105,6 +125,9 @@
                                                 Активен
                                             </span>
                                         @endif
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                        {{ $user->created_at?->format('d.m.Y H:i') ?? '—' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ $user->reports_count }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm">

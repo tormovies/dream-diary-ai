@@ -70,9 +70,19 @@ class AdminController extends Controller
             $query->where('role', $request->role);
         }
 
-        $users = $query->withCount('reports')->paginate(20);
+        $order = $request->input('order', 'desc');
+        if (! in_array($order, ['asc', 'desc'], true)) {
+            $order = 'desc';
+        }
 
-        return view('admin.users', compact('users'));
+        $users = $query
+            ->orderBy('created_at', $order)
+            ->orderBy('id', $order)
+            ->withCount('reports')
+            ->paginate(20)
+            ->withQueryString();
+
+        return view('admin.users', compact('users', 'order'));
     }
 
     /**
