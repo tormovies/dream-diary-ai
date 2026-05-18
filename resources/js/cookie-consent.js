@@ -160,7 +160,7 @@ function loadYandexMetrika(metrikaId) {
     })(window, document, 'script', `https://mc.yandex.ru/metrika/tag.js?id=${metrikaId}`, 'ym');
     window.ym(metrikaId, 'init', {
         ssr: true,
-        webvisor: true,
+        webvisor: false,
         clickmap: true,
         accurateTrackBounce: true,
         trackLinks: true,
@@ -201,7 +201,7 @@ function hideBanner(el) {
 function openModal(modal, analyticsCheckbox, consent) {
     modal.classList.remove('hidden');
     modal.classList.add('flex');
-    analyticsCheckbox.checked = !!consent.analytics;
+    analyticsCheckbox.checked = consent ? !!consent.analytics : true;
 }
 
 function closeModal(modal) {
@@ -228,16 +228,21 @@ export function initCookieConsent() {
             hideBanner(banner);
         }
     } else if (consent && consent.policyVersion !== cfg.policyVersion) {
+        const keepAnalytics = !!consent.analytics;
         consent = writeConsent({
             policyVersion: cfg.policyVersion,
             necessary: true,
-            analytics: false,
+            analytics: keepAnalytics,
             updatedAt: Date.now(),
         });
         logConsentToServer(consent);
         applyAnalyticsFromConsent(consent);
         if (banner) {
-            showBanner(banner);
+            if (keepAnalytics) {
+                hideBanner(banner);
+            } else {
+                showBanner(banner);
+            }
         }
     } else if (banner) {
         showBanner(banner);
@@ -257,10 +262,10 @@ export function initCookieConsent() {
     }
 
     if (banner) {
-        document.getElementById('cookie-btn-necessary')?.addEventListener('click', () => persistChoice(false));
-        document.getElementById('cookie-btn-accept-all')?.addEventListener('click', () => persistChoice(true));
+        document.getElementById('cookie-btn-accept')?.addEventListener('click', () => persistChoice(true));
+        document.getElementById('cookie-btn-reject-analytics')?.addEventListener('click', () => persistChoice(false));
         document.getElementById('cookie-btn-settings')?.addEventListener('click', () => {
-            openModal(modal, analyticsCheckbox, consent || { analytics: false });
+            openModal(modal, analyticsCheckbox, consent);
         });
     }
 
@@ -278,7 +283,7 @@ export function initCookieConsent() {
     }
 
     window.addEventListener('open-cookie-settings', () => {
-        const c = readConsent() || { analytics: false };
+        const c = readConsent();
         if (modal && analyticsCheckbox) {
             openModal(modal, analyticsCheckbox, c);
         }
