@@ -1,7 +1,12 @@
 import './bootstrap';
 
 import Alpine from 'alpinejs';
-import { initCookieConsent } from './cookie-consent';
+import { initCookieConsent, initCookieInformativeNotice } from './cookie-consent';
+
+function initCookieUi() {
+    initCookieInformativeNotice();
+    initCookieConsent();
+}
 
 window.Alpine = Alpine;
 
@@ -19,9 +24,9 @@ window.Alpine = Alpine;
 Alpine.start();
 
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => initCookieConsent());
+    document.addEventListener('DOMContentLoaded', () => initCookieUi());
 } else {
-    initCookieConsent();
+    initCookieUi();
 }
 
 // Переключение темы

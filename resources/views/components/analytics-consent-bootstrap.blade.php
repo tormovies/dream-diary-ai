@@ -1,18 +1,19 @@
-{{-- Метрика: сразу, если баннер отключён или админка; иначе после согласия (cookie-consent.js). --}}
+{{-- Метрика: сразу (off/informative) или после согласия (consent). --}}
 @props(['excludeAdmin' => true])
 
 @php
-    $excludeAdmin = (bool) ($excludeAdmin ?? true);
+    use App\Support\ComplianceCookieBanner;
+
     $onPublicSite = ! request()->is('admin*');
-    $cookieBannerEnabled = (bool) config('compliance.cookie_banner_enabled', false);
-    $deferAnalytics = $onPublicSite && $cookieBannerEnabled;
+    $bannerMode = ComplianceCookieBanner::mode();
+    $deferAnalytics = $onPublicSite && $bannerMode === ComplianceCookieBanner::MODE_CONSENT;
     $metrikaId = preg_replace('/\D/', '', (string) \App\Models\Setting::getValue('yandex_metrika_id', '89409547'));
     $globalHeadAd = (string) \App\Models\Setting::getValue('global_head_ad_code', '');
     $compliancePayload = [
         'policyVersion' => config('compliance.policy_version'),
         'consentLogUrl' => route('consent.store'),
+        'bannerMode' => $bannerMode,
         'deferContext' => $deferAnalytics,
-        'bannerEnabled' => $cookieBannerEnabled,
         'hasMetrika' => $deferAnalytics && $metrikaId !== '',
         'hasDeferredHeadAd' => $deferAnalytics && $globalHeadAd !== '',
     ];

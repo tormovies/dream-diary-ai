@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Support\ComplianceCookieBanner;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -9,27 +10,43 @@ class CookieConsentUiTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_homepage_hides_cookie_banner_when_disabled(): void
+    protected function tearDown(): void
     {
-        config(['compliance.cookie_banner_enabled' => false]);
-
-        $this->get('/')
-            ->assertOk()
-            ->assertDontSee('id="cookie-consent-banner"', false)
-            ->assertDontSee('Принять и продолжить', false);
+        ComplianceCookieBanner::forceMode(null);
+        parent::tearDown();
     }
 
-    public function test_homepage_shows_improved_cookie_banner_markup_when_enabled(): void
+    public function test_homepage_shows_informative_notice_by_default_mode(): void
     {
-        config(['compliance.cookie_banner_enabled' => true]);
+        ComplianceCookieBanner::forceMode(ComplianceCookieBanner::MODE_INFORMATIVE);
 
         $this->get('/')
             ->assertOk()
-            ->assertSee('id="cookie-btn-accept"', false)
+            ->assertSee('id="cookie-informative-banner"', false)
+            ->assertSee('Мы используем файлы cookie для улучшения работы сайта', false)
+            ->assertSee('Подробнее', false)
+            ->assertDontSee('id="cookie-consent-banner"', false);
+    }
+
+    public function test_homepage_shows_full_consent_banner_in_consent_mode(): void
+    {
+        ComplianceCookieBanner::forceMode(ComplianceCookieBanner::MODE_CONSENT);
+
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('id="cookie-consent-banner"', false)
             ->assertSee('Принять и продолжить', false)
-            ->assertSee('Без аналитики', false)
-            ->assertSee('Статистика посещений', false)
-            ->assertDontSee('рекламные пиксели', false);
+            ->assertDontSee('id="cookie-informative-banner"', false);
+    }
+
+    public function test_homepage_hides_all_banners_in_off_mode(): void
+    {
+        ComplianceCookieBanner::forceMode(ComplianceCookieBanner::MODE_OFF);
+
+        $this->get('/')
+            ->assertOk()
+            ->assertDontSee('id="cookie-informative-banner"', false)
+            ->assertDontSee('id="cookie-consent-banner"', false);
     }
 
     public function test_cookie_policy_describes_metrika_without_ads_wording(): void

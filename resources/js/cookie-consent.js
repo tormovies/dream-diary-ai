@@ -209,9 +209,39 @@ function closeModal(modal) {
     modal.classList.remove('flex');
 }
 
+const INFORMATIVE_NOTICE_KEY = 'snovidec_cookie_notice_dismissed_v1';
+
+export function initCookieInformativeNotice() {
+    const cfg = getComplianceConfig();
+    if (cfg.bannerMode !== 'informative') {
+        return;
+    }
+
+    const banner = document.getElementById('cookie-informative-banner');
+    if (!banner) {
+        return;
+    }
+
+    try {
+        if (localStorage.getItem(INFORMATIVE_NOTICE_KEY) === '1') {
+            banner.remove();
+            return;
+        }
+    } catch (_) {}
+
+    banner.classList.remove('hidden');
+
+    document.getElementById('cookie-notice-dismiss')?.addEventListener('click', () => {
+        try {
+            localStorage.setItem(INFORMATIVE_NOTICE_KEY, '1');
+        } catch (_) {}
+        banner.remove();
+    });
+}
+
 export function initCookieConsent() {
     const cfg = getComplianceConfig();
-    if (!cfg.deferContext) {
+    if (cfg.bannerMode !== 'consent' || !cfg.deferContext) {
         return;
     }
 

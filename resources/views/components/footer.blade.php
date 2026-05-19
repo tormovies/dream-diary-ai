@@ -16,7 +16,7 @@
                class="hover:text-gray-900 hover:underline dark:hover:text-gray-200">
                 Политика cookie
             </a>
-            @if(config('compliance.cookie_banner_enabled'))
+            @if(\App\Support\ComplianceCookieBanner::requiresConsent())
             <span class="hidden sm:inline text-gray-300 dark:text-gray-600" aria-hidden="true">·</span>
             <button type="button"
                     class="cursor-pointer border-0 bg-transparent p-0 text-purple-600 underline hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300"
