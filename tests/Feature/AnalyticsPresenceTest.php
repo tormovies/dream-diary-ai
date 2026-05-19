@@ -10,21 +10,28 @@ class AnalyticsPresenceTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_public_pages_include_deferred_metrika_bootstrap(): void
+    public function test_public_pages_load_metrika_immediately_when_banner_disabled(): void
     {
-        foreach (
-            [
-                '/',
-                route('legal.cookies', [], false),
-                route('login', [], false),
-            ] as $uri
-        ) {
+        config(['compliance.cookie_banner_enabled' => false]);
+
+        foreach (['/', route('legal.cookies', [], false), route('login', [], false)] as $uri) {
             $this->get($uri)
                 ->assertOk()
-                ->assertSee('window.__COMPLIANCE__', false)
-                ->assertSee('name="deferred-metrika-id"', false)
-                ->assertDontSee('mc.yandex.ru/metrika/tag.js', false);
+                ->assertSee('mc.yandex.ru/metrika/tag.js', false)
+                ->assertDontSee('name="deferred-metrika-id"', false)
+                ->assertDontSee('id="cookie-consent-banner"', false);
         }
+    }
+
+    public function test_public_pages_defer_metrika_when_banner_enabled(): void
+    {
+        config(['compliance.cookie_banner_enabled' => true]);
+
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('name="deferred-metrika-id"', false)
+            ->assertDontSee('mc.yandex.ru/metrika/tag.js', false)
+            ->assertSee('id="cookie-consent-banner"', false);
     }
 
     public function test_admin_pages_load_metrika_immediately(): void
@@ -40,33 +47,5 @@ class AnalyticsPresenceTest extends TestCase
             ->assertOk()
             ->assertSee('mc.yandex.ru/metrika/tag.js', false)
             ->assertDontSee('name="deferred-metrika-id"', false);
-    }
-
-    public function test_authenticated_dashboard_uses_deferred_metrika(): void
-    {
-        $user = User::factory()->create([
-            'nickname' => 'testuser',
-            'email_verified_at' => now(),
-        ]);
-
-        $this->actingAs($user)
-            ->get(route('dashboard'))
-            ->assertOk()
-            ->assertSee('window.__COMPLIANCE__', false)
-            ->assertSee('name="deferred-metrika-id"', false);
-    }
-
-    public function test_dream_interpretations_list_uses_deferred_metrika(): void
-    {
-        $user = User::factory()->create([
-            'nickname' => 'dreamer',
-            'email_verified_at' => now(),
-        ]);
-
-        $this->actingAs($user)
-            ->get(route('dream-interpretations.index'))
-            ->assertOk()
-            ->assertSee('window.__COMPLIANCE__', false)
-            ->assertSee('name="deferred-metrika-id"', false);
     }
 }

@@ -9,8 +9,20 @@ class CookieConsentUiTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_homepage_shows_improved_cookie_banner_markup(): void
+    public function test_homepage_hides_cookie_banner_when_disabled(): void
     {
+        config(['compliance.cookie_banner_enabled' => false]);
+
+        $this->get('/')
+            ->assertOk()
+            ->assertDontSee('id="cookie-consent-banner"', false)
+            ->assertDontSee('Принять и продолжить', false);
+    }
+
+    public function test_homepage_shows_improved_cookie_banner_markup_when_enabled(): void
+    {
+        config(['compliance.cookie_banner_enabled' => true]);
+
         $this->get('/')
             ->assertOk()
             ->assertSee('id="cookie-btn-accept"', false)

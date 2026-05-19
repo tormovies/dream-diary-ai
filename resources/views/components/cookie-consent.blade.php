@@ -1,4 +1,4 @@
-@if(!request()->is('admin*'))
+@if(config('compliance.cookie_banner_enabled') && !request()->is('admin*'))
 <div id="cookie-consent-mount" class="pointer-events-none fixed inset-x-0 bottom-0 z-[100] flex justify-center px-4 pb-4 sm:pb-6">
     <div id="cookie-consent-banner"
          class="pointer-events-auto hidden w-full max-w-lg rounded-2xl border border-gray-200 bg-white p-4 shadow-xl dark:border-gray-600 dark:bg-gray-800 sm:p-5">
