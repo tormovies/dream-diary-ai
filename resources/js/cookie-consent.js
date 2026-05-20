@@ -229,8 +229,6 @@ export function initCookieInformativeNotice() {
         }
     } catch (_) {}
 
-    banner.classList.remove('hidden');
-
     document.getElementById('cookie-notice-dismiss')?.addEventListener('click', () => {
         try {
             localStorage.setItem(INFORMATIVE_NOTICE_KEY, '1');

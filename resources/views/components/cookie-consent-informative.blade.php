@@ -1,5 +1,5 @@
 <div id="cookie-informative-banner"
-     class="pointer-events-auto hidden fixed inset-x-0 bottom-0 z-[100] border-t border-gray-200 bg-white/95 px-4 py-3 shadow-lg backdrop-blur-sm dark:border-gray-700 dark:bg-gray-900/95">
+     class="pointer-events-auto fixed inset-x-0 bottom-0 z-[100] border-t border-gray-200 bg-white/95 px-4 py-3 shadow-lg backdrop-blur-sm dark:border-gray-700 dark:bg-gray-900/95">
     <div class="mx-auto flex max-w-[1600px] flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
         <p class="text-sm text-gray-700 dark:text-gray-200">
             Мы используем файлы cookie для улучшения работы сайта.
