@@ -481,6 +481,7 @@ class AdminController extends Controller
         $totalCompleted = DreamInterpretationStat::where('processing_status', 'completed')->count();
         $totalPending = DreamInterpretationStat::where('processing_status', 'pending')->count();
         $totalFailed = DreamInterpretationStat::where('processing_status', 'failed')->count();
+        $totalIssues = DreamInterpretationStat::whereNotNull('analysis_issue')->count();
 
         $periodCreated = DreamInterpretationStat::whereBetween('interpretation_created_at', [$startDateUtc, $endDateUtc])->count();
         $periodCompleted = DreamInterpretationStat::whereBetween('interpretation_created_at', [$startDateUtc, $endDateUtc])
@@ -489,6 +490,8 @@ class AdminController extends Controller
             ->where('processing_status', 'pending')->count();
         $periodFailed = DreamInterpretationStat::whereBetween('interpretation_created_at', [$startDateUtc, $endDateUtc])
             ->where('processing_status', 'failed')->count();
+        $periodIssues = DreamInterpretationStat::whereBetween('interpretation_created_at', [$startDateUtc, $endDateUtc])
+            ->whereNotNull('analysis_issue')->count();
 
         // Статистика по традициям за период — из stats (лёгкая таблица)
         $traditionsStats = DreamInterpretationStat::whereBetween('interpretation_created_at', [$startDateUtc, $endDateUtc])
@@ -507,6 +510,7 @@ class AdminController extends Controller
 
         // Фильтры
         $statusFilter = $request->filled('status') ? $request->status : null;
+        $issueFilter = $request->filled('issue') ? $request->issue : null;
         $traditionFilter = $request->filled('tradition') ? $request->tradition : null;
         $searchFilter = $request->filled('search') ? $request->search : null;
 
@@ -518,7 +522,8 @@ class AdminController extends Controller
         if ($traditionFilter) {
             $dailyStatsQuery->whereJsonContains('traditions', $traditionFilter);
         }
-        $allStats = $dailyStatsQuery->get(['interpretation_created_at', 'processing_status']);
+        $this->applyInterpretationIssueFilter($dailyStatsQuery, $issueFilter);
+        $allStats = $dailyStatsQuery->get(['interpretation_created_at', 'processing_status', 'analysis_issue']);
         $dailyStats = $allStats->groupBy(function ($stat) use ($timezone) {
             return \Carbon\Carbon::parse($stat->interpretation_created_at)->setTimezone($timezone)->format('Y-m-d');
         })->map(function ($group, $date) {
@@ -528,6 +533,7 @@ class AdminController extends Controller
                 'completed' => $group->where('processing_status', 'completed')->count(),
                 'pending' => $group->where('processing_status', 'pending')->count(),
                 'failed' => $group->where('processing_status', 'failed')->count(),
+                'issues' => $group->whereNotNull('analysis_issue')->count(),
             ];
         })->sortKeysDesc()->values();
 
@@ -557,9 +563,10 @@ class AdminController extends Controller
             if ($searchFilter) {
                 $dayQuery->where('dream_description', 'like', '%' . $searchFilter . '%');
             }
+            $this->applyInterpretationIssueFilter($dayQuery, $issueFilter);
 
             $dayInterpretations = $dayQuery
-                ->select('id', 'hash', 'created_at', 'processing_status', 'traditions', 'report_id', 'ip_address', 'allow_public_linking')
+                ->select('id', 'hash', 'created_at', 'processing_status', 'analysis_issue', 'traditions', 'report_id', 'ip_address', 'allow_public_linking')
                 ->with([
                     // Для подсветки "запрещено публиковать" в админ таблице
                     'report' => function ($q) {
@@ -587,9 +594,10 @@ class AdminController extends Controller
             if ($searchFilter) {
                 $query->where('dream_description', 'like', '%' . $searchFilter . '%');
             }
+            $this->applyInterpretationIssueFilter($query, $issueFilter);
 
             $interpretations = $query
-                ->select('id', 'hash', 'created_at', 'processing_status', 'traditions', 'report_id', 'ip_address')
+                ->select('id', 'hash', 'created_at', 'processing_status', 'analysis_issue', 'traditions', 'report_id', 'ip_address')
                 ->with('report:id')
                 ->orderBy('created_at', 'desc')
                 ->paginate(50)
@@ -606,10 +614,12 @@ class AdminController extends Controller
             'totalCompleted',
             'totalPending',
             'totalFailed',
+            'totalIssues',
             'periodCreated',
             'periodCompleted',
             'periodPending',
             'periodFailed',
+            'periodIssues',
             'traditionsStats',
             'dailyStats',
             'selectedDate',
@@ -618,6 +628,7 @@ class AdminController extends Controller
             'startDate',
             'endDate',
             'statusFilter',
+            'issueFilter',
             'traditionFilter',
             'traditionsConfig',
             'timezone'
@@ -1213,6 +1224,24 @@ class AdminController extends Controller
     /**
      * Удаление толкования снов
      */
+    /**
+     * @param  \Illuminate\Database\Eloquent\Builder<\App\Models\DreamInterpretation>|\Illuminate\Database\Eloquent\Builder<\App\Models\DreamInterpretationStat>  $query
+     */
+    private function applyInterpretationIssueFilter($query, ?string $issueFilter): void
+    {
+        if (! $issueFilter) {
+            return;
+        }
+
+        if ($issueFilter === 'any') {
+            $query->whereNotNull('analysis_issue');
+
+            return;
+        }
+
+        $query->where('analysis_issue', $issueFilter);
+    }
+
     public function deleteInterpretation(Request $request, DreamInterpretation $interpretation): RedirectResponse
     {
         SeoGoneRecorder::recordInterpretationIfNeeded($interpretation, SeoGoneRecorder::SOURCE_ADMIN_DELETE);

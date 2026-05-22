@@ -12,6 +12,7 @@ use App\Models\Report;
 use App\Models\SeoMeta;
 use App\Models\Setting;
 use App\Services\DeepSeekService;
+use App\Support\InterpretationQualityAnalyzer;
 use App\Services\DreamAnalysisAdapters\DreamAnalysisAdapterFactory;
 use App\Services\TextSanitizer;
 use Illuminate\Http\RedirectResponse;
@@ -187,6 +188,9 @@ class DreamAnalyzerController extends Controller
                 'raw_api_request' => $result['raw_request'] ?? null,
                 'raw_api_response' => $result['raw_response'] ?? null,
                 'api_error' => $result['success'] ? null : ($result['error'] ?? 'Неизвестная ошибка'),
+                'analysis_issue' => ($result['success'] ?? false)
+                    ? InterpretationQualityAnalyzer::detectFromDeepSeekResult($result)
+                    : null,
             ]);
 
             if (! $result['success']) {
@@ -755,6 +759,7 @@ class DreamAnalyzerController extends Controller
         $interpretation->update([
             'processing_status' => 'pending',
             'api_error' => null,
+            'analysis_issue' => null,
             'processing_started_at' => null,
         ]);
 
@@ -836,6 +841,9 @@ class DreamAnalyzerController extends Controller
                 'raw_api_response' => $result['raw_response'] ?? null,
                 'api_error' => $isCompleted ? null : ($result['error'] ?? 'Неизвестная ошибка'),
                 'processing_status' => $isCompleted ? 'completed' : 'failed',
+                'analysis_issue' => $isCompleted
+                    ? InterpretationQualityAnalyzer::detectFromDeepSeekResult($result)
+                    : null,
             ];
 
             // Очищаем кеш статистики, если толкование завершено
@@ -893,6 +901,7 @@ class DreamAnalyzerController extends Controller
             $interpretation->update([
                 'processing_status' => 'failed',
                 'api_error' => $errorMessage,
+                'analysis_issue' => null,
             ]);
         }
     }

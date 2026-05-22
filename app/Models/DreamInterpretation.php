@@ -19,6 +19,7 @@ class DreamInterpretation extends Model
         'traditions',
         'analysis_type',
         'processing_status',
+        'analysis_issue',
         'processing_started_at',
         'analysis_data',
         'raw_api_request',

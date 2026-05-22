@@ -13,6 +13,7 @@ class DreamInterpretationStat extends Model
         'dream_interpretation_id',
         'interpretation_created_at',
         'processing_status',
+        'analysis_issue',
         'traditions',
     ];
 
@@ -35,6 +36,11 @@ class DreamInterpretationStat extends Model
     {
         $status = $interpretation->processing_status ?? 'pending';
 
+        $analysisIssue = $interpretation->analysis_issue;
+        if (! array_key_exists('analysis_issue', $interpretation->getAttributes()) && $interpretation->exists) {
+            $analysisIssue = DreamInterpretation::where('id', $interpretation->id)->value('analysis_issue');
+        }
+
         $createdAt = $interpretation->created_at;
         if ($createdAt === null) {
             $createdAt = DreamInterpretation::where('id', $interpretation->id)->value('created_at') ?? now();
@@ -50,6 +56,7 @@ class DreamInterpretationStat extends Model
             [
                 'interpretation_created_at' => $createdAt,
                 'processing_status' => $status,
+                'analysis_issue' => $analysisIssue,
                 'traditions' => $traditions,
             ]
         );

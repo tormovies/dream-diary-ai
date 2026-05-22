@@ -700,6 +700,15 @@
                             <!-- Отладочная информация (только для администраторов) -->
                             <div class="bg-gray-50 dark:bg-gray-900 rounded-2xl p-6 border border-gray-200 dark:border-gray-700">
                                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">Отладочная информация (только для администраторов)</h3>
+                                @if(!empty($interpretation->analysis_issue))
+                                    <div class="mb-4 rounded-lg border border-orange-300 dark:border-orange-700 bg-orange-50 dark:bg-orange-900/30 px-4 py-3">
+                                        <p class="text-sm font-semibold text-orange-900 dark:text-orange-200 mb-1">Проблема качества (в админке)</p>
+                                        @include('admin.partials.analysis-issue-badge', ['issue' => $interpretation->analysis_issue])
+                                        <p class="text-xs text-orange-800 dark:text-orange-300 mt-2">
+                                            В сыром ответе API проверьте <code>choices[0].finish_reason</code> (значение <code>length</code> — обрезка по max_tokens).
+                                        </p>
+                                    </div>
+                                @endif
                                 
                                 @php
                                     $hasJsonData = isset($interpretation->raw_api_request) || isset($interpretation->raw_api_response) || isset($interpretation->analysis_data);

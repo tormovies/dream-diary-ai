@@ -17,7 +17,7 @@
         <div class="max-w-[1600px] mx-auto sm:px-6 lg:px-8">
             @if(!$selectedDate)
             <!-- Общая статистика -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-6">
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6">
                         <div class="text-2xl font-bold text-gray-900">{{ $totalCreated }}</div>
@@ -42,6 +42,12 @@
                         <div class="text-sm text-gray-600">Ошибки</div>
                     </div>
                 </div>
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                    <div class="p-6">
+                        <div class="text-2xl font-bold text-orange-600">{{ $totalIssues ?? 0 }}</div>
+                        <div class="text-sm text-gray-600">Проблемы качества</div>
+                    </div>
+                </div>
             </div>
             @endif
 
@@ -53,7 +59,7 @@
                         <h3 class="text-lg font-semibold">Статистика за период ({{ $startDate }} - {{ $endDate }})</h3>
                         <span class="text-xs text-gray-500">Часовой пояс: {{ $timezone ?? 'UTC' }}</span>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
                         <div>
                             <div class="text-xl font-bold text-gray-900">{{ $periodCreated }}</div>
                             <div class="text-sm text-gray-600">Создано</div>
@@ -69,6 +75,10 @@
                         <div>
                             <div class="text-xl font-bold text-red-600">{{ $periodFailed }}</div>
                             <div class="text-sm text-gray-600">Ошибки</div>
+                        </div>
+                        <div>
+                            <div class="text-xl font-bold text-orange-600">{{ $periodIssues ?? 0 }}</div>
+                            <div class="text-sm text-gray-600">Проблемы качества</div>
                         </div>
                     </div>
                 </div>
@@ -96,6 +106,14 @@
                                     <option value="completed" {{ $statusFilter === 'completed' ? 'selected' : '' }}>Завершено</option>
                                     <option value="pending" {{ $statusFilter === 'pending' ? 'selected' : '' }}>В процессе</option>
                                     <option value="failed" {{ $statusFilter === 'failed' ? 'selected' : '' }}>Ошибки</option>
+                                </select>
+                            </div>
+                            <div class="flex-1 min-w-[180px]">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Проблема качества</label>
+                                <select name="issue" class="w-full rounded-md border-gray-300">
+                                    @foreach(\App\Support\InterpretationQualityAnalyzer::filterOptions() as $value => $label)
+                                        <option value="{{ $value }}" {{ ($issueFilter ?? '') === $value ? 'selected' : '' }}>{{ $label }}</option>
+                                    @endforeach
                                 </select>
                             </div>
                             <div class="flex-1 min-w-[150px]">
@@ -169,6 +187,7 @@
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Тип</th>
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Хеш</th>
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Статус</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Качество</th>
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Традиции</th>
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Публикация</th>
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">IP адрес</th>
@@ -195,9 +214,10 @@
                                                 } else {
                                                     $isForbiddenForPublic = !(bool) ($interpretation->allow_public_linking ?? true);
                                                 }
-                                                $rowBgAttr = $isForbiddenForPublic ? ' style="background-color: #f3f4f6;"' : '';
+                                                $hasQualityIssue = !empty($interpretation->analysis_issue);
+                                                $rowBgAttr = $isForbiddenForPublic ? ' style="background-color: #f3f4f6;"' : ($hasQualityIssue ? ' style="background-color: #fff7ed;"' : '');
                                             @endphp
-                                            <tr class="{{ $isForbiddenForPublic ? 'bg-gray-100' : '' }} hover:bg-gray-50"{!! $rowBgAttr !!}>
+                                            <tr class="{{ $isForbiddenForPublic ? 'bg-gray-100' : ($hasQualityIssue ? 'bg-orange-50' : '') }} hover:bg-gray-50"{!! $rowBgAttr !!}>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"{!! $rowBgAttr !!}>
                                                     @php
                                                         $timezone = $timezone ?? 'UTC';
@@ -229,6 +249,9 @@
                                                     @else
                                                         <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">{{ $interpretation->processing_status ?? 'Неизвестно' }}</span>
                                                     @endif
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap"{!! $rowBgAttr !!}>
+                                                    @include('admin.partials.analysis-issue-badge', ['issue' => $interpretation->analysis_issue])
                                                 </td>
                                                 <td class="px-6 py-4 text-sm text-gray-900"{!! $rowBgAttr !!}>
                                                     @php
@@ -270,6 +293,9 @@
                                                                 $openTitle = 'Открыть анализ отчета';
                                                             } else {
                                                                 $openUrl = route('dream-analyzer.show', $interpretation->hash);
+                                                                if (!empty($interpretation->analysis_issue)) {
+                                                                    $openUrl .= (str_contains($openUrl, '?') ? '&' : '?') . 'debug=1';
+                                                                }
                                                                 $openTitle = 'Открыть толкование';
                                                             }
                                                         @endphp
@@ -288,6 +314,7 @@
                                                             <input type="hidden" name="end_date" value="{{ request('end_date') }}">
                                                             <input type="hidden" name="date" value="{{ request('date') }}">
                                                             <input type="hidden" name="status" value="{{ request('status') }}">
+                                                            <input type="hidden" name="issue" value="{{ request('issue') }}">
                                                             <input type="hidden" name="tradition" value="{{ request('tradition') }}">
                                                             <input type="hidden" name="page" value="{{ request('page') }}">
                                                             <button type="submit" 
@@ -325,6 +352,7 @@
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Завершено</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">В процессе</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ошибки</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Проблемы</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Действия</th>
                                     </tr>
                                 </thead>
@@ -346,6 +374,9 @@
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600">
                                                 {{ $day->failed }}
                                             </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-orange-600">
+                                                {{ $day->issues ?? 0 }}
+                                            </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                                 <a href="{{ route('admin.interpretations', array_merge(request()->except('date'), ['date' => $day->date, 'start_date' => $startDate, 'end_date' => $endDate])) }}" 
                                                    class="text-blue-600 hover:text-blue-900">Детали</a>
@@ -353,7 +384,7 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="6" class="px-6 py-4 text-center text-gray-500">Нет данных за выбранный период</td>
+                                            <td colspan="7" class="px-6 py-4 text-center text-gray-500">Нет данных за выбранный период</td>
                                         </tr>
                                     @endforelse
                                 </tbody>

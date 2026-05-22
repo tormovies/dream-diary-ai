@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Console\Commands\AggregateDreamEntityDaily;
 use App\Console\Commands\BackfillDreamInterpretationStats;
+use App\Console\Commands\ScanInterpretationQualityIssues;
 use App\Console\Commands\IndexDreamInterpretationEntities;
 use App\Console\Commands\ImportRedirectsFromFile;
 use App\Console\Commands\TestMailCommand;
@@ -27,6 +28,7 @@ class AppServiceProvider extends ServiceProvider
         $this->commands([
             ImportRedirectsFromFile::class,
             BackfillDreamInterpretationStats::class,
+            ScanInterpretationQualityIssues::class,
             IndexDreamInterpretationEntities::class,
             AggregateDreamEntityDaily::class,
             TestMailCommand::class,

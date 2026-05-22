@@ -9,6 +9,7 @@ use App\Http\Requests\StoreReportRequest;
 use App\Http\Requests\UpdateReportRequest;
 use App\Services\SeoGoneRecorder;
 use App\Services\TextSanitizer;
+use App\Support\InterpretationQualityAnalyzer;
 use App\Models\Article;
 use App\Models\Report;
 use App\Models\Dream;
@@ -1335,6 +1336,9 @@ class ReportController extends Controller
                 'raw_api_response' => $result['raw_response'] ?? null,
                 'api_error' => $result['error'] ?? null,
                 'processing_status' => $isCompleted ? 'completed' : 'failed',
+                'analysis_issue' => $isCompleted
+                    ? InterpretationQualityAnalyzer::detectFromDeepSeekResult($result)
+                    : null,
             ]);
 
             // Сохраняем в отчёт полный JSON context_for_next_analysis (вложенная структура: key_themes, recurring_symbols и т.д.) для будущих запросов к DeepSeek.
@@ -1374,7 +1378,8 @@ class ReportController extends Controller
             
             $interpretation->update([
                 'processing_status' => 'failed',
-                'api_error' => $e->getMessage()
+                'api_error' => $e->getMessage(),
+                'analysis_issue' => null,
             ]);
         }
     }
