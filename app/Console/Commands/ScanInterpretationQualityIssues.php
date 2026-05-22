@@ -12,6 +12,7 @@ class ScanInterpretationQualityIssues extends Command
     protected $signature = 'interpretations:scan-quality-issues
                             {--chunk=200 : Размер чанка}
                             {--only-completed : Только processing_status=completed}
+                            {--rescan : Перепроверить все (в т.ч. с уже проставленной меткой)}
                             {--dry-run : Только показать, без записи в БД}';
 
     protected $description = 'Найти и проставить analysis_issue у существующих толкований (обрезка, ошибка JSON)';
@@ -19,8 +20,11 @@ class ScanInterpretationQualityIssues extends Command
     public function handle(): int
     {
         $query = DreamInterpretation::query()
-            ->whereNull('analysis_issue')
             ->select(['id', 'analysis_data', 'raw_api_response', 'processing_status']);
+
+        if (! $this->option('rescan')) {
+            $query->whereNull('analysis_issue');
+        }
 
         if ($this->option('only-completed')) {
             $query->where('processing_status', 'completed');
@@ -54,11 +58,12 @@ class ScanInterpretationQualityIssues extends Command
 
                 if ($issue !== null) {
                     $found++;
-                    DreamInterpretation::where('id', $interpretation->id)->update(['analysis_issue' => $issue]);
-                    $stat = DreamInterpretationStat::where('dream_interpretation_id', $interpretation->id)->first();
-                    if ($stat) {
-                        $stat->update(['analysis_issue' => $issue]);
-                    }
+                }
+
+                DreamInterpretation::where('id', $interpretation->id)->update(['analysis_issue' => $issue]);
+                $stat = DreamInterpretationStat::where('dream_interpretation_id', $interpretation->id)->first();
+                if ($stat) {
+                    $stat->update(['analysis_issue' => $issue]);
                 }
 
                 $bar->advance();

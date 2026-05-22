@@ -364,6 +364,11 @@
                                                 <p class="text-sm text-gray-700 dark:text-gray-300 mb-2">
                                                     {{ $analysis['parse_error'] ?? 'Неизвестная ошибка' }}
                                                 </p>
+                                                @if(($analysis['api_finish_reason'] ?? null) === 'length')
+                                                    <p class="text-sm text-orange-700 dark:text-orange-300 mb-2">
+                                                        Ответ DeepSeek обрезан по лимиту токенов (часто при серии из 4+ снов с длинным HTML). Повторите анализ — для серий лимит увеличен.
+                                                    </p>
+                                                @endif
                                                 @if(isset($analysis['json_error_code']) && $analysis['json_error_code'] !== 0)
                                                     <p class="text-xs text-gray-600 dark:text-gray-400">
                                                         Код ошибки: {{ $analysis['json_error_code'] }}
@@ -704,8 +709,15 @@
                                     <div class="mb-4 rounded-lg border border-orange-300 dark:border-orange-700 bg-orange-50 dark:bg-orange-900/30 px-4 py-3">
                                         <p class="text-sm font-semibold text-orange-900 dark:text-orange-200 mb-1">Проблема качества (в админке)</p>
                                         @include('admin.partials.analysis-issue-badge', ['issue' => $interpretation->analysis_issue])
-                                        <p class="text-xs text-orange-800 dark:text-orange-300 mt-2">
-                                            В сыром ответе API проверьте <code>choices[0].finish_reason</code> (значение <code>length</code> — обрезка по max_tokens).
+                                            <p class="text-xs text-orange-800 dark:text-orange-300 mt-2">
+                                            @if(!empty($interpretation->analysis_data['api_finish_reason']))
+                                                finish_reason: <code>{{ $interpretation->analysis_data['api_finish_reason'] }}</code>
+                                                @if(!empty($interpretation->analysis_data['api_completion_tokens']))
+                                                    · токенов ответа: {{ $interpretation->analysis_data['api_completion_tokens'] }}
+                                                @endif
+                                            @else
+                                                В сыром ответе API: <code>choices[0].finish_reason</code> — значение <code>length</code> означает обрезку по max_tokens.
+                                            @endif
                                         </p>
                                     </div>
                                 @endif

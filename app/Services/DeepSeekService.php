@@ -4,11 +4,16 @@ namespace App\Services;
 
 use App\Helpers\TraditionHelper;
 use App\Models\Setting;
+use App\Support\DeepSeekJsonParser;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class DeepSeekService
 {
+    private const MAX_TOKENS_DEFAULT = 8000;
+
+    private const MAX_TOKENS_SERIES = 24000;
+
     private string $apiKey;
 
     private string $baseUrl = 'https://api.deepseek.com';
@@ -54,6 +59,8 @@ class DeepSeekService
         // Формируем промпт
         $prompt = $this->buildPrompt($dreamDescription, $context, $traditionsForPrompt, $analysisType, $dreams);
 
+        $maxTokens = $this->resolveMaxTokens($analysisType, $dreams);
+
         // Подготавливаем данные для запроса
         $requestData = [
             'model' => 'deepseek-chat',
@@ -64,7 +71,7 @@ class DeepSeekService
                 ],
             ],
             'temperature' => 0.7,
-            'max_tokens' => 8000,
+            'max_tokens' => $maxTokens,
         ];
 
         // Получаем таймауты из настроек (с дефолтными значениями)
@@ -135,6 +142,8 @@ class DeepSeekService
             }
 
             $content = $responseData['choices'][0]['message']['content'] ?? '';
+            $finishReason = $responseData['choices'][0]['finish_reason'] ?? null;
+            $completionTokens = $responseData['usage']['completion_tokens'] ?? null;
 
             if (empty($content)) {
                 Log::error('DeepSeek API Empty Content', [
@@ -151,7 +160,13 @@ class DeepSeekService
 
             // Пытаемся распарсить JSON из ответа
             $this->lastJsonWasRepaired = false;
-            $analysisData = $this->parseJsonResponse($content);
+            $parsed = DeepSeekJsonParser::parseFromAssistantContent($content);
+            $analysisData = $parsed['data'] ?? [
+                'raw_content' => $parsed['raw_content'] ?? $content,
+                'parse_error' => $parsed['error'] ?? 'Не удалось распарсить JSON из ответа API',
+                'json_error_code' => $parsed['error_code'] ?? json_last_error(),
+            ];
+            $this->lastJsonWasRepaired = (bool) ($parsed['repaired'] ?? false);
             
             // Сохраняем ПОЛНЫЙ content в analysis_data
             if (!is_array($analysisData)) {
@@ -159,6 +174,12 @@ class DeepSeekService
             }
             // Сохраняем весь content полностью
             $analysisData['full_content'] = $content;
+            if ($finishReason !== null) {
+                $analysisData['api_finish_reason'] = $finishReason;
+            }
+            if ($completionTokens !== null) {
+                $analysisData['api_completion_tokens'] = $completionTokens;
+            }
             
             // Извлекаем текстовую часть (если есть) - все что до JSON блока
             $textAnalysis = '';
@@ -178,9 +199,15 @@ class DeepSeekService
             
             // Проверяем, что парсинг прошел успешно
             if (isset($analysisData['parse_error'])) {
+                if ($finishReason === 'length') {
+                    $analysisData['parse_error'] .= ' (ответ обрезан по лимиту max_tokens='.$maxTokens.')';
+                }
                 Log::warning('DeepSeek API JSON Parse Error', [
                     'content' => $content,
                     'parse_error' => $analysisData['parse_error'],
+                    'finish_reason' => $finishReason,
+                    'completion_tokens' => $completionTokens,
+                    'max_tokens' => $maxTokens,
                 ]);
             }
 
@@ -190,6 +217,7 @@ class DeepSeekService
                 'raw_request' => json_encode($requestData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
                 'raw_response' => $rawResponse,
                 'json_was_repaired' => $this->lastJsonWasRepaired,
+                'finish_reason' => $finishReason,
             ];
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
             Log::error('DeepSeek API Connection Error', [
@@ -379,7 +407,7 @@ class DeepSeekService
         $prompt .= "ТИП АНАЛИЗА: {$analysisType}\n";
         $prompt .= "СОН ДЛЯ АНАЛИЗА: {$dreamDescription}\n\n";
         
-        $prompt .= "ВАЖНО: После всего анализа предоставь ответ в формате JSON где все текстовые поля содержат HTML-разметку (только теги: h2, h3, p, ul, li, strong, em). Пример:\n{\n  \"dream_analysis\": {\n    \"dream_title\": \"<h2>Название сна</h2>\",\n    \"dream_detailed\": \"<p>Первый абзац...</p><p>Второй абзац...</p>\",\n    \"key_symbols\": [\n      {\"symbol\": \"<strong>Символ</strong>\", \"meaning\": \"<p>Значение...</p>\"}\n    ]\n  }\n}, только json без лишнего текста, название переменной на английском языке, значение переменной на русском языке, без аббревиатур, сокращений, замена нерусских терминов и слов русскими аналогами (например, 'reality check' -> 'проверка реальности', 'ПР' -> 'проверка реальности', 'lucidity' -> 'осознанность'), Не используй китайские, японские, корейские иероглифы или слова. Используй только русскую кириллицу и стандартные знаки препинания. Пример запрета: '表演' → 'манипуляция'. \n";
+        $prompt .= "ВАЖНО: После всего анализа предоставь ответ в формате JSON где все текстовые поля содержат HTML-разметку (только теги: h2, h3, p, ul, li, strong, em). Пример:\n{\n  \"dream_analysis\": {\n    \"dream_title\": \"<h2>Название сна</h2>\",\n    \"dream_detailed\": \"<p>Первый абзац...</p><p>Второй абзац...</p>\",\n    \"key_symbols\": [\n      {\"symbol\": \"<strong>Символ</strong>\", \"meaning\": \"<p>Значение...</p>\"}\n    ]\n  }\n}, только json без лишнего текста, название переменной на английском языке, значение переменной на русском языке, без аббревиатур, сокращений, замена нерусских терминов и слов русскими аналогами (например, 'reality check' -> 'проверка реальности', 'ПР' -> 'проверка реальности', 'lucidity' -> 'осознанность'), Не используй китайские, японские, корейские иероглифы или слова. Используй только русскую кириллицу и стандартные знаки препинания. Пример запрета: '表演' → 'манипуляция'. Внутри значений JSON не используй ASCII-кавычки (\") — только «ёлочки». \n";
         $prompt .= "{\n";
         $prompt .= "  \"dream_analysis\": {\n";
         $prompt .= "    \"traditions\": {$traditionsJson},\n";
@@ -509,6 +537,7 @@ class DeepSeekService
         $prompt .= "   - Связь с предыдущими темами из контекста\n";
         $prompt .= "3. Заверши ОБЩИМИ ПРАКТИЧЕСКИМИ РЕКОМЕНДАЦИЯМИ на основе инсайтов из всей серии.\n";
         $prompt .= "4. Тон: поддерживающий, уверенный, видящий прогресс.\n";
+        $prompt .= "5. ОГРАНИЧЕНИЕ ОБЪЁМА (обязательно): overall_theme — до 2500 символов; dream_detailed каждого сна — до 1500 символов; meaning у символа — до 400 символов. Иначе JSON не поместится в ответ.\n";
         
         // Собираем специфические промпты для всех выбранных традиций
         $traditionSpecificPrompts = [];
@@ -528,9 +557,9 @@ class DeepSeekService
         } else {
             $instructionText = $defaultPrompt;
         }
-        $prompt .= "5. {$instructionText} \n\n";
+        $prompt .= "6. {$instructionText} \n\n";
         
-        $prompt .= "ВАЖНО: После всего анализа предоставь ответ в формате JSON где все текстовые поля содержат HTML-разметку (только теги: h2, h3, p, ul, li, strong, em). Пример:\n{\n  \"dream_analysis\": {\n    \"dream_title\": \"<h2>Название сна</h2>\",\n    \"dream_detailed\": \"<p>Первый абзац...</p><p>Второй абзац...</p>\",\n    \"key_symbols\": [\n      {\"symbol\": \"<strong>Символ</strong>\", \"meaning\": \"<p>Значение...</p>\"}\n    ]\n  }\n}, только json без лишнего текста, название переменной на английском языке, значение переменной на русском языке, без аббревиатур, сокращений, замена не русских терминов русскими аналогами (например, 'reality check' -> 'проверка реальности', 'ПР' -> 'проверка реальности', 'lucidity' -> 'осознанность'), Не используй китайские, японские, корейские иероглифы или слова. Используй только русскую кириллицу и стандартные знаки препинания. Пример запрета: '表演' → 'манипуляция'. \n";
+        $prompt .= "ВАЖНО: После всего анализа предоставь ответ в формате JSON где все текстовые поля содержат HTML-разметку (только теги: h2, h3, p, ul, li, strong, em). Пример:\n{\n  \"dream_analysis\": {\n    \"dream_title\": \"<h2>Название сна</h2>\",\n    \"dream_detailed\": \"<p>Первый абзац...</p><p>Второй абзац...</p>\",\n    \"key_symbols\": [\n      {\"symbol\": \"<strong>Символ</strong>\", \"meaning\": \"<p>Значение...</p>\"}\n    ]\n  }\n}, только json без лишнего текста, название переменной на английском языке, значение переменной на русском языке, без аббревиатур, сокращений, замена не русских терминов русскими аналогами (например, 'reality check' -> 'проверка реальности', 'ПР' -> 'проверка реальности', 'lucidity' -> 'осознанность'), Не используй китайские, японские, корейские иероглифы или слова. Используй только русскую кириллицу и стандартные знаки препинания. Пример запрета: '表演' → 'манипуляция'. Внутри значений JSON не используй ASCII-кавычки (\") — только «ёлочки». \n";
         $prompt .= "ОСОБОЕ ВНИМАНИЕ к блоку seo_metadata: meta_title должен быть ровно 55-60 символов (включая пробелы), meta_description - 150-160 символов, h1 - краткий и информативный заголовок, intro_text - 100-200 слов вступительного текста. Все поля seo_metadata должны быть БЕЗ HTML-разметки, только чистый текст на русском языке.\n";
         $prompt .= "ОСОБОЕ ВНИМАНИЕ к блоку seo_metadata: meta_title должен быть ровно 55-60 символов (включая пробелы), meta_description - 150-160 символов, h1 - краткий и информативный заголовок, intro_text - 100-200 слов вступительного текста. Все поля seo_metadata должны быть БЕЗ HTML-разметки, только чистый текст на русском языке.\n";
         $prompt .= "{\n";
@@ -604,178 +633,13 @@ class DeepSeekService
         return $prompt;
     }
 
-    /**
-     * Парсинг JSON из ответа API
-     */
-    private function parseJsonResponse(string $content): array
+    private function resolveMaxTokens(string $analysisType, ?array $dreams): int
     {
-        // Пытаемся найти JSON в ответе (может быть обернут в markdown код)
-        $originalContent = $content;
-        
-        // Исправляем кодировку UTF-8 если нужно
-        if (!mb_check_encoding($content, 'UTF-8')) {
-            $content = mb_convert_encoding($content, 'UTF-8', 'UTF-8');
-        }
-        
-        $content = trim($content);
+        $isSeries = $analysisType === 'series_integrated'
+            || str_starts_with($analysisType, 'series_')
+            || ($dreams !== null && count($dreams) > 1);
 
-        // Сначала пытаемся найти JSON внутри markdown блока ```json ... ```
-        // Поддержка обрезанного JSON (может не быть закрывающего ```)
-        if (preg_match('/```json\s*\n(.*?)(?:\n```|$)/is', $content, $matches)) {
-            $jsonString = trim($matches[1]);
-            $decoded = json_decode($jsonString, true, 512, JSON_INVALID_UTF8_SUBSTITUTE);
-            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-                Log::info('DeepSeek API JSON Parsed Successfully (from markdown block)');
-                return $decoded;
-            }
-            
-            // Если не получилось, пробуем "восстановить" обрезанный JSON
-            // Ищем последнюю закрывающую скобку для корневого объекта
-            $openBraces = 0;
-            $lastValidPos = -1;
-            for ($i = 0; $i < strlen($jsonString); $i++) {
-                $char = $jsonString[$i];
-                // Пропускаем строки в кавычках
-                if ($char === '"' && ($i === 0 || $jsonString[$i-1] !== '\\')) {
-                    // Находим конец строки
-                    $i++;
-                    while ($i < strlen($jsonString) && ($jsonString[$i] !== '"' || $jsonString[$i-1] === '\\')) {
-                        $i++;
-                    }
-                    continue;
-                }
-                if ($char === '{') {
-                    $openBraces++;
-                } elseif ($char === '}') {
-                    $openBraces--;
-                    if ($openBraces === 0) {
-                        $lastValidPos = $i;
-                        break;
-                    }
-                }
-            }
-            
-            if ($lastValidPos > 0) {
-                $jsonString = substr($jsonString, 0, $lastValidPos + 1);
-                $decoded = json_decode($jsonString, true, 512, JSON_INVALID_UTF8_SUBSTITUTE);
-                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-                    $this->lastJsonWasRepaired = true;
-                    Log::info('DeepSeek API JSON Parsed Successfully (from markdown block, repaired)');
-                    return $decoded;
-                }
-            }
-        }
-        
-        // Также пробуем найти JSON после ```json даже без закрывающего ```
-        // (на случай обрезанного JSON)
-        $jsonBlockStart = strpos($content, '```json');
-        if ($jsonBlockStart !== false) {
-            $jsonLineStart = strpos($content, "\n", $jsonBlockStart);
-            if ($jsonLineStart !== false) {
-                $jsonString = substr($content, $jsonLineStart + 1);
-                // Пытаемся найти начало JSON объекта
-                $braceStart = strpos($jsonString, '{');
-                if ($braceStart !== false) {
-                    $jsonString = substr($jsonString, $braceStart);
-                    
-                    // Пытаемся найти последнюю закрывающую скобку для верхнего уровня
-                    // Это поможет обработать обрезанный JSON
-                    $openBraces = 0;
-                    $lastValidBrace = -1;
-                    for ($i = 0; $i < strlen($jsonString); $i++) {
-                        if ($jsonString[$i] === '{') {
-                            $openBraces++;
-                        } elseif ($jsonString[$i] === '}') {
-                            $openBraces--;
-                            if ($openBraces === 0) {
-                                $lastValidBrace = $i;
-                                break; // Нашли закрывающую скобку верхнего уровня
-                            }
-                        }
-                    }
-                    
-                    if ($lastValidBrace > 0) {
-                        $jsonString = substr($jsonString, 0, $lastValidBrace + 1);
-                    }
-                    
-                    // Пытаемся распарсить
-                    $decoded = json_decode($jsonString, true, 512, JSON_INVALID_UTF8_SUBSTITUTE);
-                    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-                        $this->lastJsonWasRepaired = true;
-                        Log::info('DeepSeek API JSON Parsed Successfully (from markdown block, potentially truncated)');
-                        return $decoded;
-                    }
-                }
-            }
-        }
-
-        // Если не нашли в markdown блоке, убираем markdown код блоки, если есть
-        $content = preg_replace('/```json\s*/i', '', $content);
-        $content = preg_replace('/```\s*/', '', $content);
-        $content = trim($content);
-
-        // Пытаемся распарсить весь контент как JSON
-        $decoded = json_decode($content, true, 512, JSON_INVALID_UTF8_SUBSTITUTE);
-        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-            Log::info('DeepSeek API JSON Parsed Successfully (direct)');
-            return $decoded;
-        }
-
-        // Если не получилось, пытаемся найти JSON объект в тексте
-        // Ищем начало JSON (может быть после текста)
-        $jsonStart = strpos($content, '{');
-        
-        if ($jsonStart !== false) {
-            // Пытаемся найти конец JSON
-            $jsonEnd = strrpos($content, '}');
-            
-            if ($jsonEnd !== false && $jsonEnd > $jsonStart) {
-                // Пробуем распарсить с закрывающей скобкой
-                $jsonString = substr($content, $jsonStart, $jsonEnd - $jsonStart + 1);
-                $decoded = json_decode($jsonString, true, 512, JSON_INVALID_UTF8_SUBSTITUTE);
-
-                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-                    Log::info('DeepSeek API JSON Parsed Successfully (extracted)');
-                    return $decoded;
-                }
-            }
-            
-            // Если не получилось, пробуем извлечь JSON до конца строки
-            // (на случай обрезанного JSON)
-            $jsonString = substr($content, $jsonStart);
-            // Убираем текст после последней закрывающей скобки (если есть незакрытые структуры)
-            // Попробуем найти последнюю валидную структуру
-            $lastBrace = strrpos($jsonString, '}');
-            if ($lastBrace !== false) {
-                $jsonString = substr($jsonString, 0, $lastBrace + 1);
-                $decoded = json_decode($jsonString, true, 512, JSON_INVALID_UTF8_SUBSTITUTE);
-                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-                    $this->lastJsonWasRepaired = true;
-                    Log::info('DeepSeek API JSON Parsed Successfully (extracted, potentially truncated)');
-                    return $decoded;
-                }
-            }
-            
-            Log::warning('DeepSeek API JSON Parse Error', [
-                'json_error' => json_last_error_msg(),
-                'json_start' => $jsonStart,
-                'json_end' => $jsonEnd ?? 'not found',
-                'content_preview' => substr($content, $jsonStart, 500),
-            ]);
-        }
-
-        // Если не удалось распарсить, логируем и возвращаем как есть
-        Log::error('DeepSeek API JSON Parse Failed', [
-            'content_length' => strlen($content),
-            'content_preview' => substr($content, 0, 500),
-            'json_error' => json_last_error_msg(),
-        ]);
-
-        return [
-            'raw_content' => $originalContent,
-            'parse_error' => 'Не удалось распарсить JSON из ответа API: ' . json_last_error_msg(),
-            'json_error_code' => json_last_error(),
-        ];
+        return $isSeries ? self::MAX_TOKENS_SERIES : self::MAX_TOKENS_DEFAULT;
     }
 }
 
