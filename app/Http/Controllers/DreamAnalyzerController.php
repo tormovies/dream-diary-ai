@@ -738,9 +738,7 @@ class DreamAnalyzerController extends Controller
      */
     public function retry(Request $request, string $hash): RedirectResponse
     {
-        $interpretation = DreamInterpretation::where('hash', $hash)
-            ->select('id', 'hash', 'user_id', 'processing_status')
-            ->firstOrFail();
+        $interpretation = DreamInterpretation::where('hash', $hash)->firstOrFail();
 
         // Проверяем права доступа
         if ($interpretation->user_id !== null) {
@@ -755,11 +753,14 @@ class DreamAnalyzerController extends Controller
             }
         }
 
-        // Сбрасываем статус и ошибки для повторной попытки
+        // Сбрасываем статус и старый результат (в т.ч. parse_error при status=completed)
         $interpretation->update([
             'processing_status' => 'pending',
             'api_error' => null,
             'analysis_issue' => null,
+            'analysis_data' => null,
+            'raw_api_request' => null,
+            'raw_api_response' => null,
             'processing_started_at' => null,
         ]);
 

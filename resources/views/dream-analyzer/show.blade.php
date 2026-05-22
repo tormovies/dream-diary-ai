@@ -366,7 +366,11 @@
                                                 </p>
                                                 @if(($analysis['api_finish_reason'] ?? null) === 'length')
                                                     <p class="text-sm text-orange-700 dark:text-orange-300 mb-2">
-                                                        Ответ DeepSeek обрезан по лимиту токенов (часто при серии из 4+ снов с длинным HTML). Повторите анализ — для серий лимит увеличен.
+                                                        Ответ DeepSeek обрезан по лимиту токенов (часто при серии из 4+ снов с длинным HTML). Нажмите «Повторить анализ» — для серий лимит увеличен до 24 000 токенов.
+                                                    </p>
+                                                @elseif(($analysis['api_finish_reason'] ?? null) === 'stop')
+                                                    <p class="text-sm text-rose-700 dark:text-rose-300 mb-2">
+                                                        Модель завершила ответ сама (<code>stop</code>), но JSON не удалось разобрать. Нажмите «Повторить анализ» — обычно помогает повторный запрос или обновлённый парсер.
                                                     </p>
                                                 @endif
                                                 @if(isset($analysis['json_error_code']) && $analysis['json_error_code'] !== 0)
@@ -382,7 +386,7 @@
                                                 </h4>
                                                 <ul class="list-disc list-inside space-y-2 text-gray-700 dark:text-gray-300">
                                                     <li>
-                                                        <strong>Попробуйте создать анализ заново</strong> — в большинстве случаев повторный запрос работает успешно
+                                                        <strong>Нажмите «Повторить анализ»</strong> на этой странице — тот же сон будет отправлен в API заново
                                                     </li>
                                                     <li>
                                                         Если проблема повторяется, попробуйте:
@@ -393,21 +397,27 @@
                                                         </ul>
                                                     </li>
                                                     <li>
-                                                        Сейчас лимит увеличен с 4000 до 8000 токенов — новые анализы должны работать лучше
+                                                        Для серии снов лимит ответа — до 24 000 токенов, для одного сна — 8000
                                                     </li>
                                                 </ul>
                                             </div>
                                             
                                             <div class="flex flex-wrap gap-3 mt-6">
-                                                <a href="{{ route('dream-analyzer.create') }}" 
-                                                   class="inline-flex items-center px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition-colors">
-                                                    <i class="fas fa-redo mr-2"></i>
-                                                    Создать новый анализ
+                                                <form method="POST" action="{{ route('dream-analyzer.retry', $interpretation->hash) }}" class="inline">
+                                                    @csrf
+                                                    <button type="submit" class="inline-flex items-center px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition-colors">
+                                                        <i class="fas fa-redo mr-2"></i>
+                                                        Повторить анализ
+                                                    </button>
+                                                </form>
+                                                <a href="{{ route('feedback.index') }}" class="inline-flex items-center px-6 py-3 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-semibold rounded-lg transition-colors">
+                                                    <i class="fas fa-comment-dots mr-2"></i>
+                                                    Обратная связь
                                                 </a>
-                                                <a href="{{ route('dashboard') }}" 
-                                                   class="inline-flex items-center px-6 py-3 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-semibold rounded-lg transition-colors">
-                                                    <i class="fas fa-home mr-2"></i>
-                                                    На главную
+                                                <a href="{{ route('dream-analyzer.create') }}" 
+                                                   class="inline-flex items-center px-6 py-3 border border-purple-300 dark:border-purple-600 text-purple-800 dark:text-purple-200 font-semibold rounded-lg transition-colors hover:bg-purple-50 dark:hover:bg-purple-900/30">
+                                                    <i class="fas fa-plus mr-2"></i>
+                                                    Новый анализ
                                                 </a>
                                             </div>
                                         </div>
