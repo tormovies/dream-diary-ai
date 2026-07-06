@@ -208,12 +208,22 @@
                     
                     <div class="form-group mb-3">
                         <label class="form-label block-description-label ${isContext ? '' : 'required'}">${isContext ? 'Контекст (ваши мысли, идеи по поводу сна)' : 'Описание'}</label>
-                        <textarea name="dreams[${dreamIndex}][description]" 
-                                  rows="4"
-                                  class="form-textarea dream-description"
-                                  data-dream-index="${dreamIndex}"
-                                  oninput="checkDreamSeries(this)"
-                                  ${isContext ? '' : 'required'}>${(description || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</textarea>
+                        <div class="textarea-expand-wrap">
+                            <textarea name="dreams[${dreamIndex}][description]" 
+                                      rows="4"
+                                      class="form-textarea dream-description"
+                                      data-dream-index="${dreamIndex}"
+                                      oninput="checkDreamSeries(this)"
+                                      ${isContext ? '' : 'required'}>${(description || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</textarea>
+                            <button type="button"
+                                    class="textarea-expand-btn"
+                                    onclick="toggleTextareaExpand(this)"
+                                    title="Развернуть поле"
+                                    aria-label="Развернуть поле"
+                                    aria-expanded="false">
+                                <i class="fas fa-arrows-up-down" aria-hidden="true"></i>
+                            </button>
+                        </div>
                         <div class="form-hint dream-series-hint" style="${isContext ? 'display:none' : ''}">Если хотите написать несколько снов в одно окно - используйте разделитель три и более тире (-----)</div>
                         <div id="dream-count-${dreamIndex}" class="mt-2 text-sm font-semibold" x-cloak></div>
                     </div>
@@ -453,6 +463,23 @@
             }
 
             // Проверка на серию снов (разделитель ---)
+            function toggleTextareaExpand(btn) {
+                const wrap = btn.closest('.textarea-expand-wrap');
+                if (!wrap) return;
+
+                const textarea = wrap.querySelector('textarea');
+                const expanded = wrap.classList.toggle('is-expanded');
+
+                if (!expanded && textarea) {
+                    textarea.style.height = '';
+                }
+
+                const label = expanded ? 'Свернуть поле' : 'Развернуть поле';
+                btn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+                btn.title = label;
+                btn.setAttribute('aria-label', label);
+            }
+
             function checkDreamSeries(textarea) {
                 const text = textarea.value;
                 const dreamIndex = textarea.dataset.dreamIndex;
