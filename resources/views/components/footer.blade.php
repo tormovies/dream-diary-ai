@@ -12,6 +12,11 @@
                 Политика обработки персональных данных
             </a>
             <span class="hidden sm:inline text-gray-300 dark:text-gray-600" aria-hidden="true">·</span>
+            <a href="{{ route('legal.terms') }}"
+               class="hover:text-gray-900 hover:underline dark:hover:text-gray-200">
+                Пользовательское соглашение
+            </a>
+            <span class="hidden sm:inline text-gray-300 dark:text-gray-600" aria-hidden="true">·</span>
             <a href="{{ route('legal.cookies') }}"
                class="hover:text-gray-900 hover:underline dark:hover:text-gray-200">
                 Политика cookie

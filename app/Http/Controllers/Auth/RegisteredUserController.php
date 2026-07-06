@@ -8,6 +8,7 @@ use App\Models\SeoGoneUrl;
 use App\Models\User;
 use App\Rules\EmailNotBlocked;
 use App\Rules\NoSpam;
+use App\Support\RegistrationConsentLogger;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -87,6 +88,7 @@ class RegisteredUserController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+            'terms_accepted' => ['accepted'],
             'personal_data_consent' => ['accepted'],
             'name' => ['required', 'string', 'max:255', new NoSpam],
             'nickname' => [
@@ -104,6 +106,7 @@ class RegisteredUserController extends Controller
         // Кастомные сообщения об ошибках
         $validator->setCustomMessages([
             'nickname.regex' => 'Никнейм может содержать только буквы, цифры, точку (.), дефис (-) и подчеркивание (_).',
+            'terms_accepted.accepted' => 'Необходимо принять пользовательское соглашение.',
             'personal_data_consent.accepted' => 'Необходимо согласие на обработку персональных данных.',
         ]);
 
@@ -148,6 +151,8 @@ class RegisteredUserController extends Controller
             'diary_privacy' => 'public',
             // public_link будет автоматически установлен через boot метод модели
         ]);
+
+        RegistrationConsentLogger::log($user, $request);
 
         event(new Registered($user));
 

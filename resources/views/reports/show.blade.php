@@ -438,6 +438,8 @@
                                 <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">По умолчанию выключено. Если включить, в анализ попадёт ваш контекст из этого отчёта и контекст предыстории из предыдущего по дате отчёта.</p>
                             </div>
 
+                            <x-ai-processing-notice class="mb-6" />
+
                             <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 mt-6">
                                 <button type="button" onclick="closeAnalysisModal()" class="w-full sm:flex-1 bg-gray-500 hover:bg-gray-700 text-white font-bold py-3 px-4 sm:px-6 rounded-lg transition-colors">
                                     <i class="fas fa-times mr-2"></i>Отмена

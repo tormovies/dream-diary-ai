@@ -15,6 +15,16 @@ class MyDreamInterpretationsController extends Controller
     {
         $interpretations = DreamInterpretation::query()
             ->where('user_id', auth()->id())
+            ->select([
+                'id',
+                'hash',
+                'user_id',
+                'report_id',
+                'dream_description',
+                'processing_status',
+                'analysis_issue',
+                'created_at',
+            ])
             ->orderByDesc('created_at')
             ->paginate(20);
 
@@ -35,6 +45,12 @@ class MyDreamInterpretationsController extends Controller
             return redirect()
                 ->route('dream-analyzer.show', $interpretation->hash)
                 ->with('info', 'Перенести в дневник можно только завершённое толкование.');
+        }
+
+        if ($interpretation->analysis_issue) {
+            return redirect()
+                ->route('dream-analyzer.show', $interpretation->hash)
+                ->with('info', 'Сначала повторите анализ — результат ещё не получен полностью.');
         }
 
         $linkedReport = $this->resolveLinkedReport($interpretation);
@@ -61,6 +77,12 @@ class MyDreamInterpretationsController extends Controller
             return redirect()
                 ->route('dream-analyzer.show', $interpretation->hash)
                 ->with('error', 'Перенос возможен только для завершённого толкования.');
+        }
+
+        if ($interpretation->analysis_issue) {
+            return redirect()
+                ->route('dream-analyzer.show', $interpretation->hash)
+                ->with('error', 'Сначала повторите анализ — результат ещё не получен полностью.');
         }
 
         $linkedReport = $this->resolveLinkedReport($interpretation);

@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\CookieConsentLog;
+use App\Models\UserRegistrationConsent;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -16,7 +17,16 @@ class ComplianceTest extends TestCase
         $this->get(route('legal.personal-data'))
             ->assertOk()
             ->assertSee('Политика обработки персональных данных', false)
-            ->assertSee(config('compliance.operator.inn'), false);
+            ->assertSee(config('compliance.operator.inn'), false)
+            ->assertSee('DeepSeek', false);
+    }
+
+    public function test_legal_terms_page_is_available(): void
+    {
+        $this->get(route('legal.terms'))
+            ->assertOk()
+            ->assertSee('Пользовательское соглашение', false)
+            ->assertSee(config('compliance.operator.ogrnip'), false);
     }
 
     public function test_legal_cookie_policy_page_is_available(): void
@@ -24,7 +34,8 @@ class ComplianceTest extends TestCase
         $this->get(route('legal.cookies'))
             ->assertOk()
             ->assertSee('Политика использования файлов cookie', false)
-            ->assertSee(config('compliance.operator.ogrnip'), false);
+            ->assertSee(config('compliance.operator.ogrnip'), false)
+            ->assertSee('informative', false);
     }
 
     public function test_consent_endpoint_stores_log_entry(): void
@@ -79,6 +90,26 @@ class ComplianceTest extends TestCase
 
         $response->assertOk();
         $response->assertSee(route('legal.personal-data', [], false), false);
+        $response->assertSee(route('legal.terms', [], false), false);
         $response->assertSee(route('legal.cookies', [], false), false);
+    }
+
+    public function test_registration_stores_consent_log(): void
+    {
+        $this->post('/register', [
+            'name' => 'Maria Ivanova',
+            'nickname' => 'mariadreams',
+            'email' => 'consent@example.com',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
+            'terms_accepted' => '1',
+            'personal_data_consent' => '1',
+        ])->assertRedirect(route('notifications.index', absolute: false));
+
+        $this->assertDatabaseHas('user_registration_consents', [
+            'policy_version' => config('compliance.policy_version'),
+        ]);
+
+        $this->assertSame(1, UserRegistrationConsent::query()->count());
     }
 }

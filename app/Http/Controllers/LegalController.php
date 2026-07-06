@@ -23,4 +23,13 @@ class LegalController extends Controller
             'effectiveDate' => config('compliance.documents_effective_date'),
         ]);
     }
+
+    public function terms(): View
+    {
+        return view('legal.user-agreement', [
+            'operator' => config('compliance.operator'),
+            'policyVersion' => config('compliance.policy_version'),
+            'effectiveDate' => config('compliance.documents_effective_date'),
+        ]);
+    }
 }

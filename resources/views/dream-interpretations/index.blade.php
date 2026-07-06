@@ -35,17 +35,18 @@
                 @foreach($interpretations as $row)
                     @php
                         $status = $row->processing_status ?? 'completed';
+                        $analysisIssue = $row->analysis_issue;
                         $snippet = \Illuminate\Support\Str::limit(preg_replace('/\s+/u', ' ', trim(strip_tags($row->dream_description))), 160);
                         $linkedReport = $row->report_id ? $row->report : null;
                         if ($linkedReport !== null && (int) $linkedReport->user_id !== (int) auth()->id()) {
                             $linkedReport = null;
                         }
                     @endphp
-                    <div class="p-4 space-y-3">
+                    <div @class(['p-4 space-y-3', 'bg-orange-50/80 dark:bg-orange-950/20' => !empty($analysisIssue)])>
                         <div class="flex flex-wrap items-start justify-between gap-2">
                             <span class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{{ $row->created_at->format('d.m.Y H:i') }}</span>
                             <div>
-                                @include('dream-interpretations.partials.status-badge', ['status' => $status])
+                                @include('dream-interpretations.partials.status-badge', ['status' => $status, 'analysisIssue' => $analysisIssue])
                             </div>
                         </div>
                         <p class="text-sm text-gray-800 dark:text-gray-200 break-words">{{ $snippet ?: '—' }}</p>
@@ -59,6 +60,7 @@
                         @include('dream-interpretations.partials.row-actions', [
                             'hash' => $row->hash,
                             'status' => $status,
+                            'analysisIssue' => $analysisIssue,
                             'linkedReport' => $linkedReport,
                             'openLabel' => 'Открыть толкование',
                         ])
@@ -80,17 +82,21 @@
                         @foreach($interpretations as $row)
                             @php
                                 $status = $row->processing_status ?? 'completed';
+                                $analysisIssue = $row->analysis_issue;
                                 $snippet = \Illuminate\Support\Str::limit(preg_replace('/\s+/u', ' ', trim(strip_tags($row->dream_description))), 72);
                                 $linkedReport = $row->report_id ? $row->report : null;
                                 if ($linkedReport !== null && (int) $linkedReport->user_id !== (int) auth()->id()) {
                                     $linkedReport = null;
                                 }
                             @endphp
-                            <tr class="hover:bg-gray-50 dark:hover:bg-gray-900/30">
+                            <tr @class([
+                                'hover:bg-gray-50 dark:hover:bg-gray-900/30',
+                                'bg-orange-50/80 dark:bg-orange-950/20' => !empty($analysisIssue),
+                            ])>
                                 <td class="px-4 py-3 whitespace-nowrap text-gray-700 dark:text-gray-300">{{ $row->created_at->format('d.m.Y H:i') }}</td>
                                 <td class="px-4 py-3 text-gray-700 dark:text-gray-300 max-w-[16rem] min-w-0 break-words">{{ $snippet ?: '—' }}</td>
                                 <td class="px-4 py-3">
-                                    @include('dream-interpretations.partials.status-badge', ['status' => $status])
+                                    @include('dream-interpretations.partials.status-badge', ['status' => $status, 'analysisIssue' => $analysisIssue])
                                 </td>
                                 <td class="px-4 py-3 text-gray-700 dark:text-gray-300">
                                     @if($linkedReport)
@@ -105,6 +111,7 @@
                                     @include('dream-interpretations.partials.row-actions', [
                                         'hash' => $row->hash,
                                         'status' => $status,
+                                        'analysisIssue' => $analysisIssue,
                                         'linkedReport' => $linkedReport,
                                         'align' => 'end',
                                         'tooltips' => true,

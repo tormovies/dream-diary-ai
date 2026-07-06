@@ -62,7 +62,8 @@
         </div>
         <p class="mt-4 text-xs text-gray-500 dark:text-gray-400">
             Подробнее: <a href="{{ route('legal.cookies') }}" class="text-purple-600 underline dark:text-purple-400">политика cookie</a>,
-            <a href="{{ route('legal.personal-data') }}" class="text-purple-600 underline dark:text-purple-400">политика ПДн</a>.
+            <a href="{{ route('legal.personal-data') }}" class="text-purple-600 underline dark:text-purple-400">политика ПДн</a>,
+            <a href="{{ route('legal.terms') }}" class="text-purple-600 underline dark:text-purple-400">пользовательское соглашение</a>.
         </p>
     </div>
 </div>

@@ -122,6 +122,8 @@
                                     <x-input-error :messages="$errors->get('analysis_type')" class="mt-2" />
                                 </div>
 
+                                <x-ai-processing-notice class="mb-4" />
+
                                 <div class="flex flex-wrap items-center justify-center md:justify-end gap-3">
                                     <label class="flex items-start gap-2 cursor-pointer text-sm text-gray-700 dark:text-gray-300">
                                         <input type="checkbox"

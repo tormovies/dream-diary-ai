@@ -14,6 +14,8 @@ Route::get('/politika-personalnyh-dannyh', [\App\Http\Controllers\LegalControlle
     ->name('legal.personal-data');
 Route::get('/politika-cookie', [\App\Http\Controllers\LegalController::class, 'cookies'])
     ->name('legal.cookies');
+Route::get('/polzovatelskoe-soglashenie', [\App\Http\Controllers\LegalController::class, 'terms'])
+    ->name('legal.terms');
 
 Route::post('/consent', [\App\Http\Controllers\CookieConsentController::class, 'store'])
     ->middleware('throttle:60,1')
