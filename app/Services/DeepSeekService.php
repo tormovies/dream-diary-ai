@@ -14,6 +14,9 @@ class DeepSeekService
 
     private const MAX_TOKENS_SERIES = 24000;
 
+    /** Наследник deepseek-chat (снят 2026-07-24). Альтернатива: deepseek-v4-pro. */
+    private const DEFAULT_MODEL = 'deepseek-v4-flash';
+
     private string $apiKey;
 
     private string $baseUrl = 'https://api.deepseek.com';
@@ -23,6 +26,40 @@ class DeepSeekService
     public function __construct()
     {
         $this->apiKey = Setting::getValue('deepseek_api_key', '');
+    }
+
+    /**
+     * Модель API: из настройки deepseek_model или deepseek-v4-flash.
+     * Старые deepseek-chat / deepseek-reasoner больше не принимаются API.
+     */
+    private function resolveModel(): string
+    {
+        $model = trim((string) Setting::getValue('deepseek_model', self::DEFAULT_MODEL));
+        if ($model === '' || in_array($model, ['deepseek-chat', 'deepseek-reasoner'], true)) {
+            return self::DEFAULT_MODEL;
+        }
+
+        return $model;
+    }
+
+    /**
+     * Базовые поля chat/completions: без thinking (как бывший deepseek-chat).
+     */
+    private function buildChatRequest(string $prompt, int $maxTokens): array
+    {
+        return [
+            'model' => $this->resolveModel(),
+            'messages' => [
+                [
+                    'role' => 'user',
+                    'content' => $prompt,
+                ],
+            ],
+            'temperature' => 0.7,
+            'max_tokens' => $maxTokens,
+            // У V4 thinking включён по умолчанию; для JSON-анализов отключаем.
+            'thinking' => ['type' => 'disabled'],
+        ];
     }
 
     /**
@@ -60,19 +97,7 @@ class DeepSeekService
         $prompt = $this->buildPrompt($dreamDescription, $context, $traditionsForPrompt, $analysisType, $dreams);
 
         $maxTokens = $this->resolveMaxTokens($analysisType, $dreams);
-
-        // Подготавливаем данные для запроса
-        $requestData = [
-            'model' => 'deepseek-chat',
-            'messages' => [
-                [
-                    'role' => 'user',
-                    'content' => $prompt,
-                ],
-            ],
-            'temperature' => 0.7,
-            'max_tokens' => $maxTokens,
-        ];
+        $requestData = $this->buildChatRequest($prompt, $maxTokens);
 
         // Получаем таймауты из настроек (с дефолтными значениями)
         $phpTimeout = (int) \App\Models\Setting::getValue('deepseek_php_execution_timeout', 660);
@@ -289,12 +314,7 @@ class DeepSeekService
             $template
         );
 
-        $requestData = [
-            'model' => 'deepseek-chat',
-            'messages' => [['role' => 'user', 'content' => $prompt]],
-            'temperature' => 0.7,
-            'max_tokens' => 8000,
-        ];
+        $requestData = $this->buildChatRequest($prompt, 8000);
 
         $phpTimeout = (int) \App\Models\Setting::getValue('deepseek_php_execution_timeout', 660);
         $httpTimeout = (int) \App\Models\Setting::getValue('deepseek_http_timeout', 600);
