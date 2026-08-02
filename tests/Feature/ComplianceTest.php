@@ -18,7 +18,8 @@ class ComplianceTest extends TestCase
             ->assertOk()
             ->assertSee('Политика обработки персональных данных', false)
             ->assertSee(config('compliance.operator.inn'), false)
-            ->assertSee('DeepSeek', false);
+            ->assertSee('DeepSeek', false)
+            ->assertSee('трансграничную передачу', false);
     }
 
     public function test_legal_terms_page_is_available(): void
