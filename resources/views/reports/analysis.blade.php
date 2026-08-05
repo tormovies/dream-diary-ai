@@ -218,13 +218,11 @@
                             @endif
                         </script>
                     @else
-                        <!-- Результаты анализа -->
-                        @if($interpretation->analysis_type === 'single')
-                            <!-- Одиночный анализ -->
-                            @include('dream-analyzer.partials.single-analysis-normalized', ['result' => $interpretation->result, 'interpretation' => $interpretation, 'symbolPageUrlBySlug' => $symbolPageUrlBySlug ?? []])
-                        @else
-                            <!-- Серия снов -->
+                        <!-- Результаты анализа: ветка по result.type (не по analysis_type — там бывает integrated/comparative) -->
+                        @if(($interpretation->result->type ?? 'single') === 'series')
                             @include('dream-analyzer.partials.series-analysis-normalized', ['result' => $interpretation->result, 'interpretation' => $interpretation, 'symbolPageUrlBySlug' => $symbolPageUrlBySlug ?? []])
+                        @else
+                            @include('dream-analyzer.partials.single-analysis-normalized', ['result' => $interpretation->result, 'interpretation' => $interpretation, 'symbolPageUrlBySlug' => $symbolPageUrlBySlug ?? []])
                         @endif
                     @endif
 
@@ -401,9 +399,23 @@
                                         </div>
                                     @else
                                         <div class="bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3">
-                                            <p class="text-sm text-gray-600 dark:text-gray-400">
-                                                <strong>Контекст от DeepSeek:</strong> не сохранён (в ответе API не было <code>context_for_next_analysis</code> или анализ ещё не завершён).
-                                            </p>
+                                            @php
+                                                $ctxInRaw = \App\Support\AnalysisContextExtractor::extract(
+                                                    is_array($interpretation->analysis_data ?? null) ? $interpretation->analysis_data : null,
+                                                    $interpretation->raw_api_response ?? null
+                                                );
+                                            @endphp
+                                            @if($ctxInRaw)
+                                                <p class="text-sm text-amber-800 dark:text-amber-200">
+                                                    <strong>Контекст от DeepSeek:</strong> в <code>report.current_context</code> не сохранён, но в ответе API он есть.
+                                                    После деплоя восстановите: <code>php artisan dream-interpretations:migrate --only-empty</code>
+                                                    (или нажмите «Повторить анализ»).
+                                                </p>
+                                            @else
+                                                <p class="text-sm text-gray-600 dark:text-gray-400">
+                                                    <strong>Контекст от DeepSeek:</strong> не сохранён (в ответе API не было <code>context_for_next_analysis</code> или анализ ещё не завершён).
+                                                </p>
+                                            @endif
                                         </div>
                                     @endif
                                 </div>

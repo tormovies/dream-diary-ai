@@ -20,6 +20,7 @@ class ScanInterpretationQualityIssues extends Command
     public function handle(): int
     {
         $query = DreamInterpretation::query()
+            ->with('result')
             ->select(['id', 'analysis_data', 'raw_api_response', 'processing_status']);
 
         if (! $this->option('rescan')) {
@@ -37,33 +38,46 @@ class ScanInterpretationQualityIssues extends Command
             return 0;
         }
 
-        if ($this->option('dry-run')) {
-            $this->warn('Режим dry-run: записи в БД не обновляются.');
-
-            return 0;
-        }
-
         $chunk = (int) $this->option('chunk');
         $found = 0;
+        $byIssue = [];
+        $dryRun = (bool) $this->option('dry-run');
+
+        if ($dryRun) {
+            $this->warn('Режим dry-run: записи в БД не обновляются.');
+        }
+
         $bar = $this->output->createProgressBar($total);
         $bar->start();
 
-        $query->orderBy('id')->chunk($chunk, function ($interpretations) use (&$found, $bar) {
+        $query->orderBy('id')->chunk($chunk, function ($interpretations) use (&$found, &$byIssue, $bar, $dryRun) {
             foreach ($interpretations as $interpretation) {
+                $analysisData = is_array($interpretation->analysis_data) ? $interpretation->analysis_data : null;
                 $issue = InterpretationQualityAnalyzer::detect(
-                    is_array($interpretation->analysis_data) ? $interpretation->analysis_data : null,
+                    $analysisData,
                     $interpretation->raw_api_response,
                     false
                 );
 
-                if ($issue !== null) {
-                    $found++;
+                if ($issue === null) {
+                    $issue = InterpretationQualityAnalyzer::detectEmptyNormalizedResult(
+                        $interpretation->result,
+                        $analysisData,
+                        $interpretation->raw_api_response
+                    );
                 }
 
-                DreamInterpretation::where('id', $interpretation->id)->update(['analysis_issue' => $issue]);
-                $stat = DreamInterpretationStat::where('dream_interpretation_id', $interpretation->id)->first();
-                if ($stat) {
-                    $stat->update(['analysis_issue' => $issue]);
+                if ($issue !== null) {
+                    $found++;
+                    $byIssue[$issue] = ($byIssue[$issue] ?? 0) + 1;
+                }
+
+                if (! $dryRun) {
+                    DreamInterpretation::where('id', $interpretation->id)->update(['analysis_issue' => $issue]);
+                    $stat = DreamInterpretationStat::where('dream_interpretation_id', $interpretation->id)->first();
+                    if ($stat) {
+                        $stat->update(['analysis_issue' => $issue]);
+                    }
                 }
 
                 $bar->advance();
@@ -73,6 +87,10 @@ class ScanInterpretationQualityIssues extends Command
         $bar->finish();
         $this->newLine();
         $this->info("Готово. Найдено проблемных: {$found}");
+        foreach ($byIssue as $code => $count) {
+            $label = InterpretationQualityAnalyzer::label($code) ?? $code;
+            $this->line("  - {$label}: {$count}");
+        }
 
         return 0;
     }

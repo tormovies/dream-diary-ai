@@ -12,6 +12,9 @@ class InterpretationQualityAnalyzer
 
     public const ISSUE_JSON_SYNTAX = 'json_syntax';
 
+    /** Ответ распарсился, но нет dream_detailed / series (чужой schema или пустой result). */
+    public const ISSUE_EMPTY_CONTENT = 'empty_content';
+
     /**
      * @param  array<string, mixed>|null  $analysisData
      */
@@ -31,7 +34,70 @@ class InterpretationQualityAnalyzer
             return self::ISSUE_TRUNCATED_JSON;
         }
 
+        if (is_array($analysisData) && ! self::hasUsableAnalysisContent($analysisData)) {
+            // Пустой/чужой schema при наличии ответа API — нужно переделать анализ
+            if (self::hasApiPayload($analysisData, $rawApiResponse)) {
+                return self::ISSUE_EMPTY_CONTENT;
+            }
+        }
+
         return null;
+    }
+
+    /**
+     * Есть ли текст анализа в ожидаемом (или совместимом) формате.
+     *
+     * @param  array<string, mixed>  $analysisData
+     */
+    public static function hasUsableAnalysisContent(array $analysisData): bool
+    {
+        if (! empty($analysisData['dream_analysis']['dream_detailed'])) {
+            return true;
+        }
+
+        if (! empty($analysisData['series_analysis']['overall_theme'])) {
+            return true;
+        }
+
+        if (! empty($analysisData['dreams']) && is_array($analysisData['dreams'])) {
+            foreach ($analysisData['dreams'] as $dream) {
+                if (is_array($dream) && ! empty($dream['dream_detailed'])) {
+                    return true;
+                }
+            }
+        }
+
+        // Legacy schema (unified_schema / dream_metadata)
+        if (! empty($analysisData['dream_metadata']['dream_detailed'])) {
+            return true;
+        }
+
+        if (! empty($analysisData['dream_analysis']['dream_metadata']['dream_detailed'])) {
+            return true;
+        }
+
+        if (! empty($analysisData['dream_analysis']['core_theme'])
+            || ! empty($analysisData['dream_analysis']['central_message'])) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * @param  array<string, mixed>|null  $analysisData
+     */
+    private static function hasApiPayload(?array $analysisData, ?string $rawApiResponse): bool
+    {
+        if (is_string($rawApiResponse) && $rawApiResponse !== '') {
+            return true;
+        }
+
+        if (! is_array($analysisData)) {
+            return false;
+        }
+
+        return ! empty($analysisData['full_content']) || ! empty($analysisData['raw_content']);
     }
 
     /**
@@ -58,6 +124,7 @@ class InterpretationQualityAnalyzer
             self::ISSUE_JSON_SYNTAX => 'Синтаксис JSON в ответе',
             self::ISSUE_TRUNCATED_TOKENS => 'Обрезка по лимиту токенов',
             self::ISSUE_TRUNCATED_JSON => 'Обрезанный JSON (восстановлен)',
+            self::ISSUE_EMPTY_CONTENT => 'Пустой анализ (нужен повтор)',
             default => null,
         };
     }
@@ -69,6 +136,7 @@ class InterpretationQualityAnalyzer
             self::ISSUE_JSON_SYNTAX => 'bg-rose-100 text-rose-800',
             self::ISSUE_TRUNCATED_TOKENS => 'bg-orange-100 text-orange-800',
             self::ISSUE_TRUNCATED_JSON => 'bg-amber-100 text-amber-800',
+            self::ISSUE_EMPTY_CONTENT => 'bg-yellow-100 text-yellow-800',
             default => 'bg-gray-100 text-gray-800',
         };
     }
@@ -81,11 +149,44 @@ class InterpretationQualityAnalyzer
         return [
             '' => 'Все',
             'any' => 'Любая проблема',
+            self::ISSUE_EMPTY_CONTENT => 'Пустой анализ',
             self::ISSUE_JSON_SYNTAX => 'Синтаксис JSON',
             self::ISSUE_PARSE_FAILED => 'JSON не распарсился (обрезка)',
             self::ISSUE_TRUNCATED_TOKENS => 'Обрезка по токенам',
             self::ISSUE_TRUNCATED_JSON => 'Обрезанный JSON',
         ];
+    }
+
+    /**
+     * Пустой нормализованный result при наличии ответа — тоже помечаем к переделке.
+     *
+     * @param  \App\Models\DreamInterpretationResult|null  $result
+     */
+    public static function detectEmptyNormalizedResult(?object $result, ?array $analysisData, ?string $rawApiResponse): ?string
+    {
+        if ($result === null) {
+            if (self::hasApiPayload($analysisData, $rawApiResponse) && ! self::hasUsableAnalysisContent($analysisData ?? [])) {
+                return self::ISSUE_EMPTY_CONTENT;
+            }
+
+            return null;
+        }
+
+        $type = $result->type ?? null;
+        if ($type === 'single' && empty($result->dream_detailed)) {
+            return self::ISSUE_EMPTY_CONTENT;
+        }
+
+        if ($type === 'series' && empty($result->overall_theme)) {
+            $hasSeriesDreams = method_exists($result, 'relationLoaded')
+                && $result->relationLoaded('seriesDreams')
+                && $result->seriesDreams->isNotEmpty();
+            if (! $hasSeriesDreams) {
+                return self::ISSUE_EMPTY_CONTENT;
+            }
+        }
+
+        return null;
     }
 
     /**

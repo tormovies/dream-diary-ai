@@ -15,14 +15,16 @@ class MigrateDreamInterpretations extends Command
      *
      * @var string
      */
-    protected $signature = 'dream-interpretations:migrate {--force : Принудительно мигрировать все записи, даже если уже есть нормализованные данные}';
+    protected $signature = 'dream-interpretations:migrate
+                            {--force : Принудительно мигрировать все записи, даже если уже есть нормализованные данные}
+                            {--only-empty : Только записи с пустым dream_detailed / overall_theme (восстановление из analysis_data/raw)}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Мигрировать существующие данные анализа снов в нормализованную структуру (одноразовая миграция, обычно уже выполнена)';
+    protected $description = 'Мигрировать / пересобрать нормализованные данные анализа снов';
 
     /**
      * Execute the console command.
@@ -31,11 +33,30 @@ class MigrateDreamInterpretations extends Command
     {
         $this->info('Начинаем миграцию данных анализа снов...');
 
-        $query = DreamInterpretation::whereNotNull('analysis_data')
-            ->whereNull('api_error');
+        $query = DreamInterpretation::query()
+            ->whereNull('api_error')
+            ->where(function ($q) {
+                $q->whereNotNull('analysis_data')->orWhereNotNull('raw_api_response');
+            });
 
-        if (!$this->option('force')) {
-            $query->doesntHave('result');
+        if ($this->option('only-empty')) {
+            $query->whereHas('result', function ($q) {
+                $q->where(function ($inner) {
+                    $inner->where(function ($s) {
+                        $s->where('type', 'single')
+                            ->where(function ($e) {
+                                $e->whereNull('dream_detailed')->orWhere('dream_detailed', '');
+                            });
+                    })->orWhere(function ($s) {
+                        $s->where('type', 'series')
+                            ->where(function ($e) {
+                                $e->whereNull('overall_theme')->orWhere('overall_theme', '');
+                            });
+                    });
+                });
+            });
+        } elseif (! $this->option('force')) {
+            $query->whereNotNull('analysis_data')->doesntHave('result');
         }
 
         $total = $query->count();
@@ -52,13 +73,17 @@ class MigrateDreamInterpretations extends Command
 
         $success = 0;
         $errors = 0;
+        $stillEmpty = 0;
 
-        // Обрабатываем чанками, чтобы не грузить все записи в память
-        $query->chunk(100, function ($interpretations) use (&$success, &$errors, $bar) {
+        $query->chunk(100, function ($interpretations) use (&$success, &$errors, &$stillEmpty, $bar) {
             foreach ($interpretations as $interpretation) {
                 try {
-                    $this->migrateInterpretation($interpretation);
-                    $success++;
+                    $filled = $this->migrateInterpretation($interpretation);
+                    if ($filled) {
+                        $success++;
+                    } else {
+                        $stillEmpty++;
+                    }
                 } catch (\Exception $e) {
                     $errors++;
                     $this->newLine();
@@ -71,11 +96,12 @@ class MigrateDreamInterpretations extends Command
         $bar->finish();
         $this->newLine(2);
 
-        $this->info("✅ Миграция завершена!");
+        $this->info('Миграция завершена!');
         $this->table(
             ['Статус', 'Количество'],
             [
-                ['Успешно', $success],
+                ['Заполнено', $success],
+                ['Всё ещё пусто (нужен повтор API)', $stillEmpty],
                 ['Ошибки', $errors],
                 ['Всего', $total],
             ]
@@ -85,28 +111,38 @@ class MigrateDreamInterpretations extends Command
     }
 
     /**
-     * Мигрирует одну интерпретацию
+     * @return bool true если после миграции есть usable content
      */
-    private function migrateInterpretation(DreamInterpretation $interpretation): void
+    private function migrateInterpretation(DreamInterpretation $interpretation): bool
     {
-        // Проверяем, не существует ли уже нормализованных данных
-        if (!$this->option('force') && $interpretation->result) {
-            return;
+        if (! $this->option('force') && ! $this->option('only-empty') && $interpretation->result) {
+            return false;
         }
 
-        $rawAnalysisData = $interpretation->analysis_data;
+        $rawAnalysisData = is_array($interpretation->analysis_data) ? $interpretation->analysis_data : null;
+
+        // Если в analysis_data нет usable-полей — пробуем перепарсить raw_api_response
+        if (! $rawAnalysisData || ! \App\Support\InterpretationQualityAnalyzer::hasUsableAnalysisContent($rawAnalysisData)) {
+            $payload = json_decode((string) $interpretation->raw_api_response, true);
+            $content = $payload['choices'][0]['message']['content'] ?? '';
+            if ($content !== '') {
+                $parsed = \App\Support\DeepSeekJsonParser::parseFromAssistantContent($content);
+                if (is_array($parsed['data'] ?? null)) {
+                    $rawAnalysisData = $parsed['data'];
+                    // Сохраняем восстановленный analysis_data
+                    $interpretation->update(['analysis_data' => $rawAnalysisData]);
+                }
+            }
+        }
+
         if (empty($rawAnalysisData)) {
-            return;
+            return false;
         }
 
-        // Определяем версию формата
         $version = DreamAnalysisAdapterFactory::detectVersion($rawAnalysisData);
-        
-        // Получаем адаптер и нормализуем данные
         $adapter = DreamAnalysisAdapterFactory::getAdapter($version);
         $normalized = $adapter->normalize($rawAnalysisData);
 
-        // Сохраняем нормализованные данные
         $result = DreamInterpretationResult::updateOrCreate(
             ['dream_interpretation_id' => $interpretation->id],
             [
@@ -119,47 +155,77 @@ class MigrateDreamInterpretations extends Command
         );
 
         if ($normalized['type'] === 'single') {
-            // Сохраняем данные для одиночного сна
             $singleAnalysis = $normalized['single_analysis'];
             $result->update([
-                'dream_title' => $singleAnalysis['dream_title'] ?? null,
+                'dream_title' => $this->truncateVarchar($singleAnalysis['dream_title'] ?? null),
                 'dream_detailed' => $singleAnalysis['dream_detailed'] ?? null,
-                'dream_type' => $singleAnalysis['dream_type'] ?? null,
+                'dream_type' => $this->truncateVarchar($singleAnalysis['dream_type'] ?? null),
                 'key_symbols' => $singleAnalysis['key_symbols'] ?? [],
                 'unified_locations' => $singleAnalysis['unified_locations'] ?? [],
                 'key_tags' => $singleAnalysis['key_tags'] ?? [],
                 'summary_insight' => $singleAnalysis['summary_insight'] ?? null,
-                'emotional_tone' => $singleAnalysis['emotional_tone'] ?? null,
+                'emotional_tone' => $this->truncateVarchar($singleAnalysis['emotional_tone'] ?? null),
             ]);
+            $filled = ! empty($singleAnalysis['dream_detailed']);
         } else {
-            // Сохраняем данные для серии снов
             $seriesAnalysis = $normalized['series_analysis'];
             $result->update([
-                'series_title' => $seriesAnalysis['series_title'] ?? null,
+                'series_title' => $this->truncateVarchar($seriesAnalysis['series_title'] ?? null),
                 'overall_theme' => $seriesAnalysis['overall_theme'] ?? null,
                 'emotional_arc' => $seriesAnalysis['emotional_arc'] ?? null,
                 'key_connections' => $seriesAnalysis['key_connections'] ?? [],
             ]);
 
-            // Удаляем старые сны в серии (если есть)
             $result->seriesDreams()->delete();
 
-            // Сохраняем отдельные сны в серии
             foreach ($seriesAnalysis['dreams'] ?? [] as $dreamData) {
                 DreamInterpretationSeriesDream::create([
                     'dream_interpretation_result_id' => $result->id,
                     'dream_number' => $dreamData['dream_number'] ?? 1,
-                    'dream_title' => $dreamData['dream_title'] ?? null,
+                    'dream_title' => $this->truncateVarchar($dreamData['dream_title'] ?? null),
                     'dream_detailed' => $dreamData['dream_detailed'] ?? null,
-                    'dream_type' => $dreamData['dream_type'] ?? null,
+                    'dream_type' => $this->truncateVarchar($dreamData['dream_type'] ?? null),
                     'key_symbols' => $dreamData['key_symbols'] ?? [],
                     'unified_locations' => $dreamData['unified_locations'] ?? [],
                     'key_tags' => $dreamData['key_tags'] ?? [],
                     'summary_insight' => $dreamData['summary_insight'] ?? null,
-                    'emotional_tone' => $dreamData['emotional_tone'] ?? null,
+                    'emotional_tone' => $this->truncateVarchar($dreamData['emotional_tone'] ?? null),
                     'order' => $dreamData['dream_number'] ?? 1,
                 ]);
             }
+            $filled = ! empty($seriesAnalysis['overall_theme']);
         }
+
+        if ($filled) {
+            $interpretation->update(['analysis_issue' => null]);
+            $stat = \App\Models\DreamInterpretationStat::where('dream_interpretation_id', $interpretation->id)->first();
+            if ($stat) {
+                $stat->update(['analysis_issue' => null]);
+            }
+
+            // Восстановить context_for_next_analysis в связанный отчёт
+            if ($interpretation->report_id) {
+                $ctx = \App\Support\AnalysisContextExtractor::extract(
+                    is_array($rawAnalysisData) ? $rawAnalysisData : null,
+                    $interpretation->raw_api_response
+                );
+                if (is_array($ctx) && $ctx !== []) {
+                    \App\Models\Report::where('id', $interpretation->report_id)->update([
+                        'current_context' => json_encode($ctx, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                    ]);
+                }
+            }
+        }
+
+        return $filled;
+    }
+
+    private function truncateVarchar(?string $value, int $max = 255): ?string
+    {
+        if ($value === null || $value === '') {
+            return $value;
+        }
+
+        return mb_strlen($value) > $max ? mb_substr($value, 0, $max) : $value;
     }
 }

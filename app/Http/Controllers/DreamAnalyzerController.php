@@ -293,12 +293,11 @@ class DreamAnalyzerController extends Controller
             // Новая система: проверяем analysis_data
             // Старая система: проверяем отдельные поля
             if ($result) {
-                // Проверяем новую систему (analysis_data)
-                if (! empty($result->analysis_data) && is_array($result->analysis_data)) {
+                if (! empty($result->dream_detailed) || ! empty($result->overall_theme) || ! empty($result->series_title)) {
                     $hasNormalizedData = true;
-                }
-                // Проверяем старую систему (отдельные поля)
-                elseif (
+                } elseif (! empty($result->analysis_data) && is_array($result->analysis_data)) {
+                    $hasNormalizedData = true;
+                } elseif (
                     (is_array($result->general_interpretation ?? null) && count($result->general_interpretation) > 0) ||
                     (is_array($result->key_symbols ?? null) && count($result->key_symbols) > 0) ||
                     (is_array($result->emotional_state ?? null) && count($result->emotional_state) > 0) ||
@@ -524,33 +523,35 @@ class DreamAnalyzerController extends Controller
             $normalized = $adapter->normalize($rawAnalysisData);
 
             // Сохраняем нормализованные данные
-            $result = DreamInterpretationResult::create([
-                'dream_interpretation_id' => $interpretation->id,
-                'type' => $normalized['type'],
-                'format_version' => $normalized['version'],
-                'traditions' => $normalized['traditions'],
-                'analysis_type' => $normalized['analysis_type'],
-                'recommendations' => $normalized['recommendations'],
-            ]);
+            $result = DreamInterpretationResult::updateOrCreate(
+                ['dream_interpretation_id' => $interpretation->id],
+                [
+                    'type' => $normalized['type'],
+                    'format_version' => $normalized['version'],
+                    'traditions' => $normalized['traditions'],
+                    'analysis_type' => $normalized['analysis_type'],
+                    'recommendations' => $normalized['recommendations'],
+                ]
+            );
 
             if ($normalized['type'] === 'single') {
                 // Сохраняем данные для одиночного сна
                 $singleAnalysis = $normalized['single_analysis'];
                 $result->update([
-                    'dream_title' => $singleAnalysis['dream_title'] ?? null,
+                    'dream_title' => self::truncateVarchar($singleAnalysis['dream_title'] ?? null),
                     'dream_detailed' => $singleAnalysis['dream_detailed'] ?? null,
-                    'dream_type' => $singleAnalysis['dream_type'] ?? null,
+                    'dream_type' => self::truncateVarchar($singleAnalysis['dream_type'] ?? null),
                     'key_symbols' => $singleAnalysis['key_symbols'] ?? [],
                     'unified_locations' => $singleAnalysis['unified_locations'] ?? [],
                     'key_tags' => $singleAnalysis['key_tags'] ?? [],
                     'summary_insight' => $singleAnalysis['summary_insight'] ?? null,
-                    'emotional_tone' => $singleAnalysis['emotional_tone'] ?? null,
+                    'emotional_tone' => self::truncateVarchar($singleAnalysis['emotional_tone'] ?? null),
                 ]);
             } else {
                 // Сохраняем данные для серии снов
                 $seriesAnalysis = $normalized['series_analysis'];
                 $result->update([
-                    'series_title' => $seriesAnalysis['series_title'] ?? null,
+                    'series_title' => self::truncateVarchar($seriesAnalysis['series_title'] ?? null),
                     'overall_theme' => $seriesAnalysis['overall_theme'] ?? null,
                     'emotional_arc' => $seriesAnalysis['emotional_arc'] ?? null,
                     'key_connections' => $seriesAnalysis['key_connections'] ?? [],
@@ -561,14 +562,14 @@ class DreamAnalyzerController extends Controller
                     DreamInterpretationSeriesDream::create([
                         'dream_interpretation_result_id' => $result->id,
                         'dream_number' => $dreamData['dream_number'] ?? 1,
-                        'dream_title' => $dreamData['dream_title'] ?? null,
+                        'dream_title' => self::truncateVarchar($dreamData['dream_title'] ?? null),
                         'dream_detailed' => $dreamData['dream_detailed'] ?? null,
-                        'dream_type' => $dreamData['dream_type'] ?? null,
+                        'dream_type' => self::truncateVarchar($dreamData['dream_type'] ?? null),
                         'key_symbols' => $dreamData['key_symbols'] ?? [],
                         'unified_locations' => $dreamData['unified_locations'] ?? [],
                         'key_tags' => $dreamData['key_tags'] ?? [],
                         'summary_insight' => $dreamData['summary_insight'] ?? null,
-                        'emotional_tone' => $dreamData['emotional_tone'] ?? null,
+                        'emotional_tone' => self::truncateVarchar($dreamData['emotional_tone'] ?? null),
                         'order' => $dreamData['dream_number'] ?? 1,
                     ]);
                 }
@@ -584,6 +585,15 @@ class DreamAnalyzerController extends Controller
                 'trace' => $e->getTraceAsString(),
             ]);
         }
+    }
+
+    private static function truncateVarchar(?string $value, int $max = 255): ?string
+    {
+        if ($value === null || $value === '') {
+            return $value;
+        }
+
+        return mb_strlen($value) > $max ? mb_substr($value, 0, $max) : $value;
     }
 
     /**

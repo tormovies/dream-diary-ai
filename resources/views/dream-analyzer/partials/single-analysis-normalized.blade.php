@@ -186,19 +186,27 @@
 <!-- Практические рекомендации -->
 @if($result->recommendations && count($result->recommendations) > 0)
     @php
-        // Объединяем рекомендации в один HTML
-        $recommendationsHtml = \App\Helpers\HtmlHelper::sanitize(implode('', array_map(function($rec) { return '<p>' . $rec . '</p>'; }, $result->recommendations)));
-        // Удаляем заголовок "Практические рекомендации" из любого места (включая внутри <p>)
+        $recItems = is_array($result->recommendations) ? $result->recommendations : [];
+        // Только плоский список строк (legacy-объекты уже нормализуются в адаптере)
+        $recLines = [];
+        foreach ($recItems as $rec) {
+            if (is_string($rec) && $rec !== '') {
+                $recLines[] = '<p>'.$rec.'</p>';
+            }
+        }
+        $recommendationsHtml = \App\Helpers\HtmlHelper::sanitize(implode('', $recLines));
         $recommendationsHtml = preg_replace('/<p>\s*<h3[^>]*>Практические рекомендации<\/h3>\s*<\/p>/is', '', $recommendationsHtml);
         $recommendationsHtml = preg_replace('/<h3[^>]*>Практические рекомендации<\/h3>\s*/is', '', $recommendationsHtml);
         $recommendationsHtml = trim($recommendationsHtml);
     @endphp
+    @if($recommendationsHtml !== '')
     <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700 mb-6">
         <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Практические рекомендации</h3>
         <div class="text-gray-700 dark:text-gray-300 leading-relaxed prose prose-purple dark:prose-invert max-w-none [&_h2]:text-xl [&_h2]:font-bold [&_h2]:text-purple-600 [&_h2]:dark:text-purple-400 [&_h2]:mt-6 [&_h2]:mb-4 [&_h2]:first:mt-0 [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:text-gray-900 [&_h3]:dark:text-white [&_h3]:mt-5 [&_h3]:mb-3 [&_p]:mb-4 [&_p]:leading-relaxed [&_ul]:list-disc [&_ul]:ml-6 [&_ul]:mb-4 [&_ul]:space-y-2 [&_ol]:list-decimal [&_ol]:ml-6 [&_ol]:mb-4 [&_ol]:space-y-2 [&_li]:mb-1 [&_strong]:font-semibold [&_strong]:text-gray-900 [&_strong]:dark:text-gray-100 [&_em]:italic">
             {!! $recommendationsHtml !!}
         </div>
     </div>
+    @endif
 @endif
 
 <!-- Блок "Поделиться" (Вариант 3) -->

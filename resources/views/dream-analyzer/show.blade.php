@@ -282,13 +282,13 @@
                         $isNewSystem = false;
                         
                         if ($result) {
-                            // Проверяем новую систему (analysis_data)
-                            if (!empty($result->analysis_data) && is_array($result->analysis_data)) {
+                            if (!empty($result->dream_detailed) || !empty($result->overall_theme) || !empty($result->series_title)) {
+                                $hasResultData = true;
+                                $isNewSystem = false;
+                            } elseif (!empty($result->analysis_data) && is_array($result->analysis_data)) {
                                 $hasResultData = true;
                                 $isNewSystem = true;
-                            }
-                            // Проверяем старую систему (отдельные поля)
-                            elseif (
+                            } elseif (
                                 (is_array($result->general_interpretation ?? null) && count($result->general_interpretation) > 0) ||
                                 (is_array($result->key_symbols ?? null) && count($result->key_symbols) > 0) ||
                                 (is_array($result->emotional_state ?? null) && count($result->emotional_state) > 0) ||

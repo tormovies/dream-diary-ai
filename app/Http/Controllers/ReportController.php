@@ -1327,47 +1327,67 @@ class ReportController extends Controller
                 $interpretation->analysis_type,
                 $isSeries ? $dreamDescriptions : null
             );
-            
-            // Обновляем запись с результатами
-            $isCompleted = !empty($result['analysis_data']);
+
+            $analysisData = is_array($result['analysis_data'] ?? null) ? $result['analysis_data'] : null;
+
+            // Если первичный разбор не дал usable-полей — перепарсить content из raw
+            if ($analysisData === null
+                || ! \App\Support\InterpretationQualityAnalyzer::hasUsableAnalysisContent($analysisData)) {
+                $payload = json_decode((string) ($result['raw_response'] ?? ''), true);
+                $content = $payload['choices'][0]['message']['content'] ?? '';
+                if (is_string($content) && $content !== '') {
+                    $reparsed = \App\Support\DeepSeekJsonParser::parseFromAssistantContent($content);
+                    if (is_array($reparsed['data'] ?? null)
+                        && \App\Support\InterpretationQualityAnalyzer::hasUsableAnalysisContent($reparsed['data'])) {
+                        $analysisData = $reparsed['data'];
+                        $result['analysis_data'] = $analysisData;
+                        \Log::info('Async analysis: recovered analysis_data via raw reparse', [
+                            'interpretation_id' => $interpretation->id,
+                        ]);
+                    }
+                }
+            }
+
+            $usable = is_array($analysisData)
+                && \App\Support\InterpretationQualityAnalyzer::hasUsableAnalysisContent($analysisData);
+            $isCompleted = ($result['success'] ?? false) && $usable;
+
             $interpretation->update([
-                'analysis_data' => $result['analysis_data'] ?? null,
+                'analysis_data' => $analysisData,
                 'raw_api_request' => $result['raw_request'] ?? null,
                 'raw_api_response' => $result['raw_response'] ?? null,
-                'api_error' => $result['error'] ?? null,
+                'api_error' => $isCompleted ? null : ($result['error'] ?? ($analysisData['parse_error'] ?? 'Не удалось разобрать ответ анализа')),
                 'processing_status' => $isCompleted ? 'completed' : 'failed',
-                'analysis_issue' => $isCompleted
-                    ? InterpretationQualityAnalyzer::detectFromDeepSeekResult($result)
-                    : null,
+                'analysis_issue' => InterpretationQualityAnalyzer::detect(
+                    $analysisData,
+                    $result['raw_response'] ?? null,
+                    (bool) ($result['json_was_repaired'] ?? false)
+                ),
             ]);
 
-            // Сохраняем в отчёт полный JSON context_for_next_analysis (вложенная структура: key_themes, recurring_symbols и т.д.) для будущих запросов к DeepSeek.
-            $ctxNext = $result['analysis_data']['context_for_next_analysis'] ?? null;
-            if (is_array($ctxNext) && !empty($ctxNext)) {
+            $ctxNext = \App\Support\AnalysisContextExtractor::extract($analysisData, $result['raw_response'] ?? null);
+            if (is_array($ctxNext) && $ctxNext !== []) {
                 $report->update(['current_context' => json_encode($ctxNext, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)]);
                 \Log::info('Report current_context saved from DeepSeek', ['report_id' => $report->id]);
             } else {
                 \Log::info('Report current_context not saved: no context_for_next_analysis in response', [
                     'report_id' => $report->id,
-                    'has_ctx_key' => isset($result['analysis_data']['context_for_next_analysis']),
+                    'usable' => $usable,
+                    'has_parse_error' => isset($analysisData['parse_error']),
                 ]);
             }
-            
-            // Очищаем кеш статистики, если толкование завершено
+
             if ($isCompleted) {
                 \App\Helpers\StatisticsHelper::clearCache();
-            }
-            
-            \Log::info('Async analysis completed', [
-                'interpretation_id' => $interpretation->id,
-                'has_result' => !empty($result['analysis_data'])
-            ]);
-            
-            // Обрабатываем и сохраняем нормализованные данные
-            if (!empty($result['analysis_data'])) {
-                $this->saveNormalizedData($interpretation, $result['analysis_data']);
+                $this->saveNormalizedData($interpretation, $analysisData);
                 \Log::info('Normalized data saved (async)', ['interpretation_id' => $interpretation->id]);
             }
+
+            \Log::info('Async analysis completed', [
+                'interpretation_id' => $interpretation->id,
+                'usable' => $usable,
+                'status' => $isCompleted ? 'completed' : 'failed',
+            ]);
             
         } catch (\Exception $e) {
             \Log::error('Async analysis failed', [
@@ -1397,34 +1417,36 @@ class ReportController extends Controller
             $adapter = \App\Services\DreamAnalysisAdapters\DreamAnalysisAdapterFactory::getAdapter($version);
             $normalized = $adapter->normalize($rawAnalysisData);
 
-            // Сохраняем нормализованные данные
-            $result = \App\Models\DreamInterpretationResult::create([
-                'dream_interpretation_id' => $interpretation->id,
-                'type' => $normalized['type'],
-                'format_version' => $normalized['version'],
-                'traditions' => $normalized['traditions'],
-                'analysis_type' => $normalized['analysis_type'],
-                'recommendations' => $normalized['recommendations'],
-            ]);
+            // Сохраняем нормализованные данные (updateOrCreate — безопасно при retry/race)
+            $result = \App\Models\DreamInterpretationResult::updateOrCreate(
+                ['dream_interpretation_id' => $interpretation->id],
+                [
+                    'type' => $normalized['type'],
+                    'format_version' => $normalized['version'],
+                    'traditions' => $normalized['traditions'],
+                    'analysis_type' => $normalized['analysis_type'],
+                    'recommendations' => $normalized['recommendations'],
+                ]
+            );
 
             if ($normalized['type'] === 'single') {
                 // Сохраняем данные для одиночного сна
                 $singleAnalysis = $normalized['single_analysis'];
                 $result->update([
-                    'dream_title' => $singleAnalysis['dream_title'] ?? null,
+                    'dream_title' => self::truncateVarchar($singleAnalysis['dream_title'] ?? null),
                     'dream_detailed' => $singleAnalysis['dream_detailed'] ?? null,
-                    'dream_type' => $singleAnalysis['dream_type'] ?? null,
+                    'dream_type' => self::truncateVarchar($singleAnalysis['dream_type'] ?? null),
                     'key_symbols' => $singleAnalysis['key_symbols'] ?? [],
                     'unified_locations' => $singleAnalysis['unified_locations'] ?? [],
                     'key_tags' => $singleAnalysis['key_tags'] ?? [],
                     'summary_insight' => $singleAnalysis['summary_insight'] ?? null,
-                    'emotional_tone' => $singleAnalysis['emotional_tone'] ?? null,
+                    'emotional_tone' => self::truncateVarchar($singleAnalysis['emotional_tone'] ?? null),
                 ]);
             } else {
                 // Сохраняем данные для серии снов
                 $seriesAnalysis = $normalized['series_analysis'];
                 $result->update([
-                    'series_title' => $seriesAnalysis['series_title'] ?? null,
+                    'series_title' => self::truncateVarchar($seriesAnalysis['series_title'] ?? null),
                     'overall_theme' => $seriesAnalysis['overall_theme'] ?? null,
                     'emotional_arc' => $seriesAnalysis['emotional_arc'] ?? null,
                     'key_connections' => $seriesAnalysis['key_connections'] ?? [],
@@ -1435,14 +1457,14 @@ class ReportController extends Controller
                     \App\Models\DreamInterpretationSeriesDream::create([
                         'dream_interpretation_result_id' => $result->id,
                         'dream_number' => $dreamData['dream_number'] ?? 1,
-                        'dream_title' => $dreamData['dream_title'] ?? null,
+                        'dream_title' => self::truncateVarchar($dreamData['dream_title'] ?? null),
                         'dream_detailed' => $dreamData['dream_detailed'] ?? null,
-                        'dream_type' => $dreamData['dream_type'] ?? null,
+                        'dream_type' => self::truncateVarchar($dreamData['dream_type'] ?? null),
                         'key_symbols' => $dreamData['key_symbols'] ?? [],
                         'unified_locations' => $dreamData['unified_locations'] ?? [],
                         'key_tags' => $dreamData['key_tags'] ?? [],
                         'summary_insight' => $dreamData['summary_insight'] ?? null,
-                        'emotional_tone' => $dreamData['emotional_tone'] ?? null,
+                        'emotional_tone' => self::truncateVarchar($dreamData['emotional_tone'] ?? null),
                         'connection_to_previous' => $dreamData['connection_to_previous'] ?? null,
                     ]);
                 }
@@ -1464,6 +1486,15 @@ class ReportController extends Controller
             ]);
             // Не бросаем исключение, чтобы не прерывать процесс создания анализа
         }
+    }
+
+    private static function truncateVarchar(?string $value, int $max = 255): ?string
+    {
+        if ($value === null || $value === '') {
+            return $value;
+        }
+
+        return mb_strlen($value) > $max ? mb_substr($value, 0, $max) : $value;
     }
     
     /**
