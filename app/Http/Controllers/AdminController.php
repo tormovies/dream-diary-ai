@@ -525,7 +525,16 @@ class AdminController extends Controller
         $statusFilter = $request->filled('status') ? $request->status : null;
         $issueFilter = $request->filled('issue') ? $request->issue : null;
         $traditionFilter = $request->filled('tradition') ? $request->tradition : null;
-        $searchFilter = $request->filled('search') ? $request->search : null;
+        // «q», не «search»: на части хостингов/WAF параметр search отфильтровывается
+        $searchFilter = null;
+        if ($request->filled('q')) {
+            $searchFilter = trim((string) $request->get('q'));
+        } elseif ($request->filled('search')) {
+            $searchFilter = trim((string) $request->get('search'));
+        }
+        if ($searchFilter === '') {
+            $searchFilter = null;
+        }
 
         // Статистика по дням за период — из stats, группировка в PHP по дате в локальном времени
         $dailyStatsQuery = DreamInterpretationStat::whereBetween('interpretation_created_at', [$startDateUtc, $endDateUtc]);
@@ -536,6 +545,13 @@ class AdminController extends Controller
             $dailyStatsQuery->whereJsonContains('traditions', $traditionFilter);
         }
         $this->applyInterpretationIssueFilter($dailyStatsQuery, $issueFilter);
+        if ($searchFilter) {
+            $dailyStatsQuery->whereIn('dream_interpretation_id', function ($sub) use ($searchFilter) {
+                $sub->select('id')
+                    ->from('dream_interpretations')
+                    ->where('dream_description', 'like', '%'.$searchFilter.'%');
+            });
+        }
         $allStats = $dailyStatsQuery->get(['interpretation_created_at', 'processing_status', 'analysis_issue']);
         $dailyStats = $allStats->groupBy(function ($stat) use ($timezone) {
             return \Carbon\Carbon::parse($stat->interpretation_created_at)->setTimezone($timezone)->format('Y-m-d');
@@ -574,12 +590,12 @@ class AdminController extends Controller
                 $dayQuery->whereJsonContains('traditions', $traditionFilter);
             }
             if ($searchFilter) {
-                $dayQuery->where('dream_description', 'like', '%' . $searchFilter . '%');
+                $dayQuery->where('dream_description', 'like', '%'.$searchFilter.'%');
             }
             $this->applyInterpretationIssueFilter($dayQuery, $issueFilter);
 
             $dayInterpretations = $dayQuery
-                ->select('id', 'hash', 'created_at', 'processing_status', 'analysis_issue', 'traditions', 'report_id', 'ip_address', 'allow_public_linking')
+                ->select('id', 'hash', 'created_at', 'processing_status', 'analysis_issue', 'traditions', 'report_id', 'ip_address', 'allow_public_linking', 'dream_description')
                 ->with([
                     // Для подсветки "запрещено публиковать" в админ таблице
                     'report' => function ($q) {
@@ -605,12 +621,12 @@ class AdminController extends Controller
                 $query->whereJsonContains('traditions', $traditionFilter);
             }
             if ($searchFilter) {
-                $query->where('dream_description', 'like', '%' . $searchFilter . '%');
+                $query->where('dream_description', 'like', '%'.$searchFilter.'%');
             }
             $this->applyInterpretationIssueFilter($query, $issueFilter);
 
             $interpretations = $query
-                ->select('id', 'hash', 'created_at', 'processing_status', 'analysis_issue', 'traditions', 'report_id', 'ip_address')
+                ->select('id', 'hash', 'created_at', 'processing_status', 'analysis_issue', 'traditions', 'report_id', 'ip_address', 'dream_description')
                 ->with('report:id')
                 ->orderBy('created_at', 'desc')
                 ->paginate(50)
@@ -645,6 +661,7 @@ class AdminController extends Controller
             'statusFilter',
             'issueFilter',
             'traditionFilter',
+            'searchFilter',
             'traditionsConfig',
             'timezone'
         ));
@@ -1284,7 +1301,7 @@ class AdminController extends Controller
         $interpretation->delete();
 
         // Возвращаемся на ту же страницу с теми же параметрами
-        $queryParams = $request->only(['start_date', 'end_date', 'date', 'status', 'tradition', 'page']);
+        $queryParams = $request->only(['start_date', 'end_date', 'date', 'status', 'tradition', 'issue', 'q', 'page']);
 
         return redirect()->route('admin.interpretations', $queryParams)
             ->with('success', 'Толкование успешно удалено');

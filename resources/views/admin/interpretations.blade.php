@@ -187,7 +187,7 @@
                             </div>
                             <div class="flex-1 min-w-[150px]">
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Поиск по описанию</label>
-                                <input type="text" name="search" value="{{ request('search') }}" placeholder="Поиск..." class="w-full rounded-md border-gray-300">
+                                <input type="text" name="q" value="{{ $searchFilter ?? '' }}" placeholder="например: дом" class="w-full rounded-md border-gray-300">
                             </div>
                             <div class="flex items-end min-w-[120px]">
                                 <button type="submit" class="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
@@ -222,18 +222,28 @@
             @endif
             @endif
 
-            @if(!$selectedDate && !empty($issueFilter) && $interpretations)
-            <!-- Список проблемных толкований за период -->
+            @if(!$selectedDate && ((!empty($issueFilter) || !empty($searchFilter)) && $interpretations))
+            <!-- Список толкований за период (фильтр проблемы и/или поиск) -->
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
                 <div class="p-6">
                     <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
                         <h3 class="text-lg font-semibold">
-                            Проблемные толкования
-                            <span class="text-sm font-normal text-gray-500">
-                                ({{ \App\Support\InterpretationQualityAnalyzer::label($issueFilter === 'any' ? null : $issueFilter) ?? ($issueFilter === 'any' ? 'любая проблема' : $issueFilter) }})
-                            </span>
+                            @if(!empty($searchFilter) && !empty($issueFilter))
+                                Результаты: «{{ $searchFilter }}»
+                                <span class="text-sm font-normal text-gray-500">
+                                    + {{ \App\Support\InterpretationQualityAnalyzer::label($issueFilter === 'any' ? null : $issueFilter) ?? ($issueFilter === 'any' ? 'любая проблема' : $issueFilter) }}
+                                </span>
+                            @elseif(!empty($searchFilter))
+                                Результаты поиска: «{{ $searchFilter }}»
+                            @else
+                                Проблемные толкования
+                                <span class="text-sm font-normal text-gray-500">
+                                    ({{ \App\Support\InterpretationQualityAnalyzer::label($issueFilter === 'any' ? null : $issueFilter) ?? ($issueFilter === 'any' ? 'любая проблема' : $issueFilter) }})
+                                </span>
+                            @endif
+                            <span class="text-sm font-normal text-gray-500">— {{ $interpretations->total() }} шт.</span>
                         </h3>
-                        <a href="{{ route('admin.interpretations', request()->except(['issue', 'date', 'page'])) }}"
+                        <a href="{{ route('admin.interpretations', request()->except(['issue', 'q', 'search', 'date', 'page'])) }}"
                            class="text-sm text-gray-600 hover:text-gray-900">Сбросить фильтр</a>
                     </div>
                     @if($interpretations->count() > 0)
@@ -242,7 +252,7 @@
                                 <thead class="bg-gray-50">
                                     <tr>
                                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Дата</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Хеш</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Описание</th>
                                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Статус</th>
                                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Проблема</th>
                                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Отчёт</th>
@@ -255,8 +265,11 @@
                                             <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
                                                 {{ $interpretation->created_at?->timezone($timezone ?? 'UTC')->format('d.m.Y H:i') }}
                                             </td>
-                                            <td class="px-4 py-3 whitespace-nowrap text-sm font-mono text-gray-600">
-                                                {{ \Illuminate\Support\Str::limit($interpretation->hash, 12, '…') }}
+                                            <td class="px-4 py-3 text-sm text-gray-700 max-w-md">
+                                                <div class="line-clamp-2" title="{{ $interpretation->dream_description }}">
+                                                    {{ \Illuminate\Support\Str::limit(strip_tags((string) $interpretation->dream_description), 120) }}
+                                                </div>
+                                                <div class="text-xs font-mono text-gray-400 mt-1">{{ \Illuminate\Support\Str::limit($interpretation->hash, 12, '…') }}</div>
                                             </td>
                                             <td class="px-4 py-3 whitespace-nowrap text-sm">
                                                 {{ $interpretation->processing_status }}
@@ -285,7 +298,13 @@
                             {{ $interpretations->links() }}
                         </div>
                     @else
-                        <p class="text-gray-500">Нет записей с выбранной проблемой за период.</p>
+                        <p class="text-gray-500">
+                            @if(!empty($searchFilter))
+                                Ничего не найдено по «{{ $searchFilter }}» за выбранный период.
+                            @else
+                                Нет записей с выбранной проблемой за период.
+                            @endif
+                        </p>
                     @endif
                 </div>
             </div>
