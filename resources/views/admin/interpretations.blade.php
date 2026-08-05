@@ -44,8 +44,11 @@
                 </div>
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6">
-                        <div class="text-2xl font-bold text-orange-600">{{ $totalIssues ?? 0 }}</div>
-                        <div class="text-sm text-gray-600">Проблемы качества</div>
+                        <a href="{{ route('admin.interpretations', array_merge(request()->except('date'), ['issue' => 'any', 'start_date' => $startDate, 'end_date' => $endDate])) }}"
+                           class="block hover:opacity-80">
+                            <div class="text-2xl font-bold text-orange-600">{{ $totalIssues ?? 0 }}</div>
+                            <div class="text-sm text-gray-600">Проблемы качества →</div>
+                        </a>
                     </div>
                 </div>
             </div>
@@ -77,9 +80,62 @@
                             <div class="text-sm text-gray-600">Ошибки</div>
                         </div>
                         <div>
-                            <div class="text-xl font-bold text-orange-600">{{ $periodIssues ?? 0 }}</div>
-                            <div class="text-sm text-gray-600">Проблемы качества</div>
+                            <a href="{{ route('admin.interpretations', array_merge(request()->except('date'), ['issue' => 'any', 'start_date' => $startDate, 'end_date' => $endDate])) }}"
+                               class="block hover:opacity-80">
+                                <div class="text-xl font-bold text-orange-600">{{ $periodIssues ?? 0 }}</div>
+                                <div class="text-sm text-gray-600">Проблемы качества →</div>
+                            </a>
                         </div>
+                    </div>
+                </div>
+            </div>
+            @endif
+
+            @if(!$selectedDate && (($periodIssuesByType ?? collect())->isNotEmpty() || ($totalIssuesByType ?? collect())->isNotEmpty()))
+            <!-- Разбивка проблем качества -->
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
+                <div class="p-6">
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+                        <h3 class="text-lg font-semibold">Проблемы качества по типам</h3>
+                        <a href="{{ route('admin.interpretations', ['issue' => 'any', 'start_date' => $startDate, 'end_date' => $endDate]) }}"
+                           class="text-sm text-orange-600 hover:text-orange-800 font-medium">
+                            Показать все проблемные за период
+                        </a>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        @php
+                            $issueCodes = collect($periodIssuesByType ?? [])
+                                ->keys()
+                                ->merge(collect($totalIssuesByType ?? [])->keys())
+                                ->unique()
+                                ->sort()
+                                ->values();
+                        @endphp
+                        @foreach($issueCodes as $code)
+                            @php
+                                $periodCount = (int) ($periodIssuesByType[$code] ?? 0);
+                                $totalCount = (int) ($totalIssuesByType[$code] ?? 0);
+                                $label = \App\Support\InterpretationQualityAnalyzer::label($code) ?? $code;
+                                $badge = \App\Support\InterpretationQualityAnalyzer::badgeClass($code);
+                            @endphp
+                            <a href="{{ route('admin.interpretations', array_merge(request()->except('date'), ['issue' => $code, 'start_date' => $startDate, 'end_date' => $endDate])) }}"
+                               class="rounded-lg border border-gray-200 p-4 hover:border-orange-300 hover:bg-orange-50/40 transition-colors {{ ($issueFilter ?? '') === $code ? 'ring-2 ring-orange-400' : '' }}">
+                                <div class="flex items-start justify-between gap-2 mb-2">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $badge }}">{{ $label }}</span>
+                                    <span class="text-xs text-gray-400">{{ $code }}</span>
+                                </div>
+                                <div class="flex gap-4 text-sm">
+                                    <div>
+                                        <div class="text-xl font-bold text-orange-700">{{ $periodCount }}</div>
+                                        <div class="text-xs text-gray-500">за период</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-lg font-semibold text-gray-700">{{ $totalCount }}</div>
+                                        <div class="text-xs text-gray-500">всего</div>
+                                    </div>
+                                </div>
+                            </a>
+                        @endforeach
                     </div>
                 </div>
             </div>
@@ -164,6 +220,75 @@
                 </div>
             </div>
             @endif
+            @endif
+
+            @if(!$selectedDate && !empty($issueFilter) && $interpretations)
+            <!-- Список проблемных толкований за период -->
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
+                <div class="p-6">
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+                        <h3 class="text-lg font-semibold">
+                            Проблемные толкования
+                            <span class="text-sm font-normal text-gray-500">
+                                ({{ \App\Support\InterpretationQualityAnalyzer::label($issueFilter === 'any' ? null : $issueFilter) ?? ($issueFilter === 'any' ? 'любая проблема' : $issueFilter) }})
+                            </span>
+                        </h3>
+                        <a href="{{ route('admin.interpretations', request()->except(['issue', 'date', 'page'])) }}"
+                           class="text-sm text-gray-600 hover:text-gray-900">Сбросить фильтр</a>
+                    </div>
+                    @if($interpretations->count() > 0)
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Дата</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Хеш</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Статус</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Проблема</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Отчёт</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Действия</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    @foreach($interpretations as $interpretation)
+                                        <tr class="hover:bg-orange-50/40">
+                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                                                {{ $interpretation->created_at?->timezone($timezone ?? 'UTC')->format('d.m.Y H:i') }}
+                                            </td>
+                                            <td class="px-4 py-3 whitespace-nowrap text-sm font-mono text-gray-600">
+                                                {{ \Illuminate\Support\Str::limit($interpretation->hash, 12, '…') }}
+                                            </td>
+                                            <td class="px-4 py-3 whitespace-nowrap text-sm">
+                                                {{ $interpretation->processing_status }}
+                                            </td>
+                                            <td class="px-4 py-3 whitespace-nowrap text-sm">
+                                                @include('admin.partials.analysis-issue-badge', ['issue' => $interpretation->analysis_issue])
+                                            </td>
+                                            <td class="px-4 py-3 whitespace-nowrap text-sm">
+                                                @if($interpretation->report_id)
+                                                    <a href="{{ route('reports.analysis', $interpretation->report_id) }}?debug=1" class="text-blue-600 hover:underline" target="_blank">
+                                                        #{{ $interpretation->report_id }}
+                                                    </a>
+                                                @else
+                                                    <span class="text-gray-400">—</span>
+                                                @endif
+                                            </td>
+                                            <td class="px-4 py-3 whitespace-nowrap text-sm">
+                                                <a href="{{ route('dream-analyzer.show', $interpretation->hash) }}" class="text-blue-600 hover:underline" target="_blank">Открыть</a>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="mt-4">
+                            {{ $interpretations->links() }}
+                        </div>
+                    @else
+                        <p class="text-gray-500">Нет записей с выбранной проблемой за период.</p>
+                    @endif
+                </div>
+            </div>
             @endif
 
             <!-- Таблица по датам или детализация за день -->
@@ -375,7 +500,14 @@
                                                 {{ $day->failed }}
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-orange-600">
-                                                {{ $day->issues ?? 0 }}
+                                                @if(($day->issues ?? 0) > 0)
+                                                    <a href="{{ route('admin.interpretations', array_merge(request()->except('date'), ['date' => $day->date, 'issue' => 'any', 'start_date' => $startDate, 'end_date' => $endDate])) }}"
+                                                       class="font-semibold hover:underline">
+                                                        {{ $day->issues }}
+                                                    </a>
+                                                @else
+                                                    0
+                                                @endif
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                                 <a href="{{ route('admin.interpretations', array_merge(request()->except('date'), ['date' => $day->date, 'start_date' => $startDate, 'end_date' => $endDate])) }}" 

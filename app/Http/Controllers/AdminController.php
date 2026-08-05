@@ -493,6 +493,19 @@ class AdminController extends Controller
         $periodIssues = DreamInterpretationStat::whereBetween('interpretation_created_at', [$startDateUtc, $endDateUtc])
             ->whereNotNull('analysis_issue')->count();
 
+        // Разбивка проблем качества по типам (всего и за период)
+        $totalIssuesByType = DreamInterpretationStat::query()
+            ->whereNotNull('analysis_issue')
+            ->selectRaw('analysis_issue, COUNT(*) as c')
+            ->groupBy('analysis_issue')
+            ->pluck('c', 'analysis_issue');
+        $periodIssuesByType = DreamInterpretationStat::query()
+            ->whereBetween('interpretation_created_at', [$startDateUtc, $endDateUtc])
+            ->whereNotNull('analysis_issue')
+            ->selectRaw('analysis_issue, COUNT(*) as c')
+            ->groupBy('analysis_issue')
+            ->pluck('c', 'analysis_issue');
+
         // Статистика по традициям за период — из stats (лёгкая таблица)
         $traditionsStats = DreamInterpretationStat::whereBetween('interpretation_created_at', [$startDateUtc, $endDateUtc])
             ->whereNotNull('traditions')
@@ -615,11 +628,13 @@ class AdminController extends Controller
             'totalPending',
             'totalFailed',
             'totalIssues',
+            'totalIssuesByType',
             'periodCreated',
             'periodCompleted',
             'periodPending',
             'periodFailed',
             'periodIssues',
+            'periodIssuesByType',
             'traditionsStats',
             'dailyStats',
             'selectedDate',
