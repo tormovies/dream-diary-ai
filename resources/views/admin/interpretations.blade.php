@@ -70,9 +70,9 @@
                     <span class="text-sm text-gray-500 group-open:hidden">показать ▾</span>
                     <span class="text-sm text-gray-500 hidden group-open:inline">скрыть ▴</span>
                 </summary>
-                <div class="px-6 pb-6 border-t border-gray-100 pt-4 space-y-8">
+                <div class="px-6 pb-6 border-t border-gray-100 pt-4 space-y-5">
                     <!-- Статистика за период -->
-                    <div>
+                    <div class="rounded-xl border border-gray-200 bg-gray-50/70 p-5">
                         <div class="flex justify-between items-center mb-4">
                             <h4 class="text-base font-semibold text-gray-900">Статистика за период ({{ $startDate }} - {{ $endDate }})</h4>
                             <span class="text-xs text-gray-500">Часовой пояс: {{ $timezone ?? 'UTC' }}</span>
@@ -106,7 +106,7 @@
 
                     @if(($periodIssuesByType ?? collect())->isNotEmpty() || ($totalIssuesByType ?? collect())->isNotEmpty())
                     <!-- Разбивка проблем качества -->
-                    <div>
+                    <div class="rounded-xl border border-gray-200 bg-gray-50/70 p-5">
                         <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
                             <h4 class="text-base font-semibold text-gray-900">Проблемы качества по типам</h4>
                             <a href="{{ route('admin.interpretations', ['issue' => 'any', 'start_date' => $startDate, 'end_date' => $endDate]) }}"
@@ -131,7 +131,7 @@
                                     $badge = \App\Support\InterpretationQualityAnalyzer::badgeClass($code);
                                 @endphp
                                 <a href="{{ route('admin.interpretations', array_merge(request()->except('date'), ['issue' => $code, 'start_date' => $startDate, 'end_date' => $endDate])) }}"
-                                   class="rounded-lg border border-gray-200 p-4 hover:border-orange-300 hover:bg-orange-50/40 transition-colors {{ ($issueFilter ?? '') === $code ? 'ring-2 ring-orange-400' : '' }}">
+                                   class="rounded-lg border border-gray-200 bg-white p-4 hover:border-orange-300 hover:bg-orange-50/40 transition-colors {{ ($issueFilter ?? '') === $code ? 'ring-2 ring-orange-400' : '' }}">
                                     <div class="flex items-start justify-between gap-2 mb-2">
                                         <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $badge }}">{{ $label }}</span>
                                         <span class="text-xs text-gray-400">{{ $code }}</span>
@@ -153,7 +153,7 @@
                     @endif
 
                     <!-- Фильтры -->
-                    <div>
+                    <div class="rounded-xl border border-gray-200 bg-gray-50/70 p-5">
                         <h4 class="text-base font-semibold text-gray-900 mb-4">Фильтры</h4>
                         <form method="GET" action="{{ route('admin.interpretations') }}">
                             <div class="flex flex-col md:flex-row gap-4 flex-wrap">
@@ -210,7 +210,7 @@
 
                     @if($traditionsStats->isNotEmpty())
                     <!-- Статистика по традициям -->
-                    <div>
+                    <div class="rounded-xl border border-gray-200 bg-gray-50/70 p-5">
                         <h4 class="text-base font-semibold text-gray-900 mb-4">Статистика по традициям (за период)</h4>
                         <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
                             @foreach($traditionsStats as $traditionKey => $count)
