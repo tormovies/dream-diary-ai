@@ -55,196 +55,178 @@
             @endif
 
             @if(!$selectedDate)
-            <!-- Статистика за период -->
-            <details class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6 group">
-                <summary class="p-6 cursor-pointer list-none flex items-center justify-between gap-3 select-none hover:bg-gray-50">
-                    <h3 class="text-lg font-semibold">Статистика за период ({{ $startDate }} - {{ $endDate }})</h3>
-                    <span class="text-sm text-gray-500 group-open:hidden">показать ▾</span>
-                    <span class="text-sm text-gray-500 hidden group-open:inline">скрыть ▴</span>
-                </summary>
-                <div class="px-6 pb-6 border-t border-gray-100 pt-4">
-                    <div class="flex justify-end mb-3">
-                        <span class="text-xs text-gray-500">Часовой пояс: {{ $timezone ?? 'UTC' }}</span>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
-                        <div>
-                            <div class="text-xl font-bold text-gray-900">{{ $periodCreated }}</div>
-                            <div class="text-sm text-gray-600">Создано</div>
-                        </div>
-                        <div>
-                            <div class="text-xl font-bold text-green-600">{{ $periodCompleted }}</div>
-                            <div class="text-sm text-gray-600">Завершено</div>
-                        </div>
-                        <div>
-                            <div class="text-xl font-bold text-yellow-600">{{ $periodPending }}</div>
-                            <div class="text-sm text-gray-600">В процессе</div>
-                        </div>
-                        <div>
-                            <div class="text-xl font-bold text-red-600">{{ $periodFailed }}</div>
-                            <div class="text-sm text-gray-600">Ошибки</div>
-                        </div>
-                        <div>
-                            <a href="{{ route('admin.interpretations', array_merge(request()->except('date'), ['issue' => 'any', 'start_date' => $startDate, 'end_date' => $endDate])) }}"
-                               class="block hover:opacity-80">
-                                <div class="text-xl font-bold text-orange-600">{{ $periodIssues ?? 0 }}</div>
-                                <div class="text-sm text-gray-600">Проблемы качества →</div>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </details>
-            @endif
-
-            @if(!$selectedDate && (($periodIssuesByType ?? collect())->isNotEmpty() || ($totalIssuesByType ?? collect())->isNotEmpty()))
-            <!-- Разбивка проблем качества -->
-            <details class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6 group">
-                <summary class="p-6 cursor-pointer list-none flex items-center justify-between gap-3 select-none hover:bg-gray-50">
-                    <h3 class="text-lg font-semibold">Проблемы качества по типам</h3>
-                    <span class="text-sm text-gray-500 group-open:hidden">показать ▾</span>
-                    <span class="text-sm text-gray-500 hidden group-open:inline">скрыть ▴</span>
-                </summary>
-                <div class="px-6 pb-6 border-t border-gray-100 pt-4">
-                    <div class="flex justify-end mb-4">
-                        <a href="{{ route('admin.interpretations', ['issue' => 'any', 'start_date' => $startDate, 'end_date' => $endDate]) }}"
-                           class="text-sm text-orange-600 hover:text-orange-800 font-medium">
-                            Показать все проблемные за период
-                        </a>
-                    </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                        @php
-                            $issueCodes = collect($periodIssuesByType ?? [])
-                                ->keys()
-                                ->merge(collect($totalIssuesByType ?? [])->keys())
-                                ->unique()
-                                ->sort()
-                                ->values();
-                        @endphp
-                        @foreach($issueCodes as $code)
-                            @php
-                                $periodCount = (int) ($periodIssuesByType[$code] ?? 0);
-                                $totalCount = (int) ($totalIssuesByType[$code] ?? 0);
-                                $label = \App\Support\InterpretationQualityAnalyzer::label($code) ?? $code;
-                                $badge = \App\Support\InterpretationQualityAnalyzer::badgeClass($code);
-                            @endphp
-                            <a href="{{ route('admin.interpretations', array_merge(request()->except('date'), ['issue' => $code, 'start_date' => $startDate, 'end_date' => $endDate])) }}"
-                               class="rounded-lg border border-gray-200 p-4 hover:border-orange-300 hover:bg-orange-50/40 transition-colors {{ ($issueFilter ?? '') === $code ? 'ring-2 ring-orange-400' : '' }}">
-                                <div class="flex items-start justify-between gap-2 mb-2">
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $badge }}">{{ $label }}</span>
-                                    <span class="text-xs text-gray-400">{{ $code }}</span>
-                                </div>
-                                <div class="flex gap-4 text-sm">
-                                    <div>
-                                        <div class="text-xl font-bold text-orange-700">{{ $periodCount }}</div>
-                                        <div class="text-xs text-gray-500">за период</div>
-                                    </div>
-                                    <div>
-                                        <div class="text-lg font-semibold text-gray-700">{{ $totalCount }}</div>
-                                        <div class="text-xs text-gray-500">всего</div>
-                                    </div>
-                                </div>
-                            </a>
-                        @endforeach
-                    </div>
-                </div>
-            </details>
-            @endif
-
-            @if(!$selectedDate)
             @php
                 $filtersActive = !empty($issueFilter) || !empty($searchFilter) || !empty($statusFilter) || !empty($traditionFilter);
             @endphp
-            <!-- Фильтры -->
+            <!-- Период, проблемы, фильтры, традиции — один спойлер -->
             <details class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6 group" @if($filtersActive) open @endif>
                 <summary class="p-6 cursor-pointer list-none flex items-center justify-between gap-3 select-none hover:bg-gray-50">
                     <h3 class="text-lg font-semibold">
-                        Фильтры
+                        Фильтры и детальная статистика
                         @if($filtersActive)
-                            <span class="text-sm font-normal text-orange-600">(активны)</span>
+                            <span class="text-sm font-normal text-orange-600">(фильтры активны)</span>
                         @endif
                     </h3>
                     <span class="text-sm text-gray-500 group-open:hidden">показать ▾</span>
                     <span class="text-sm text-gray-500 hidden group-open:inline">скрыть ▴</span>
                 </summary>
-                <div class="px-6 pb-6 border-t border-gray-100 pt-4">
-                    <form method="GET" action="{{ route('admin.interpretations') }}">
-                        <div class="flex flex-col md:flex-row gap-4 flex-wrap">
-                            <div class="flex-1 min-w-[150px]">
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Начало периода</label>
-                                <input type="date" name="start_date" value="{{ $startDate }}" class="w-full rounded-md border-gray-300">
+                <div class="px-6 pb-6 border-t border-gray-100 pt-4 space-y-8">
+                    <!-- Статистика за период -->
+                    <div>
+                        <div class="flex justify-between items-center mb-4">
+                            <h4 class="text-base font-semibold text-gray-900">Статистика за период ({{ $startDate }} - {{ $endDate }})</h4>
+                            <span class="text-xs text-gray-500">Часовой пояс: {{ $timezone ?? 'UTC' }}</span>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                            <div>
+                                <div class="text-xl font-bold text-gray-900">{{ $periodCreated }}</div>
+                                <div class="text-sm text-gray-600">Создано</div>
                             </div>
-                            <div class="flex-1 min-w-[150px]">
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Конец периода</label>
-                                <input type="date" name="end_date" value="{{ $endDate }}" class="w-full rounded-md border-gray-300">
+                            <div>
+                                <div class="text-xl font-bold text-green-600">{{ $periodCompleted }}</div>
+                                <div class="text-sm text-gray-600">Завершено</div>
                             </div>
-                            <div class="flex-1 min-w-[150px]">
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Статус</label>
-                                <select name="status" class="w-full rounded-md border-gray-300">
-                                    <option value="">Все</option>
-                                    <option value="completed" {{ $statusFilter === 'completed' ? 'selected' : '' }}>Завершено</option>
-                                    <option value="pending" {{ $statusFilter === 'pending' ? 'selected' : '' }}>В процессе</option>
-                                    <option value="failed" {{ $statusFilter === 'failed' ? 'selected' : '' }}>Ошибки</option>
-                                </select>
+                            <div>
+                                <div class="text-xl font-bold text-yellow-600">{{ $periodPending }}</div>
+                                <div class="text-sm text-gray-600">В процессе</div>
                             </div>
-                            <div class="flex-1 min-w-[180px]">
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Проблема качества</label>
-                                <select name="issue" class="w-full rounded-md border-gray-300">
-                                    @foreach(\App\Support\InterpretationQualityAnalyzer::filterOptions() as $value => $label)
-                                        <option value="{{ $value }}" {{ ($issueFilter ?? '') === $value ? 'selected' : '' }}>{{ $label }}</option>
-                                    @endforeach
-                                </select>
+                            <div>
+                                <div class="text-xl font-bold text-red-600">{{ $periodFailed }}</div>
+                                <div class="text-sm text-gray-600">Ошибки</div>
                             </div>
-                            <div class="flex-1 min-w-[150px]">
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Традиция</label>
-                                <select name="tradition" class="w-full rounded-md border-gray-300">
-                                    <option value="">Все</option>
-                                    @foreach($traditionsConfig as $key => $tradition)
-                                        @if($tradition['enabled'] ?? true)
-                                            <option value="{{ $key }}" {{ $traditionFilter === $key ? 'selected' : '' }}>
-                                                {{ $tradition['name_short'] }}
-                                            </option>
-                                        @endif
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="flex-1 min-w-[150px]">
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Поиск по описанию</label>
-                                <input type="text" name="q" value="{{ $searchFilter ?? '' }}" placeholder="например: дом" class="w-full rounded-md border-gray-300">
-                            </div>
-                            <div class="flex items-end min-w-[120px]">
-                                <button type="submit" class="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                                    Применить
-                                </button>
+                            <div>
+                                <a href="{{ route('admin.interpretations', array_merge(request()->except('date'), ['issue' => 'any', 'start_date' => $startDate, 'end_date' => $endDate])) }}"
+                                   class="block hover:opacity-80">
+                                    <div class="text-xl font-bold text-orange-600">{{ $periodIssues ?? 0 }}</div>
+                                    <div class="text-sm text-gray-600">Проблемы качества →</div>
+                                </a>
                             </div>
                         </div>
-                    </form>
-                </div>
-            </details>
-            @endif
-
-            @if(!$selectedDate)
-            <!-- Статистика по традициям -->
-            @if($traditionsStats->isNotEmpty())
-            <details class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6 group">
-                <summary class="p-6 cursor-pointer list-none flex items-center justify-between gap-3 select-none hover:bg-gray-50">
-                    <h3 class="text-lg font-semibold">Статистика по традициям (за период)</h3>
-                    <span class="text-sm text-gray-500 group-open:hidden">показать ▾</span>
-                    <span class="text-sm text-gray-500 hidden group-open:inline">скрыть ▴</span>
-                </summary>
-                <div class="px-6 pb-6 border-t border-gray-100 pt-4">
-                    <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
-                        @foreach($traditionsStats as $traditionKey => $count)
-                            @php
-                                $traditionName = $traditionsConfig[$traditionKey]['name_short'] ?? $traditionKey;
-                            @endphp
-                            <div class="text-center">
-                                <div class="text-2xl font-bold text-gray-900">{{ $count }}</div>
-                                <div class="text-sm text-gray-600">{{ $traditionName }}</div>
-                            </div>
-                        @endforeach
                     </div>
+
+                    @if(($periodIssuesByType ?? collect())->isNotEmpty() || ($totalIssuesByType ?? collect())->isNotEmpty())
+                    <!-- Разбивка проблем качества -->
+                    <div>
+                        <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+                            <h4 class="text-base font-semibold text-gray-900">Проблемы качества по типам</h4>
+                            <a href="{{ route('admin.interpretations', ['issue' => 'any', 'start_date' => $startDate, 'end_date' => $endDate]) }}"
+                               class="text-sm text-orange-600 hover:text-orange-800 font-medium">
+                                Показать все проблемные за период
+                            </a>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                            @php
+                                $issueCodes = collect($periodIssuesByType ?? [])
+                                    ->keys()
+                                    ->merge(collect($totalIssuesByType ?? [])->keys())
+                                    ->unique()
+                                    ->sort()
+                                    ->values();
+                            @endphp
+                            @foreach($issueCodes as $code)
+                                @php
+                                    $periodCount = (int) ($periodIssuesByType[$code] ?? 0);
+                                    $totalCount = (int) ($totalIssuesByType[$code] ?? 0);
+                                    $label = \App\Support\InterpretationQualityAnalyzer::label($code) ?? $code;
+                                    $badge = \App\Support\InterpretationQualityAnalyzer::badgeClass($code);
+                                @endphp
+                                <a href="{{ route('admin.interpretations', array_merge(request()->except('date'), ['issue' => $code, 'start_date' => $startDate, 'end_date' => $endDate])) }}"
+                                   class="rounded-lg border border-gray-200 p-4 hover:border-orange-300 hover:bg-orange-50/40 transition-colors {{ ($issueFilter ?? '') === $code ? 'ring-2 ring-orange-400' : '' }}">
+                                    <div class="flex items-start justify-between gap-2 mb-2">
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $badge }}">{{ $label }}</span>
+                                        <span class="text-xs text-gray-400">{{ $code }}</span>
+                                    </div>
+                                    <div class="flex gap-4 text-sm">
+                                        <div>
+                                            <div class="text-xl font-bold text-orange-700">{{ $periodCount }}</div>
+                                            <div class="text-xs text-gray-500">за период</div>
+                                        </div>
+                                        <div>
+                                            <div class="text-lg font-semibold text-gray-700">{{ $totalCount }}</div>
+                                            <div class="text-xs text-gray-500">всего</div>
+                                        </div>
+                                    </div>
+                                </a>
+                            @endforeach
+                        </div>
+                    </div>
+                    @endif
+
+                    <!-- Фильтры -->
+                    <div>
+                        <h4 class="text-base font-semibold text-gray-900 mb-4">Фильтры</h4>
+                        <form method="GET" action="{{ route('admin.interpretations') }}">
+                            <div class="flex flex-col md:flex-row gap-4 flex-wrap">
+                                <div class="flex-1 min-w-[150px]">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Начало периода</label>
+                                    <input type="date" name="start_date" value="{{ $startDate }}" class="w-full rounded-md border-gray-300">
+                                </div>
+                                <div class="flex-1 min-w-[150px]">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Конец периода</label>
+                                    <input type="date" name="end_date" value="{{ $endDate }}" class="w-full rounded-md border-gray-300">
+                                </div>
+                                <div class="flex-1 min-w-[150px]">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Статус</label>
+                                    <select name="status" class="w-full rounded-md border-gray-300">
+                                        <option value="">Все</option>
+                                        <option value="completed" {{ $statusFilter === 'completed' ? 'selected' : '' }}>Завершено</option>
+                                        <option value="pending" {{ $statusFilter === 'pending' ? 'selected' : '' }}>В процессе</option>
+                                        <option value="failed" {{ $statusFilter === 'failed' ? 'selected' : '' }}>Ошибки</option>
+                                    </select>
+                                </div>
+                                <div class="flex-1 min-w-[180px]">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Проблема качества</label>
+                                    <select name="issue" class="w-full rounded-md border-gray-300">
+                                        @foreach(\App\Support\InterpretationQualityAnalyzer::filterOptions() as $value => $label)
+                                            <option value="{{ $value }}" {{ ($issueFilter ?? '') === $value ? 'selected' : '' }}>{{ $label }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="flex-1 min-w-[150px]">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Традиция</label>
+                                    <select name="tradition" class="w-full rounded-md border-gray-300">
+                                        <option value="">Все</option>
+                                        @foreach($traditionsConfig as $key => $tradition)
+                                            @if($tradition['enabled'] ?? true)
+                                                <option value="{{ $key }}" {{ $traditionFilter === $key ? 'selected' : '' }}>
+                                                    {{ $tradition['name_short'] }}
+                                                </option>
+                                            @endif
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="flex-1 min-w-[150px]">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Поиск по описанию</label>
+                                    <input type="text" name="q" value="{{ $searchFilter ?? '' }}" placeholder="например: дом" class="w-full rounded-md border-gray-300">
+                                </div>
+                                <div class="flex items-end min-w-[120px]">
+                                    <button type="submit" class="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                                        Применить
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    @if($traditionsStats->isNotEmpty())
+                    <!-- Статистика по традициям -->
+                    <div>
+                        <h4 class="text-base font-semibold text-gray-900 mb-4">Статистика по традициям (за период)</h4>
+                        <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                            @foreach($traditionsStats as $traditionKey => $count)
+                                @php
+                                    $traditionName = $traditionsConfig[$traditionKey]['name_short'] ?? $traditionKey;
+                                @endphp
+                                <div class="text-center">
+                                    <div class="text-2xl font-bold text-gray-900">{{ $count }}</div>
+                                    <div class="text-sm text-gray-600">{{ $traditionName }}</div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                    @endif
                 </div>
             </details>
-            @endif
             @endif
 
             @if(!$selectedDate && ((!empty($issueFilter) || !empty($searchFilter)) && $interpretations))
