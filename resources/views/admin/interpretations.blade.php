@@ -56,10 +56,14 @@
 
             @if(!$selectedDate)
             <!-- Статистика за период -->
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
-                <div class="p-6">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-semibold">Статистика за период ({{ $startDate }} - {{ $endDate }})</h3>
+            <details class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6 group">
+                <summary class="p-6 cursor-pointer list-none flex items-center justify-between gap-3 select-none hover:bg-gray-50">
+                    <h3 class="text-lg font-semibold">Статистика за период ({{ $startDate }} - {{ $endDate }})</h3>
+                    <span class="text-sm text-gray-500 group-open:hidden">показать ▾</span>
+                    <span class="text-sm text-gray-500 hidden group-open:inline">скрыть ▴</span>
+                </summary>
+                <div class="px-6 pb-6 border-t border-gray-100 pt-4">
+                    <div class="flex justify-end mb-3">
                         <span class="text-xs text-gray-500">Часовой пояс: {{ $timezone ?? 'UTC' }}</span>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
@@ -88,15 +92,19 @@
                         </div>
                     </div>
                 </div>
-            </div>
+            </details>
             @endif
 
             @if(!$selectedDate && (($periodIssuesByType ?? collect())->isNotEmpty() || ($totalIssuesByType ?? collect())->isNotEmpty()))
             <!-- Разбивка проблем качества -->
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
-                <div class="p-6">
-                    <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
-                        <h3 class="text-lg font-semibold">Проблемы качества по типам</h3>
+            <details class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6 group">
+                <summary class="p-6 cursor-pointer list-none flex items-center justify-between gap-3 select-none hover:bg-gray-50">
+                    <h3 class="text-lg font-semibold">Проблемы качества по типам</h3>
+                    <span class="text-sm text-gray-500 group-open:hidden">показать ▾</span>
+                    <span class="text-sm text-gray-500 hidden group-open:inline">скрыть ▴</span>
+                </summary>
+                <div class="px-6 pb-6 border-t border-gray-100 pt-4">
+                    <div class="flex justify-end mb-4">
                         <a href="{{ route('admin.interpretations', ['issue' => 'any', 'start_date' => $startDate, 'end_date' => $endDate]) }}"
                            class="text-sm text-orange-600 hover:text-orange-800 font-medium">
                             Показать все проблемные за период
@@ -138,13 +146,26 @@
                         @endforeach
                     </div>
                 </div>
-            </div>
+            </details>
             @endif
 
             @if(!$selectedDate)
+            @php
+                $filtersActive = !empty($issueFilter) || !empty($searchFilter) || !empty($statusFilter) || !empty($traditionFilter);
+            @endphp
             <!-- Фильтры -->
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
-                <div class="p-6">
+            <details class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6 group" @if($filtersActive) open @endif>
+                <summary class="p-6 cursor-pointer list-none flex items-center justify-between gap-3 select-none hover:bg-gray-50">
+                    <h3 class="text-lg font-semibold">
+                        Фильтры
+                        @if($filtersActive)
+                            <span class="text-sm font-normal text-orange-600">(активны)</span>
+                        @endif
+                    </h3>
+                    <span class="text-sm text-gray-500 group-open:hidden">показать ▾</span>
+                    <span class="text-sm text-gray-500 hidden group-open:inline">скрыть ▴</span>
+                </summary>
+                <div class="px-6 pb-6 border-t border-gray-100 pt-4">
                     <form method="GET" action="{{ route('admin.interpretations') }}">
                         <div class="flex flex-col md:flex-row gap-4 flex-wrap">
                             <div class="flex-1 min-w-[150px]">
@@ -197,15 +218,19 @@
                         </div>
                     </form>
                 </div>
-            </div>
+            </details>
             @endif
 
             @if(!$selectedDate)
             <!-- Статистика по традициям -->
             @if($traditionsStats->isNotEmpty())
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
-                <div class="p-6">
-                    <h3 class="text-lg font-semibold mb-4">Статистика по традициям (за период)</h3>
+            <details class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6 group">
+                <summary class="p-6 cursor-pointer list-none flex items-center justify-between gap-3 select-none hover:bg-gray-50">
+                    <h3 class="text-lg font-semibold">Статистика по традициям (за период)</h3>
+                    <span class="text-sm text-gray-500 group-open:hidden">показать ▾</span>
+                    <span class="text-sm text-gray-500 hidden group-open:inline">скрыть ▴</span>
+                </summary>
+                <div class="px-6 pb-6 border-t border-gray-100 pt-4">
                     <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
                         @foreach($traditionsStats as $traditionKey => $count)
                             @php
@@ -218,7 +243,7 @@
                         @endforeach
                     </div>
                 </div>
-            </div>
+            </details>
             @endif
             @endif
 
