@@ -201,8 +201,71 @@ class AdminController extends Controller
         ]);
 
         $nickname = $user->nickname;
+        $this->executeUserPurge($user, $validated['purge_mode']);
 
         if ($validated['purge_mode'] === 'full') {
+            return redirect()->route('admin.users')->with('success', "Пользователь {$nickname} и весь его контент удалены.");
+        }
+
+        return redirect()->route('admin.users')->with('success', "Материалы и активность пользователя {$nickname} удалены. Аккаунт сохранён (email, статус блокировки и т.д.).");
+    }
+
+    /**
+     * Массовое удаление контента и/или аккаунтов выбранных пользователей.
+     */
+    public function purgeUsersBulk(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'user_ids' => ['required', 'array', 'min:1'],
+            'user_ids.*' => ['integer', 'distinct', 'exists:users,id'],
+            'purge_mode' => ['required', 'in:content_only,full'],
+            'purge_confirm' => ['required', 'accepted'],
+        ], [
+            'user_ids.required' => 'Выберите хотя бы одного пользователя.',
+            'user_ids.min' => 'Выберите хотя бы одного пользователя.',
+            'purge_confirm.accepted' => 'Нужно подтвердить, что вы понимаете необратимость действия.',
+        ]);
+
+        $authId = auth()->id();
+        $processed = 0;
+        $skipped = 0;
+
+        $users = User::query()
+            ->whereIn('id', $validated['user_ids'])
+            ->get();
+
+        foreach ($users as $user) {
+            if ($user->id === $authId || $user->isAdmin()) {
+                $skipped++;
+                continue;
+            }
+
+            $this->executeUserPurge($user, $validated['purge_mode']);
+            $processed++;
+        }
+
+        if ($processed === 0) {
+            return redirect()->route('admin.users')->with('error', 'Не удалось обработать ни одного пользователя (пропущены админы и ваша учётная запись).');
+        }
+
+        $modeLabel = $validated['purge_mode'] === 'full'
+            ? 'полностью удалены'
+            : 'очищены (аккаунты сохранены)';
+
+        $message = "Обработано: {$processed} — {$modeLabel}.";
+        if ($skipped > 0) {
+            $message .= " Пропущено: {$skipped}.";
+        }
+
+        return redirect()->route('admin.users')->with('success', $message);
+    }
+
+    /**
+     * Выполнить purge одного пользователя (контент и опционально аккаунт).
+     */
+    protected function executeUserPurge(User $user, string $purgeMode): void
+    {
+        if ($purgeMode === 'full') {
             SeoGoneRecorder::recordAllPublicContentForUser($user, SeoGoneRecorder::SOURCE_ADMIN_PURGE);
         } else {
             foreach ($user->dreamInterpretations()->get() as $interpretation) {
@@ -215,15 +278,11 @@ class AdminController extends Controller
 
         $this->purgeUserContent($user);
 
-        if ($validated['purge_mode'] === 'full') {
+        if ($purgeMode === 'full') {
             $deletedEmail = $user->email;
             $user->delete();
             BlockedEmail::markPermanent($deletedEmail);
-
-            return redirect()->route('admin.users')->with('success', "Пользователь {$nickname} и весь его контент удалены.");
         }
-
-        return redirect()->route('admin.users')->with('success', "Материалы и активность пользователя {$nickname} удалены. Аккаунт сохранён (email, статус блокировки и т.д.).");
     }
 
     /**

@@ -136,6 +136,7 @@ Route::middleware('auth')->group(function () {
     Route::prefix('admin')->name('admin.')->middleware('admin')->group(function () {
         Route::get('/dashboard', [\App\Http\Controllers\AdminController::class, 'dashboard'])->name('dashboard');
         Route::get('/users', [\App\Http\Controllers\AdminController::class, 'users'])->name('users');
+        Route::post('/users/purge-bulk', [\App\Http\Controllers\AdminController::class, 'purgeUsersBulk'])->name('users.purge-bulk');
         Route::get('/users/{user}/edit', [\App\Http\Controllers\AdminController::class, 'editUser'])->name('users.edit');
         Route::patch('/users/{user}', [\App\Http\Controllers\AdminController::class, 'updateUser'])->name('users.update');
         Route::post('/users/{user}/ban', [\App\Http\Controllers\AdminController::class, 'banUser'])->name('users.ban');
