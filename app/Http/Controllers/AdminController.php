@@ -20,7 +20,6 @@ use App\Rules\NoSpam;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Artisan;
 use App\Helpers\MarkdownHelper;
 use App\Helpers\SymbolPageLinkHelper;
 use App\Services\DeepSeekService;
@@ -483,12 +482,6 @@ class AdminController extends Controller
     {
         $enabled = (bool) Setting::getValue('maintenance_mode', false);
         Setting::setValue('maintenance_mode', ! $enabled);
-
-        if (! $enabled) {
-            // Уже работающий воркер завершится после текущего задания,
-            // новые запуски cron заблокирует команда queue:worker
-            Artisan::call('queue:restart');
-        }
 
         return back()->with('success', $enabled
             ? 'Режим сервисных работ выключен. Сайт работает в обычном режиме.'

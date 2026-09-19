@@ -251,9 +251,6 @@
                         <p class="text-sm text-gray-600 dark:text-gray-400">
                             В режиме сервисных работ сайт работает «только чтение»: просмотр страниц доступен, но создание толкований, отчётов, дневников и другие изменения для пользователей заблокированы. Администраторы не затронуты. Удобно включать на время переноса базы данных.
                         </p>
-                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                            Воркер очереди: при включении режима уже работающий воркер завершится после текущего задания, а новые запуски cron будут пропускаться (при условии, что cron использует команду <code class="text-xs bg-gray-100 dark:bg-gray-800 px-1 rounded">php artisan queue:worker</code>).
-                        </p>
                     </div>
                     <form method="POST" action="{{ route('admin.maintenance.toggle') }}" class="shrink-0">
                         @csrf
