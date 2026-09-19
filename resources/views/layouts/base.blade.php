@@ -50,6 +50,9 @@
     <body class="font-sans antialiased bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
         {{-- Header --}}
         <x-header />
+
+        {{-- Режим сервисных работ --}}
+        <x-maintenance-banner />
         
         {{-- Контент страницы --}}
         @yield('content')

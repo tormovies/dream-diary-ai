@@ -168,6 +168,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/entities/create-group-from-entity', [\App\Http\Controllers\AdminController::class, 'entitiesCreateGroupFromEntity'])->name('entities.create-group-from-entity');
         Route::get('/settings', [\App\Http\Controllers\AdminController::class, 'settings'])->name('settings');
         Route::patch('/settings', [\App\Http\Controllers\AdminController::class, 'updateSettings'])->name('settings.update');
+        Route::post('/maintenance/toggle', [\App\Http\Controllers\AdminController::class, 'toggleMaintenance'])->name('maintenance.toggle');
         Route::get('/ad', [\App\Http\Controllers\AdminController::class, 'ad'])->name('ad');
         Route::patch('/ad', [\App\Http\Controllers\AdminController::class, 'updateAd'])->name('ad.update');
 

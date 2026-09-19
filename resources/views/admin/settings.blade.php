@@ -229,6 +229,46 @@
                     </div>
                 </form>
             </div>
+
+            <!-- Режим сервисных работ -->
+            <div class="profile-form-section card-shadow mt-8">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                    <i class="fas fa-tools mr-2"></i>Режим сервисных работ
+                </h3>
+                <div class="flex items-center justify-between flex-wrap gap-4">
+                    <div class="flex-1 min-w-0">
+                        <p class="mb-2">
+                            @if($settings['maintenance_mode'])
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300">
+                                    <i class="fas fa-exclamation-triangle mr-1"></i> Включён
+                                </span>
+                            @else
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
+                                    Выключен
+                                </span>
+                            @endif
+                        </p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">
+                            В режиме сервисных работ сайт работает «только чтение»: просмотр страниц доступен, но создание толкований, отчётов, дневников и другие изменения для пользователей заблокированы. Администраторы не затронуты. Удобно включать на время переноса базы данных.
+                        </p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                            Воркер очереди: при включении режима уже работающий воркер завершится после текущего задания, а новые запуски cron будут пропускаться (при условии, что cron использует команду <code class="text-xs bg-gray-100 dark:bg-gray-800 px-1 rounded">php artisan queue:worker</code>).
+                        </p>
+                    </div>
+                    <form method="POST" action="{{ route('admin.maintenance.toggle') }}" class="shrink-0">
+                        @csrf
+                        @if($settings['maintenance_mode'])
+                            <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                                <i class="fas fa-play mr-2"></i>Выключить режим
+                            </button>
+                        @else
+                            <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+                                <i class="fas fa-tools mr-2"></i>Включить режим
+                            </button>
+                        @endif
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 </x-app-layout>

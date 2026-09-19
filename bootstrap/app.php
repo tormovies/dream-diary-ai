@@ -9,13 +9,15 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withSchedule(function (Schedule $schedule): void {
+        $maintenanceOff = fn () => !\App\Support\MaintenanceMode::enabled();
+
         // Индексация новых толкований по символам/локациям/тегам (раз в день)
-        $schedule->command('interpretations:index-entities', ['--only-new' => true])->daily();
+        $schedule->command('interpretations:index-entities', ['--only-new' => true])->daily()->when($maintenanceOff);
         // Агрегация сущностей по дням в dream_entity_daily (для статистики за день и сравнений)
-        $schedule->command('interpretations:aggregate-entity-daily', ['--yesterday' => true])->dailyAt('01:00');
+        $schedule->command('interpretations:aggregate-entity-daily', ['--yesterday' => true])->dailyAt('01:00')->when($maintenanceOff);
         // Журнал cookie-согласий и условные HTTP-логи
-        $schedule->command('consent:prune-logs', ['--days' => 730])->dailyAt('02:15');
-        $schedule->command('logs:prune-requests', ['--days' => 90])->dailyAt('02:30');
+        $schedule->command('consent:prune-logs', ['--days' => 730])->dailyAt('02:15')->when($maintenanceOff);
+        $schedule->command('logs:prune-requests', ['--days' => 90])->dailyAt('02:30')->when($maintenanceOff);
     })
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
@@ -35,6 +37,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Проверка бана для всех авторизованных пользователей
         $middleware->web(append: [
             \App\Http\Middleware\CheckBanned::class,
+            \App\Http\Middleware\CheckMaintenanceMode::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

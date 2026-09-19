@@ -21,6 +21,10 @@
     </head>
     <body class="font-sans text-gray-900 dark:text-gray-100 antialiased bg-gray-100 dark:bg-gray-900">
         <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-gray-100 dark:bg-gray-900">
+            <div class="w-full">
+                <x-maintenance-banner />
+            </div>
+
             <div class="mb-4">
                 <a href="/" class="flex items-center justify-center gap-3 hover:opacity-80 transition-opacity">
                     <x-application-logo class="text-purple-600 dark:text-purple-400 text-5xl" />

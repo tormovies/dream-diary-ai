@@ -20,6 +20,7 @@ use App\Rules\NoSpam;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Artisan;
 use App\Helpers\MarkdownHelper;
 use App\Helpers\SymbolPageLinkHelper;
 use App\Services\DeepSeekService;
@@ -384,6 +385,7 @@ class AdminController extends Controller
             'feedback_contact_vk' => Setting::getValue('feedback_contact_vk', ''),
             'feedback_contact_email' => Setting::getValue('feedback_contact_email', ''),
             'feedback_page_html' => Setting::getValue('feedback_page_html', ''),
+            'maintenance_mode' => Setting::getValue('maintenance_mode', false),
         ];
 
         return view('admin.settings', compact('settings'));
@@ -472,6 +474,25 @@ class AdminController extends Controller
         Setting::setValue('feedback_page_html', (string) $request->input('feedback_page_html', ''));
 
         return back()->with('success', 'Настройки сохранены');
+    }
+
+    /**
+     * Включение/выключение режима сервисных работ
+     */
+    public function toggleMaintenance(): RedirectResponse
+    {
+        $enabled = (bool) Setting::getValue('maintenance_mode', false);
+        Setting::setValue('maintenance_mode', ! $enabled);
+
+        if (! $enabled) {
+            // Уже работающий воркер завершится после текущего задания,
+            // новые запуски cron заблокирует команда queue:worker
+            Artisan::call('queue:restart');
+        }
+
+        return back()->with('success', $enabled
+            ? 'Режим сервисных работ выключен. Сайт работает в обычном режиме.'
+            : 'Режим сервисных работ включен. Изменение данных для пользователей заблокировано.');
     }
 
     /**
