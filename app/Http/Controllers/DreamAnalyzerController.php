@@ -180,14 +180,18 @@ class DreamAnalyzerController extends Controller
                 $context,
                 $validated['traditions'] ?? [],
                 $analysisType,
-                $dreams
+                $dreams,
+                $interpretation->hash
             );
+
+            \Illuminate\Support\Facades\Cache::forget('deepseek_fallback_notice:' . $interpretation->hash);
 
             $interpretation->update([
                 'analysis_data' => $result['analysis_data'] ?? null,
                 'raw_api_request' => $result['raw_request'] ?? null,
                 'raw_api_response' => $result['raw_response'] ?? null,
                 'api_error' => $result['success'] ? null : ($result['error'] ?? 'Неизвестная ошибка'),
+                'used_fallback' => ! empty($result['used_fallback']),
                 'analysis_issue' => ($result['success'] ?? false)
                     ? InterpretationQualityAnalyzer::detectFromDeepSeekResult($result)
                     : null,
@@ -676,9 +680,16 @@ class DreamAnalyzerController extends Controller
             ->select('processing_status')
             ->firstOrFail();
 
-        return response()->json([
+        $payload = [
             'processing_status' => $interpretation->processing_status ?? 'pending',
-        ]);
+        ];
+
+        if (($interpretation->processing_status ?? 'pending') === 'processing'
+            && \Illuminate\Support\Facades\Cache::has('deepseek_fallback_notice:' . $hash)) {
+            $payload['fallback_notice'] = true;
+        }
+
+        return response()->json($payload);
     }
 
     /**
@@ -831,8 +842,11 @@ class DreamAnalyzerController extends Controller
                 $context,
                 $traditions,
                 $analysisMode,
-                null // dreams для серии
+                null, // dreams для серии
+                $interpretation->hash
             );
+
+            \Illuminate\Support\Facades\Cache::forget('deepseek_fallback_notice:' . $interpretation->hash);
 
             // Логируем что получили от DeepSeekService
             \Log::info('DeepSeekService result keys', [
@@ -852,6 +866,7 @@ class DreamAnalyzerController extends Controller
                 'raw_api_response' => $result['raw_response'] ?? null,
                 'api_error' => $isCompleted ? null : ($result['error'] ?? 'Неизвестная ошибка'),
                 'processing_status' => $isCompleted ? 'completed' : 'failed',
+                'used_fallback' => ! empty($result['used_fallback']),
                 'analysis_issue' => $isCompleted
                     ? InterpretationQualityAnalyzer::detectFromDeepSeekResult($result)
                     : null,

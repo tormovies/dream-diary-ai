@@ -20,6 +20,7 @@ class DreamInterpretation extends Model
         'analysis_type',
         'processing_status',
         'analysis_issue',
+        'used_fallback',
         'processing_started_at',
         'analysis_data',
         'raw_api_request',
@@ -33,6 +34,7 @@ class DreamInterpretation extends Model
         'analysis_data' => 'array',
         'processing_started_at' => 'datetime',
         'allow_public_linking' => 'boolean',
+        'used_fallback' => 'boolean',
     ];
 
     protected static function booted(): void

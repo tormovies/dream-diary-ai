@@ -207,6 +207,9 @@
                                 <p class="text-blue-700 dark:text-blue-300 text-sm mt-2">
                                     Если вам кажется что анализ затянулся, вы всегда можете вернуться на данную страницу, как только она будет обновлена - анализ будет продолжен, если видите ошибки — напишите через <a href="{{ route('feedback.index') }}" class="text-blue-900 dark:text-blue-100 underline font-semibold hover:text-blue-600 dark:hover:text-blue-300">обратную связь</a>.
                                 </p>
+                                <div id="fallback-notice" class="hidden mt-3 rounded-lg bg-amber-100 dark:bg-amber-900 border border-amber-400 dark:border-amber-600 px-4 py-3 text-amber-800 dark:text-amber-200 text-sm font-medium">
+                                    <i class="fas fa-hourglass-half mr-1"></i>Основной сервис занят — пробуем резервный. Ответ займёт чуть больше времени.
+                                </div>
                                 <div class="mt-3">
                                     <button onclick="copyAnalysisLink()" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-800 dark:hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
                                         <i class="fas fa-link"></i>
@@ -237,6 +240,10 @@
                                 fetch(statusUrl, { headers: { 'Accept': 'application/json' } })
                                     .then(function(r) { return r.json(); })
                                     .then(function(data) {
+                                        if (data.fallback_notice) {
+                                            var el = document.getElementById('fallback-notice');
+                                            if (el) { el.classList.remove('hidden'); }
+                                        }
                                         if (data.processing_status === 'completed' || data.processing_status === 'failed') {
                                             location.reload();
                                         }

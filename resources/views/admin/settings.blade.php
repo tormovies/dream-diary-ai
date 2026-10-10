@@ -86,6 +86,20 @@
                             <x-input-error class="mt-2" :messages="$errors->get('deepseek_api_key')" />
                         </div>
 
+                        <div class="form-group">
+                            <label for="deepseek_base_url" class="form-label">
+                                <i class="fas fa-server"></i> Базовый URL основного API
+                            </label>
+                            <input type="url" 
+                                   id="deepseek_base_url" 
+                                   name="deepseek_base_url" 
+                                   class="form-input" 
+                                   value="{{ old('deepseek_base_url', $settings['deepseek_base_url']) }}" 
+                                   placeholder="https://api.deepseek.com" />
+                            <div class="form-hint">Оставьте пустым для стандартного значения https://api.deepseek.com.</div>
+                            <x-input-error class="mt-2" :messages="$errors->get('deepseek_base_url')" />
+                        </div>
+
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
                             <div class="form-group md:pr-4">
                                 <label for="deepseek_http_timeout" class="form-label">
@@ -115,6 +129,58 @@
                                        value="{{ old('deepseek_php_execution_timeout', $settings['deepseek_php_execution_timeout']) }}" />
                                 <div class="form-hint">Максимальное время выполнения PHP скрипта. Должно быть больше HTTP таймаута. По умолчанию: 660 сек (11 мин).</div>
                                 <x-input-error class="mt-2" :messages="$errors->get('deepseek_php_execution_timeout')" />
+                            </div>
+                        </div>
+
+                        <!-- Резервный LLM-провайдер -->
+                        <div class="form-group border-t border-gray-200 dark:border-gray-700 pt-6 mt-6">
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                                <i class="fas fa-shield-alt mr-2"></i>Резервный LLM-провайдер
+                            </h3>
+                            <div class="form-hint mb-4">Если основной API не отвечает (таймаут), запрос будет автоматически повторён через резервный сервис. Фолбэк активен, когда заполнены ключ и модель резервного провайдера.</div>
+
+                            <div class="form-group">
+                                <label for="fallback_base_url" class="form-label">
+                                    <i class="fas fa-server"></i> Базовый URL резервного API
+                                </label>
+                                <input type="url" 
+                                       id="fallback_base_url" 
+                                       name="fallback_base_url" 
+                                       class="form-input" 
+                                       value="{{ old('fallback_base_url', $settings['fallback_base_url']) }}" 
+                                       placeholder="https://api.vsegpt.ru/v1" />
+                                <div class="form-hint">Для VseGPT укажите https://api.vsegpt.ru/v1. Оставьте пустым для этого значения по умолчанию.</div>
+                                <x-input-error class="mt-2" :messages="$errors->get('fallback_base_url')" />
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+                                <div class="form-group md:pr-4">
+                                    <label for="fallback_api_key" class="form-label">
+                                        <i class="fas fa-key"></i> API ключ резервного провайдера
+                                    </label>
+                                    <input type="password" 
+                                           id="fallback_api_key" 
+                                           name="fallback_api_key" 
+                                           class="form-input" 
+                                           value="{{ old('fallback_api_key', $settings['fallback_api_key']) }}" 
+                                           placeholder="sk-..." />
+                                    <div class="form-hint">Ключ из личного кабинета резервного провайдера (например, VseGPT). Очистите поле, чтобы отключить фолбэк.</div>
+                                    <x-input-error class="mt-2" :messages="$errors->get('fallback_api_key')" />
+                                </div>
+
+                                <div class="form-group md:pl-4">
+                                    <label for="fallback_model" class="form-label">
+                                        <i class="fas fa-microchip"></i> Модель резервного провайдера
+                                    </label>
+                                    <input type="text" 
+                                           id="fallback_model" 
+                                           name="fallback_model" 
+                                           class="form-input" 
+                                           value="{{ old('fallback_model', $settings['fallback_model']) }}" 
+                                           placeholder="например: gpt-4o-mini" />
+                                    <div class="form-hint">Точное имя модели из каталога резервного провайдера.</div>
+                                    <x-input-error class="mt-2" :messages="$errors->get('fallback_model')" />
+                                </div>
                             </div>
                         </div>
                     </div>

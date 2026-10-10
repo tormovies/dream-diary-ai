@@ -1358,6 +1358,7 @@ class ReportController extends Controller
                 'raw_api_response' => $result['raw_response'] ?? null,
                 'api_error' => $isCompleted ? null : ($result['error'] ?? ($analysisData['parse_error'] ?? 'Не удалось разобрать ответ анализа')),
                 'processing_status' => $isCompleted ? 'completed' : 'failed',
+                'used_fallback' => ! empty($result['used_fallback']),
                 'analysis_issue' => InterpretationQualityAnalyzer::detect(
                     $analysisData,
                     $result['raw_response'] ?? null,

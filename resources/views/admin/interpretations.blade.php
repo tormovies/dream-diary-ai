@@ -262,6 +262,7 @@
                                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Описание</th>
                                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Статус</th>
                                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Проблема</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">ИИ</th>
                                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Отчёт</th>
                                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Действия</th>
                                     </tr>
@@ -283,6 +284,15 @@
                                             </td>
                                             <td class="px-4 py-3 whitespace-nowrap text-sm">
                                                 @include('admin.partials.analysis-issue-badge', ['issue' => $interpretation->analysis_issue])
+                                            </td>
+                                            <td class="px-4 py-3 whitespace-nowrap text-sm">
+                                                @if($interpretation->used_fallback)
+                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-amber-100 text-amber-800" title="Резервный провайдер">Р</span>
+                                                @elseif(! is_null($interpretation->used_fallback))
+                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-700" title="Основной провайдер">О</span>
+                                                @else
+                                                    <span class="text-gray-400">—</span>
+                                                @endif
                                             </td>
                                             <td class="px-4 py-3 whitespace-nowrap text-sm">
                                                 @if($interpretation->report_id)
@@ -339,6 +349,7 @@
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Хеш</th>
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Статус</th>
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Качество</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ИИ</th>
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Традиции</th>
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Публикация</th>
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">IP адрес</th>
@@ -403,6 +414,15 @@
                                                 </td>
                                                 <td class="px-6 py-4 whitespace-nowrap"{!! $rowBgAttr !!}>
                                                     @include('admin.partials.analysis-issue-badge', ['issue' => $interpretation->analysis_issue])
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap"{!! $rowBgAttr !!}>
+                                                    @if($interpretation->used_fallback)
+                                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-amber-100 text-amber-800" title="Резервный провайдер">Р</span>
+                                                    @elseif(! is_null($interpretation->used_fallback))
+                                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-700" title="Основной провайдер">О</span>
+                                                    @else
+                                                        <span class="text-gray-400">—</span>
+                                                    @endif
                                                 </td>
                                                 <td class="px-6 py-4 text-sm text-gray-900"{!! $rowBgAttr !!}>
                                                     @php

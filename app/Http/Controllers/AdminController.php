@@ -375,8 +375,12 @@ class AdminController extends Controller
             'edit_dreams_after_days' => Setting::getValue('edit_dreams_after_days', null),
             'diary_spoiler_min_length' => Setting::getValue('diary_spoiler_min_length', 1000),
             'deepseek_api_key' => Setting::getValue('deepseek_api_key', ''),
+            'deepseek_base_url' => Setting::getValue('deepseek_base_url', ''),
             'deepseek_http_timeout' => Setting::getValue('deepseek_http_timeout', 600),
             'deepseek_php_execution_timeout' => Setting::getValue('deepseek_php_execution_timeout', 660),
+            'fallback_base_url' => Setting::getValue('fallback_base_url', ''),
+            'fallback_api_key' => Setting::getValue('fallback_api_key', ''),
+            'fallback_model' => Setting::getValue('fallback_model', ''),
             'timezone' => Setting::getValue('timezone', 'UTC'),
             'yandex_metrika_id' => Setting::getValue('yandex_metrika_id', '89409547'),
             'feedback_mail_to' => Setting::getValue('feedback_mail_to', ''),
@@ -404,8 +408,12 @@ class AdminController extends Controller
             'edit_dreams_after_days' => ['nullable', 'integer', 'min:0'],
             'diary_spoiler_min_length' => ['nullable', 'integer', 'min:0'],
             'deepseek_api_key' => ['nullable', 'string', 'max:255'],
+            'deepseek_base_url' => ['nullable', 'string', 'max:255', 'url'],
             'deepseek_http_timeout' => ['nullable', 'integer', 'min:60', 'max:1800'],
             'deepseek_php_execution_timeout' => ['nullable', 'integer', 'min:60', 'max:1800'],
+            'fallback_base_url' => ['nullable', 'string', 'max:255', 'url'],
+            'fallback_api_key' => ['nullable', 'string', 'max:255'],
+            'fallback_model' => ['nullable', 'string', 'max:255'],
             'timezone' => ['nullable', 'string', 'timezone'],
             'yandex_metrika_id' => ['nullable', 'string', 'max:30', 'regex:/^\d*$/'],
             'feedback_mail_to' => ['nullable', 'string', 'max:255', 'email'],
@@ -431,6 +439,34 @@ class AdminController extends Controller
 
         if ($request->filled('deepseek_api_key')) {
             Setting::setValue('deepseek_api_key', $request->deepseek_api_key);
+        }
+
+        // Базовый URL основного API (пусто = https://api.deepseek.com)
+        $deepseekBaseUrl = trim((string) $request->input('deepseek_base_url', ''));
+        if ($deepseekBaseUrl !== '') {
+            Setting::setValue('deepseek_base_url', rtrim($deepseekBaseUrl, '/'));
+        } else {
+            Setting::where('key', 'deepseek_base_url')->delete();
+        }
+
+        // Резервный провайдер: фолбэк активен, когда заполнены и ключ, и модель
+        $fallbackBaseUrl = trim((string) $request->input('fallback_base_url', ''));
+        if ($fallbackBaseUrl !== '') {
+            Setting::setValue('fallback_base_url', rtrim($fallbackBaseUrl, '/'));
+        } else {
+            Setting::where('key', 'fallback_base_url')->delete();
+        }
+
+        if (trim((string) $request->input('fallback_api_key', '')) !== '') {
+            Setting::setValue('fallback_api_key', trim($request->input('fallback_api_key')));
+        } else {
+            Setting::where('key', 'fallback_api_key')->delete();
+        }
+
+        if (trim((string) $request->input('fallback_model', '')) !== '') {
+            Setting::setValue('fallback_model', trim($request->input('fallback_model')));
+        } else {
+            Setting::where('key', 'fallback_model')->delete();
         }
 
         // Сохранение таймаутов для DeepSeek API
@@ -668,7 +704,7 @@ class AdminController extends Controller
             $this->applyInterpretationIssueFilter($dayQuery, $issueFilter);
 
             $dayInterpretations = $dayQuery
-                ->select('id', 'hash', 'created_at', 'processing_status', 'analysis_issue', 'traditions', 'report_id', 'ip_address', 'allow_public_linking', 'dream_description')
+                ->select('id', 'hash', 'created_at', 'processing_status', 'analysis_issue', 'used_fallback', 'traditions', 'report_id', 'ip_address', 'allow_public_linking', 'dream_description')
                 ->with([
                     // Для подсветки "запрещено публиковать" в админ таблице
                     'report' => function ($q) {
@@ -699,7 +735,7 @@ class AdminController extends Controller
             $this->applyInterpretationIssueFilter($query, $issueFilter);
 
             $interpretations = $query
-                ->select('id', 'hash', 'created_at', 'processing_status', 'analysis_issue', 'traditions', 'report_id', 'ip_address', 'dream_description')
+                ->select('id', 'hash', 'created_at', 'processing_status', 'analysis_issue', 'used_fallback', 'traditions', 'report_id', 'ip_address', 'dream_description')
                 ->with('report:id')
                 ->orderBy('created_at', 'desc')
                 ->paginate(50)

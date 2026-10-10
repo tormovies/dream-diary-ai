@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Helpers\TraditionHelper;
 use App\Models\Setting;
 use App\Support\DeepSeekJsonParser;
+use Illuminate\Http\Client\Response;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -17,15 +19,20 @@ class DeepSeekService
     /** Наследник deepseek-chat (снят 2026-07-24). Альтернатива: deepseek-v4-pro. */
     private const DEFAULT_MODEL = 'deepseek-v4-flash';
 
+    private const DEFAULT_BASE_URL = 'https://api.deepseek.com';
+
+    private const DEFAULT_FALLBACK_BASE_URL = 'https://api.vsegpt.ru/v1';
+
     private string $apiKey;
 
-    private string $baseUrl = 'https://api.deepseek.com';
+    private string $baseUrl;
 
     private bool $lastJsonWasRepaired = false;
 
     public function __construct()
     {
         $this->apiKey = Setting::getValue('deepseek_api_key', '');
+        $this->baseUrl = rtrim(trim((string) Setting::getValue('deepseek_base_url', self::DEFAULT_BASE_URL)), '/') ?: self::DEFAULT_BASE_URL;
     }
 
     /**
@@ -40,6 +47,35 @@ class DeepSeekService
         }
 
         return $model;
+    }
+
+    /**
+     * Резервный провайдер (fallback_api_key + fallback_model обязательны).
+     */
+    private function resolveFallbackConfig(): ?array
+    {
+        $key = trim((string) Setting::getValue('fallback_api_key', ''));
+        $model = trim((string) Setting::getValue('fallback_model', ''));
+        if ($key === '' || $model === '') {
+            return null;
+        }
+
+        $baseUrl = rtrim(trim((string) Setting::getValue('fallback_base_url', self::DEFAULT_FALLBACK_BASE_URL)), '/');
+
+        return [
+            'key' => $key,
+            'base_url' => $baseUrl !== '' ? $baseUrl : self::DEFAULT_FALLBACK_BASE_URL,
+            'model' => $model,
+        ];
+    }
+
+    private function markFallbackNotice(?string $noticeKey): void
+    {
+        $ttl = now()->addMinutes(30);
+        Cache::put('deepseek_fallback_notice', true, $ttl);
+        if ($noticeKey !== null && $noticeKey !== '') {
+            Cache::put('deepseek_fallback_notice:' . $noticeKey, true, $ttl);
+        }
     }
 
     /**
@@ -65,7 +101,7 @@ class DeepSeekService
     /**
      * Анализ сна через DeepSeek API
      */
-    public function analyzeDream(string $dreamDescription, ?string $context, array $traditions = [], string $analysisType = 'single', ?array $dreams = null): array
+    public function analyzeDream(string $dreamDescription, ?string $context, array $traditions = [], string $analysisType = 'single', ?array $dreams = null, ?string $noticeKey = null): array
     {
         if (empty($this->apiKey)) {
             Log::error('DeepSeek API Key Missing');
@@ -108,6 +144,10 @@ class DeepSeekService
         
         set_time_limit($phpTimeout); // Таймаут выполнения PHP скрипта
 
+        // С резервным провайдером основной запрос не дублируем — его роль берет на себя fallback
+        $fallbackConfig = $this->resolveFallbackConfig();
+        $primaryRetries = $fallbackConfig !== null ? 0 : 2;
+
         // Логируем запрос (без API ключа)
         Log::info('DeepSeek API Request Data', [
             'url' => "{$this->baseUrl}/chat/completions",
@@ -119,136 +159,19 @@ class DeepSeekService
         ]);
 
         try {
-            $response = Http::timeout($httpTimeout)
-                ->connectTimeout($connectTimeout)
-                ->retry(2, 1000) // Повторная попытка 2 раза с задержкой 1 секунда
-                ->withOptions([
-                    CURLOPT_SSL_VERIFYPEER => true,
-                    CURLOPT_SSL_VERIFYHOST => 2,
-                    CURLOPT_TIMEOUT => $httpTimeout,
-                    CURLOPT_CONNECTTIMEOUT => $connectTimeout,
-                    CURLOPT_SSLVERSION => CURL_SSLVERSION_TLSv1_2, // Используем TLS 1.2+
-                    CURLOPT_CAINFO => null, // Используем системные сертификаты
-                    CURLOPT_CAPATH => null,
-                ])
-                ->withHeaders([
-                    'Authorization' => 'Bearer ' . $this->apiKey,
-                    'Content-Type' => 'application/json',
-                ])
-                ->post("{$this->baseUrl}/chat/completions", $requestData);
+            $response = $this->sendChatRequest($this->apiKey, $this->baseUrl, $requestData, $httpTimeout, $connectTimeout, $primaryRetries);
 
-            $rawResponse = $response->body();
-            
-            // Логируем сырой ответ для отладки
-            Log::info('DeepSeek API Raw Response', [
-                'status' => $response->status(),
-                'body_length' => strlen($rawResponse),
-                'body_preview' => substr($rawResponse, 0, 500),
-            ]);
-
-            if ($response->failed()) {
-                $errorData = $response->json();
-                $errorMessage = $errorData['error']['message'] ?? $errorData['message'] ?? 'Ошибка API: ' . $response->status();
-                Log::error('DeepSeek API Failed', [
-                    'status' => $response->status(),
-                    'error' => $errorData,
-                ]);
-                throw new \Exception($errorMessage, $response->status());
-            }
-
-            $responseData = $response->json();
-            
-            // Проверяем структуру ответа
-            if (!isset($responseData['choices']) || !is_array($responseData['choices']) || empty($responseData['choices'])) {
-                Log::error('DeepSeek API Invalid Response Structure', [
-                    'response_data' => $responseData,
-                ]);
-                throw new \Exception('Неверная структура ответа API: отсутствует поле choices');
-            }
-
-            $content = $responseData['choices'][0]['message']['content'] ?? '';
-            $finishReason = $responseData['choices'][0]['finish_reason'] ?? null;
-            $completionTokens = $responseData['usage']['completion_tokens'] ?? null;
-
-            if (empty($content)) {
-                Log::error('DeepSeek API Empty Content', [
-                    'response_data' => $responseData,
-                ]);
-                throw new \Exception('API вернул пустой ответ');
-            }
-
-            // Логируем содержимое для отладки
-            Log::info('DeepSeek API Content', [
-                'content_length' => strlen($content),
-                'content_preview' => substr($content, 0, 500),
-            ]);
-
-            // Пытаемся распарсить JSON из ответа
-            $this->lastJsonWasRepaired = false;
-            $parsed = DeepSeekJsonParser::parseFromAssistantContent($content);
-            $analysisData = $parsed['data'] ?? [
-                'raw_content' => $parsed['raw_content'] ?? $content,
-                'parse_error' => $parsed['error'] ?? 'Не удалось распарсить JSON из ответа API',
-                'json_error_code' => $parsed['error_code'] ?? json_last_error(),
-            ];
-            $this->lastJsonWasRepaired = (bool) ($parsed['repaired'] ?? false);
-            
-            // Сохраняем ПОЛНЫЙ content в analysis_data
-            if (!is_array($analysisData)) {
-                $analysisData = [];
-            }
-            // Сохраняем весь content полностью
-            $analysisData['full_content'] = $content;
-            if ($finishReason !== null) {
-                $analysisData['api_finish_reason'] = $finishReason;
-            }
-            if ($completionTokens !== null) {
-                $analysisData['api_completion_tokens'] = $completionTokens;
-            }
-            
-            // Извлекаем текстовую часть (если есть) - все что до JSON блока
-            $textAnalysis = '';
-            $jsonStart = strpos($content, '```json');
-            if ($jsonStart === false) {
-                $jsonStart = strpos($content, '{');
-            }
-            
-            if ($jsonStart !== false && $jsonStart > 0) {
-                $textAnalysis = trim(substr($content, 0, $jsonStart));
-            }
-            
-            // Если есть текстовая часть, добавляем её в analysis_data
-            if (!empty($textAnalysis)) {
-                $analysisData['text_analysis'] = $textAnalysis;
-            }
-            
-            // Проверяем, что парсинг прошел успешно
-            if (isset($analysisData['parse_error'])) {
-                if ($finishReason === 'length') {
-                    $analysisData['parse_error'] .= ' (ответ обрезан по лимиту max_tokens='.$maxTokens.')';
-                }
-                Log::warning('DeepSeek API JSON Parse Error', [
-                    'content' => $content,
-                    'parse_error' => $analysisData['parse_error'],
-                    'finish_reason' => $finishReason,
-                    'completion_tokens' => $completionTokens,
-                    'max_tokens' => $maxTokens,
-                ]);
-            }
-
-            return [
-                'success' => true,
-                'analysis_data' => $analysisData,
-                'raw_request' => json_encode($requestData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
-                'raw_response' => $rawResponse,
-                'json_was_repaired' => $this->lastJsonWasRepaired,
-                'finish_reason' => $finishReason,
-            ];
+            return $this->processChatResponse($response, $requestData);
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
             Log::error('DeepSeek API Connection Error', [
                 'message' => $e->getMessage(),
                 'code' => $e->getCode(),
             ]);
+
+            $fallbackResult = $this->tryFallbackProvider($fallbackConfig, $requestData, $httpTimeout, $connectTimeout, $noticeKey, $e);
+            if ($fallbackResult !== null) {
+                return $fallbackResult;
+            }
 
             return [
                 'success' => false,
@@ -267,9 +190,205 @@ class DeepSeekService
                 'success' => false,
                 'error' => $e->getMessage(),
                 'raw_request' => json_encode($requestData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
-                'raw_response' => $rawResponse ?? null,
+                'raw_response' => null,
             ];
         }
+    }
+
+    /**
+     * Повтор запроса через резервный провайдер после таймаута основного.
+     * Возвращает null, если резервный провайдер не настроен.
+     */
+    private function tryFallbackProvider(?array $fallbackConfig, array $requestData, int $httpTimeout, int $connectTimeout, ?string $noticeKey, \Throwable $primaryError): ?array
+    {
+        if ($fallbackConfig === null) {
+            return null;
+        }
+
+        Log::warning('DeepSeek API timeout, retrying via fallback provider', [
+            'primary_error' => $primaryError->getMessage(),
+            'fallback_base_url' => $fallbackConfig['base_url'],
+            'fallback_model' => $fallbackConfig['model'],
+            'notice_key' => $noticeKey,
+        ]);
+
+        $this->markFallbackNotice($noticeKey);
+        $requestData['model'] = $fallbackConfig['model'];
+
+        try {
+            $response = $this->sendChatRequest($fallbackConfig['key'], $fallbackConfig['base_url'], $requestData, $httpTimeout, $connectTimeout, 0);
+            $result = $this->processChatResponse($response, $requestData);
+            $result['used_fallback'] = true;
+
+            return $result;
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            Log::error('Fallback LLM API Connection Error', [
+                'message' => $e->getMessage(),
+                'code' => $e->getCode(),
+            ]);
+
+            return [
+                'success' => false,
+                'error' => 'Основной и резервный API недоступны: ' . $e->getMessage(),
+                'raw_request' => json_encode($requestData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
+                'raw_response' => null,
+                'used_fallback' => true,
+            ];
+        }
+    }
+
+    private function sendChatRequest(string $apiKey, string $baseUrl, array $requestData, int $httpTimeout, int $connectTimeout, int $retries): Response
+    {
+        return Http::timeout($httpTimeout)
+            ->connectTimeout($connectTimeout)
+            ->retry($retries, 1000)
+            ->withOptions([
+                CURLOPT_SSL_VERIFYPEER => true,
+                CURLOPT_SSL_VERIFYHOST => 2,
+                CURLOPT_TIMEOUT => $httpTimeout,
+                CURLOPT_CONNECTTIMEOUT => $connectTimeout,
+                CURLOPT_SSLVERSION => CURL_SSLVERSION_TLSv1_2, // Используем TLS 1.2+
+                CURLOPT_CAINFO => null, // Используем системные сертификаты
+                CURLOPT_CAPATH => null,
+            ])
+            ->withHeaders([
+                'Authorization' => 'Bearer ' . $apiKey,
+                'Content-Type' => 'application/json',
+            ])
+            ->post("{$baseUrl}/chat/completions", $requestData);
+    }
+
+    /**
+     * Разбор ответа chat/completions в стандартный массив результата.
+     */
+    private function processChatResponse(Response $response, array $requestData): array
+    {
+        $rawResponse = $response->body();
+        $maxTokens = (int) ($requestData['max_tokens'] ?? self::MAX_TOKENS_DEFAULT);
+
+        // Логируем сырой ответ для отладки
+        Log::info('DeepSeek API Raw Response', [
+            'status' => $response->status(),
+            'body_length' => strlen($rawResponse),
+            'body_preview' => substr($rawResponse, 0, 500),
+        ]);
+
+        if ($response->failed()) {
+            $errorData = $response->json();
+            $errorMessage = $errorData['error']['message'] ?? $errorData['message'] ?? 'Ошибка API: ' . $response->status();
+            Log::error('DeepSeek API Failed', [
+                'status' => $response->status(),
+                'error' => $errorData,
+            ]);
+
+            return [
+                'success' => false,
+                'error' => $errorMessage,
+                'raw_request' => json_encode($requestData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
+                'raw_response' => $rawResponse,
+            ];
+        }
+
+        $responseData = $response->json();
+        
+        // Проверяем структуру ответа
+        if (!isset($responseData['choices']) || !is_array($responseData['choices']) || empty($responseData['choices'])) {
+            Log::error('DeepSeek API Invalid Response Structure', [
+                'response_data' => $responseData,
+            ]);
+
+            return [
+                'success' => false,
+                'error' => 'Неверная структура ответа API: отсутствует поле choices',
+                'raw_request' => json_encode($requestData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
+                'raw_response' => $rawResponse,
+            ];
+        }
+
+        $content = $responseData['choices'][0]['message']['content'] ?? '';
+        $finishReason = $responseData['choices'][0]['finish_reason'] ?? null;
+        $completionTokens = $responseData['usage']['completion_tokens'] ?? null;
+
+        if (empty($content)) {
+            Log::error('DeepSeek API Empty Content', [
+                'response_data' => $responseData,
+            ]);
+
+            return [
+                'success' => false,
+                'error' => 'API вернул пустой ответ',
+                'raw_request' => json_encode($requestData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
+                'raw_response' => $rawResponse,
+            ];
+        }
+
+        // Логируем содержимое для отладки
+        Log::info('DeepSeek API Content', [
+            'content_length' => strlen($content),
+            'content_preview' => substr($content, 0, 500),
+        ]);
+
+        // Пытаемся распарсить JSON из ответа
+        $this->lastJsonWasRepaired = false;
+        $parsed = DeepSeekJsonParser::parseFromAssistantContent($content);
+        $analysisData = $parsed['data'] ?? [
+            'raw_content' => $parsed['raw_content'] ?? $content,
+            'parse_error' => $parsed['error'] ?? 'Не удалось распарсить JSON из ответа API',
+            'json_error_code' => $parsed['error_code'] ?? json_last_error(),
+        ];
+        $this->lastJsonWasRepaired = (bool) ($parsed['repaired'] ?? false);
+        
+        // Сохраняем ПОЛНЫЙ content в analysis_data
+        if (!is_array($analysisData)) {
+            $analysisData = [];
+        }
+        // Сохраняем весь content полностью
+        $analysisData['full_content'] = $content;
+        if ($finishReason !== null) {
+            $analysisData['api_finish_reason'] = $finishReason;
+        }
+        if ($completionTokens !== null) {
+            $analysisData['api_completion_tokens'] = $completionTokens;
+        }
+        
+        // Извлекаем текстовую часть (если есть) - все что до JSON блока
+        $textAnalysis = '';
+        $jsonStart = strpos($content, '```json');
+        if ($jsonStart === false) {
+            $jsonStart = strpos($content, '{');
+        }
+        
+        if ($jsonStart !== false && $jsonStart > 0) {
+            $textAnalysis = trim(substr($content, 0, $jsonStart));
+        }
+        
+        // Если есть текстовая часть, добавляем её в analysis_data
+        if (!empty($textAnalysis)) {
+            $analysisData['text_analysis'] = $textAnalysis;
+        }
+        
+        // Проверяем, что парсинг прошел успешно
+        if (isset($analysisData['parse_error'])) {
+            if ($finishReason === 'length') {
+                $analysisData['parse_error'] .= ' (ответ обрезан по лимиту max_tokens='.$maxTokens.')';
+            }
+            Log::warning('DeepSeek API JSON Parse Error', [
+                'content' => $content,
+                'parse_error' => $analysisData['parse_error'],
+                'finish_reason' => $finishReason,
+                'completion_tokens' => $completionTokens,
+                'max_tokens' => $maxTokens,
+            ]);
+        }
+
+        return [
+            'success' => true,
+            'analysis_data' => $analysisData,
+            'raw_request' => json_encode($requestData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
+            'raw_response' => $rawResponse,
+            'json_was_repaired' => $this->lastJsonWasRepaired,
+            'finish_reason' => $finishReason,
+        ];
     }
 
     /**
@@ -321,23 +440,35 @@ class DeepSeekService
         $connectTimeout = $httpTimeout;
         set_time_limit($phpTimeout);
 
-        $response = Http::timeout($httpTimeout)
-            ->connectTimeout($connectTimeout)
-            ->retry(2, 1000)
-            ->withOptions([
-                CURLOPT_SSL_VERIFYPEER => true,
-                CURLOPT_SSL_VERIFYHOST => 2,
-                CURLOPT_TIMEOUT => $httpTimeout,
-                CURLOPT_CONNECTTIMEOUT => $connectTimeout,
-                CURLOPT_SSLVERSION => CURL_SSLVERSION_TLSv1_2,
-                CURLOPT_CAINFO => null,
-                CURLOPT_CAPATH => null,
-            ])
-            ->withHeaders([
-                'Authorization' => 'Bearer ' . $this->apiKey,
-                'Content-Type' => 'application/json',
-            ])
-            ->post("{$this->baseUrl}/chat/completions", $requestData);
+        $fallbackConfig = $this->resolveFallbackConfig();
+        $primaryRetries = $fallbackConfig !== null ? 0 : 2;
+
+        try {
+            $response = $this->sendChatRequest($this->apiKey, $this->baseUrl, $requestData, $httpTimeout, $connectTimeout, $primaryRetries);
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            if ($fallbackConfig === null) {
+                throw $e;
+            }
+
+            Log::warning('DeepSeek API timeout, retrying via fallback provider', [
+                'primary_error' => $e->getMessage(),
+                'fallback_base_url' => $fallbackConfig['base_url'],
+                'fallback_model' => $fallbackConfig['model'],
+            ]);
+
+            $this->markFallbackNotice(null);
+            $requestData['model'] = $fallbackConfig['model'];
+
+            try {
+                $response = $this->sendChatRequest($fallbackConfig['key'], $fallbackConfig['base_url'], $requestData, $httpTimeout, $connectTimeout, 0);
+            } catch (\Illuminate\Http\Client\ConnectionException $fallbackException) {
+                Log::error('Fallback LLM API Connection Error', [
+                    'message' => $fallbackException->getMessage(),
+                    'code' => $fallbackException->getCode(),
+                ]);
+                throw $e;
+            }
+        }
 
         $rawResponse = $response->body();
         if ($response->failed()) {
