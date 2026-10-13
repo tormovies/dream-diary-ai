@@ -232,6 +232,18 @@
                     </div>
 
                     <div class="form-group border-t border-gray-200 dark:border-gray-700 pt-6 mt-6">
+                        <label for="additional_head_code" class="form-label">Дополнительный код счётчика перед &lt;/head&gt;</label>
+                        <textarea id="additional_head_code"
+                                  name="additional_head_code"
+                                  class="form-input font-mono"
+                                  rows="10"
+                                  maxlength="65000"
+                                  spellcheck="false">{{ old('additional_head_code', $settings['additional_head_code'] ?? '') }}</textarea>
+                        <div class="form-hint">HTML/JavaScript выводится без изменений перед закрывающим тегом &lt;/head&gt; на всех страницах, дополнительно к Яндекс.Метрике и без ожидания согласия на cookie. Вставляйте только доверенный код, предназначенный для head. Чтобы отключить его, очистите поле и сохраните настройки.</div>
+                        <x-input-error class="mt-2" :messages="$errors->get('additional_head_code')" />
+                    </div>
+
+                    <div class="form-group border-t border-gray-200 dark:border-gray-700 pt-6 mt-6">
                         <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                             <i class="fas fa-envelope-open-text mr-2"></i>Страница «Обратная связь» (/obratnaya-svyaz)
                         </h3>

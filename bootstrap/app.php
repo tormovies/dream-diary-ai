@@ -9,7 +9,9 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withSchedule(function (Schedule $schedule): void {
-        $maintenanceOff = fn () => !\App\Support\MaintenanceMode::enabled();
+        $maintenanceOff = fn () => ! \App\Support\MaintenanceMode::enabled();
+
+        $schedule->command('seo:yandex-sync')->everyFiveMinutes()->withoutOverlapping(15)->when($maintenanceOff);
 
         // Индексация новых толкований по символам/локациям/тегам (раз в день)
         $schedule->command('interpretations:index-entities', ['--only-new' => true])->daily()->when($maintenanceOff);
@@ -41,6 +43,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->dontFlash(['current_password', 'password', 'password_confirmation', 'token']);
         $exceptions->render(function (HttpException $e, Request $request) {
             $status = $e->getStatusCode();
             if ($status === 403) {

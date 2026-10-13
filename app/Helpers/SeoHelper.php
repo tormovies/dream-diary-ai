@@ -3,6 +3,8 @@
 namespace App\Helpers;
 
 use App\Models\SeoMeta;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class SeoHelper
@@ -10,11 +12,10 @@ class SeoHelper
     /**
      * Получить SEO данные для страницы
      *
-     * @param string $pageType Тип страницы (home, report, profile, etc.)
-     * @param mixed $pageId ID конкретной страницы (опционально)
-     * @param array $variables Переменные для подстановки в шаблоны
-     * @param string|null $routeName Название роута (опционально)
-     * @return array
+     * @param  string  $pageType  Тип страницы (home, report, profile, etc.)
+     * @param  mixed  $pageId  ID конкретной страницы (опционально)
+     * @param  array  $variables  Переменные для подстановки в шаблоны
+     * @param  string|null  $routeName  Название роута (опционально)
      */
     public static function get(string $pageType, $pageId = null, array $variables = [], ?string $routeName = null): array
     {
@@ -44,32 +45,32 @@ class SeoHelper
         }
 
         // Если og_title или og_description не указаны, используем title/description
-        if (empty($result['og_title']) && !empty($result['title'])) {
+        if (empty($result['og_title']) && ! empty($result['title'])) {
             $result['og_title'] = $result['title'];
         }
-        if (empty($result['og_description']) && !empty($result['description'])) {
+        if (empty($result['og_description']) && ! empty($result['description'])) {
             $result['og_description'] = $result['description'];
         }
 
         // Формируем полный URL для OG изображения
-        if (!empty($result['og_image'])) {
+        if (! empty($result['og_image'])) {
             // Если это относительный путь, делаем абсолютным
-            if (!Str::startsWith($result['og_image'], ['http://', 'https://'])) {
+            if (! Str::startsWith($result['og_image'], ['http://', 'https://'])) {
                 $baseUrl = rtrim(config('seo.base_url', config('app.url')), '/');
-                $result['og_image'] = $baseUrl . '/' . ltrim($result['og_image'], '/');
+                $result['og_image'] = $baseUrl.'/'.ltrim($result['og_image'], '/');
             }
         } else {
             // Используем дефолтное изображение
             $baseUrl = rtrim(config('seo.base_url', config('app.url')), '/');
             $defaultImage = ltrim(config('seo.default_og_image', '/images/og-default.jpg'), '/');
-            $result['og_image'] = $baseUrl . '/' . $defaultImage;
+            $result['og_image'] = $baseUrl.'/'.$defaultImage;
         }
 
         // Обрезаем description до 160 символов (стандарт для SEO)
-        if (!empty($result['description'])) {
+        if (! empty($result['description'])) {
             $result['description'] = Str::limit($result['description'], 160, '...');
         }
-        if (!empty($result['og_description'])) {
+        if (! empty($result['og_description'])) {
             $result['og_description'] = Str::limit($result['og_description'], 200, '...');
         }
 
@@ -89,6 +90,33 @@ class SeoHelper
             }
         }
 
+        return $pageType === 'report-analysis' ? $result : self::applyUrlOverride($result);
+    }
+
+    public static function applyUrlOverride(array $result): array
+    {
+        $path = parse_url($result['canonical'], PHP_URL_PATH) ?: '/';
+        $query = parse_url($result['canonical'], PHP_URL_QUERY);
+        if ($query !== null) {
+            $path .= '?'.$query;
+        }
+        if (Schema::hasTable('seo_url_overrides')) {
+            $urlOverride = DB::table('seo_url_overrides')->where('path_hash', hash('sha256', $path))->first();
+            if ($urlOverride) {
+                foreach (['title', 'description', 'h1'] as $field) {
+                    if ($urlOverride->{$field} !== null) {
+                        $result[$field] = $urlOverride->{$field};
+                    }
+                }
+                if ($urlOverride->title !== null) {
+                    $result['og_title'] = $urlOverride->title;
+                }
+                if ($urlOverride->description !== null) {
+                    $result['og_description'] = $urlOverride->description;
+                }
+            }
+        }
+
         return $result;
     }
 
@@ -100,28 +128,28 @@ class SeoHelper
         $firstDream = $report->dreams->first();
         $nickname = $report->user->nickname ?? $report->user->name;
         $date = $report->report_date->format('d.m.Y');
-        
+
         // Собираем все названия снов (не пустые)
         $dreamTitles = $report->dreams
             ->pluck('title')
             ->filter(function ($title) {
-                return !empty($title) && trim($title) !== '';
+                return ! empty($title) && trim($title) !== '';
             })
             ->values();
-        
+
         // Определяем dream_title
         $dreamTitle = '';
         $hasRealTitles = false;
-        
+
         if ($dreamTitles->isEmpty()) {
             // Нет ни одного названия
-            $dreamTitle = 'Отчёт ' . $nickname . ' о сновидениях за ' . $date;
+            $dreamTitle = 'Отчёт '.$nickname.' о сновидениях за '.$date;
         } else {
             // Проверяем, является ли название автогенерированным
             // Шаблоны автогенерированных названий: "Отчет {nickname} от {date}" или "Сон от {date}"
             $firstTitle = $dreamTitles->first();
             $isAutoGenerated = false;
-            
+
             if ($dreamTitles->count() === 1) {
                 // Варианты автогенерированных названий:
                 // "Отчет {nickname} от {date}" (из ReportController)
@@ -130,14 +158,14 @@ class SeoHelper
                 $pattern1 = "Отчет {$nickname} от {$date}";
                 $pattern2 = "Отчет от {$date}";
                 $pattern3 = "Сон от {$date}";
-                
+
                 if ($firstTitle === $pattern1 || $firstTitle === $pattern2 || $firstTitle === $pattern3) {
                     $isAutoGenerated = true;
                 }
-                
+
                 // Дополнительная проверка по шаблону (на случай разных вариантов написания)
-                if (!$isAutoGenerated) {
-                    // Проверяем, если название начинается с "Отчет " или "Сон от" 
+                if (! $isAutoGenerated) {
+                    // Проверяем, если название начинается с "Отчет " или "Сон от"
                     // и содержит " от " и заканчивается датой формата "дд.мм.гггг"
                     if ((Str::startsWith($firstTitle, 'Отчет ') || Str::startsWith($firstTitle, 'Сон от')) &&
                         Str::contains($firstTitle, ' от ') &&
@@ -146,25 +174,25 @@ class SeoHelper
                     }
                 }
             }
-            
+
             if ($isAutoGenerated) {
                 // Это автогенерированное название, значит реальных названий нет
-                $dreamTitle = 'Отчёт ' . $nickname . ' о сновидениях за ' . $date;
+                $dreamTitle = 'Отчёт '.$nickname.' о сновидениях за '.$date;
             } else {
                 // Есть реальные названия - перечисляем через запятую
                 $dreamTitle = $dreamTitles->implode(', ');
                 $hasRealTitles = true;
             }
         }
-        
-        $dreamDescription = $firstDream && !empty($firstDream->description)
+
+        $dreamDescription = $firstDream && ! empty($firstDream->description)
             ? Str::limit(strip_tags($firstDream->description), 160, '...')
             : 'Отчет о сновидении';
 
         $tags = $report->tags->pluck('name')->implode(', ');
 
         // Формируем title с учетом того, содержит ли dream_title уже дату
-        // Если это автогенерированное название "Отчёт ... о сновидениях за {date}", 
+        // Если это автогенерированное название "Отчёт ... о сновидениях за {date}",
         // то в шаблоне не нужно дублировать дату
         $seoData = [
             'dream_title' => $dreamTitle,
@@ -180,10 +208,10 @@ class SeoHelper
 
         // Если dream_title уже содержит "о сновидениях за", значит там уже есть дата
         // Убираем дублирование даты из title и og_title
-        if (!$hasRealTitles && Str::contains($dreamTitle, 'о сновидениях за')) {
+        if (! $hasRealTitles && Str::contains($dreamTitle, 'о сновидениях за')) {
             // Убираем дублирование: заменяем " — {date} |" на " |" в title
-            $seoResult['title'] = str_replace(' — ' . $date . ' |', ' |', $seoResult['title']);
-            $seoResult['og_title'] = str_replace(' — ' . $date, '', $seoResult['og_title']);
+            $seoResult['title'] = str_replace(' — '.$date.' |', ' |', $seoResult['title']);
+            $seoResult['og_title'] = str_replace(' — '.$date, '', $seoResult['og_title']);
         }
 
         return $seoResult;
@@ -227,8 +255,9 @@ class SeoHelper
     {
         $result = $template;
         foreach ($variables as $key => $value) {
-            $result = str_replace('{' . $key . '}', $value, $result);
+            $result = str_replace('{'.$key.'}', $value, $result);
         }
+
         return $result;
     }
 
@@ -241,49 +270,61 @@ class SeoHelper
 
         switch ($pageType) {
             case 'home':
-                return $baseUrl . '/';
+                return $baseUrl.'/';
             case 'report':
-                return $baseUrl . '/reports/' . ($pageId ?? $variables['report_id'] ?? '');
+                return $baseUrl.'/reports/'.($pageId ?? $variables['report_id'] ?? '');
             case 'profile':
-                return $baseUrl . '/users/' . ($pageId ?? $variables['user_id'] ?? '');
+                return $baseUrl.'/users/'.($pageId ?? $variables['user_id'] ?? '');
             case 'diary':
                 // Для дневника нужен publicLink
-                return $baseUrl . '/diary/' . ($variables['public_link'] ?? '');
+                return $baseUrl.'/diary/'.($variables['public_link'] ?? '');
             case 'search':
-                return $baseUrl . '/search';
+                return $baseUrl.'/search';
             case 'activity':
-                return $baseUrl . '/activity';
+                return $baseUrl.'/activity';
             case 'users':
-                return $baseUrl . '/users';
+                return $baseUrl.'/users';
             case 'dashboard':
-                return $baseUrl . '/dashboard';
+                return $baseUrl.'/dashboard';
             case 'statistics':
-                return $baseUrl . '/statistics';
+                return $baseUrl.'/statistics';
             case 'notifications':
-                return $baseUrl . '/notifications';
+                return $baseUrl.'/notifications';
             case 'dream-analyzer':
-                return $baseUrl . '/tolkovanie-snov';
+                return $baseUrl.'/tolkovanie-snov';
             case 'dream-analyzer-result':
-                return $baseUrl . '/tolkovanie-snov/' . ($variables['hash'] ?? $pageId ?? '');
+                return $baseUrl.'/tolkovanie-snov/'.($variables['hash'] ?? $pageId ?? '');
             case 'guide':
-                return $baseUrl . '/guide/' . ($variables['slug'] ?? $pageId ?? '');
+                return $baseUrl.'/guide/'.($variables['slug'] ?? $pageId ?? '');
             case 'article':
-                return $baseUrl . '/articles/' . ($variables['slug'] ?? $pageId ?? '');
+                return $baseUrl.'/articles/'.($variables['slug'] ?? $pageId ?? '');
             case 'entity_group':
-                return $baseUrl . '/symbol/' . ($variables['slug'] ?? $pageId ?? '');
+                return $baseUrl.'/symbol/'.($variables['slug'] ?? $pageId ?? '');
             case 'guide-index':
-                return $baseUrl . '/guide';
+                return $baseUrl.'/guide';
             case 'articles-index':
-                return $baseUrl . '/articles';
+                return $baseUrl.'/articles';
             case 'symbol-index':
-                return $baseUrl . '/symbol';
+                return $baseUrl.'/symbol';
             case 'feedback':
-                return $baseUrl . '/obratnaya-svyaz';
+                return $baseUrl.'/obratnaya-svyaz';
+            case 'register':
+                return $baseUrl.'/register';
+            case 'login':
+                return $baseUrl.'/login';
+            case 'forgot-password':
+                return $baseUrl.'/forgot-password';
+            case 'reset-password':
+                return $baseUrl.'/reset-password';
+            case 'verify-email':
+                return $baseUrl.'/verify-email';
+            case 'confirm-password':
+                return $baseUrl.'/confirm-password';
             default:
                 return $baseUrl;
         }
     }
-    
+
     /**
      * Получить SEO для страницы анализатора снов
      */
@@ -305,26 +346,26 @@ class SeoHelper
         // Приоритет: сначала нормализованные данные, потом старые
         $result = $interpretation->result ?? null;
         $analysis = $interpretation->analysis_data ?? [];
-        
+
         // Определяем тип анализа
         if ($result) {
             $isSeries = $result->type === 'series';
         } else {
             $isSeries = isset($analysis['series_analysis']) && isset($analysis['dreams']) || $report->dreams->count() > 1;
         }
-        
+
         if ($isSeries) {
             // Обработка серии снов
             if ($result) {
                 // Из нормализованных данных
                 $dreamTitle = \App\Helpers\HtmlHelper::sanitizeTitle($result->series_title ?? 'Анализ серии снов');
                 $coreMessage = \App\Helpers\HtmlHelper::sanitizeTitle($result->overall_theme ?? '');
-                
+
                 // Если нет overall_theme, берем из первого сна в серии
                 if (empty($coreMessage) && $result->seriesDreams->isNotEmpty()) {
                     $coreMessage = \App\Helpers\HtmlHelper::sanitizeTitle($result->seriesDreams->first()->summary_insight ?? '');
                 }
-                
+
                 // Традиции
                 $traditions = $result->traditions ?? [];
                 $analysisType = $result->analysis_type ?? 'series_integrated';
@@ -332,26 +373,26 @@ class SeoHelper
                 // Из старых данных
                 $seriesAnalysis = $analysis['series_analysis'] ?? [];
                 $dreams = $analysis['dreams'] ?? [];
-                
+
                 $dreamTitle = \App\Helpers\HtmlHelper::sanitizeTitle($seriesAnalysis['series_title'] ?? 'Анализ серии снов');
                 $coreMessage = \App\Helpers\HtmlHelper::sanitizeTitle($seriesAnalysis['overall_theme'] ?? '');
-                
-                if (empty($coreMessage) && !empty($dreams) && isset($dreams[0]['summary_insight'])) {
+
+                if (empty($coreMessage) && ! empty($dreams) && isset($dreams[0]['summary_insight'])) {
                     $coreMessage = \App\Helpers\HtmlHelper::sanitizeTitle($dreams[0]['summary_insight']);
                 }
-                
+
                 $traditions = $seriesAnalysis['traditions'] ?? [];
                 $analysisType = $seriesAnalysis['analysis_type'] ?? 'series_integrated';
             }
-            
+
             // Если все еще пусто, используем дефолтное описание
             if (empty($coreMessage)) {
                 $coreMessage = 'Психологический анализ серии снов с использованием различных традиций интерпретации.';
             }
-            
+
             // Традиции - общая обработка
             $traditionsText = '';
-            if (!empty($traditions) && is_array($traditions)) {
+            if (! empty($traditions) && is_array($traditions)) {
                 $traditionNames = [
                     'freudian' => 'Фрейдистский',
                     'jungian' => 'Юнгианский',
@@ -361,14 +402,14 @@ class SeoHelper
                     'gestalt' => 'Гештальт',
                     'eclectic' => 'Комплексный',
                 ];
-                
-                $translatedTraditions = array_map(function($t) use ($traditionNames) {
+
+                $translatedTraditions = array_map(function ($t) use ($traditionNames) {
                     return $traditionNames[strtolower($t)] ?? ucfirst($t);
                 }, $traditions);
-                
+
                 $traditionsText = implode(', ', $translatedTraditions);
             }
-            
+
             $analysisTypeText = 'Анализ серии снов';
         } else {
             // Обработка одиночного сна
@@ -376,47 +417,47 @@ class SeoHelper
                 // Из нормализованных данных
                 $dreamTitle = \App\Helpers\HtmlHelper::sanitizeTitle($result->dream_title ?? 'Анализ сна');
                 $coreMessage = \App\Helpers\HtmlHelper::sanitizeTitle($result->summary_insight ?? '');
-                
+
                 // Традиции
                 $traditions = $result->traditions ?? [];
                 $analysisType = $result->analysis_type ?? 'single';
             } elseif (isset($analysis['dream_analysis'])) {
                 // Новый формат (из analysis_data)
                 $dreamAnalysis = $analysis['dream_analysis'] ?? [];
-                
+
                 $dreamTitle = \App\Helpers\HtmlHelper::sanitizeTitle($dreamAnalysis['core_theme'] ?? 'Анализ сна');
                 $coreMessage = \App\Helpers\HtmlHelper::sanitizeTitle($dreamAnalysis['central_message'] ?? '');
-                
+
                 if (empty($coreMessage)) {
                     $coreMessage = \App\Helpers\HtmlHelper::sanitizeTitle($dreamAnalysis['core_theme'] ?? '');
                 }
-                
+
                 $traditions = [];
                 $analysisType = 'single';
             } else {
                 // Старый формат (из analysis_data)
                 $metadata = $analysis['metadata'] ?? [];
                 $analysisData = $analysis['analysis'] ?? [];
-                
+
                 $dreamTitle = \App\Helpers\HtmlHelper::sanitizeTitle($metadata['title'] ?? 'Анализ сна');
                 $coreMessage = \App\Helpers\HtmlHelper::sanitizeTitle($analysisData['core_message'] ?? '');
-                
+
                 if (empty($coreMessage) && isset($analysisData['interpretation'])) {
                     $coreMessage = Str::limit(\App\Helpers\HtmlHelper::sanitizeTitle($analysisData['interpretation']), 160, '...');
                 }
-                
+
                 $traditions = $analysisData['traditions'] ?? [];
                 $analysisType = $analysisData['analysis_type'] ?? 'single';
             }
-            
+
             // Если все еще пусто, используем дефолтное описание
             if (empty($coreMessage)) {
                 $coreMessage = 'Психологический анализ сна с использованием различных традиций интерпретации.';
             }
-            
+
             // Традиции - общая обработка
             $traditionsText = '';
-            if (!empty($traditions) && is_array($traditions)) {
+            if (! empty($traditions) && is_array($traditions)) {
                 $traditionNames = [
                     'freudian' => 'Фрейдистский',
                     'jungian' => 'Юнгианский',
@@ -426,14 +467,14 @@ class SeoHelper
                     'gestalt' => 'Гештальт',
                     'eclectic' => 'Комплексный',
                 ];
-                
-                $translatedTraditions = array_map(function($t) use ($traditionNames) {
+
+                $translatedTraditions = array_map(function ($t) use ($traditionNames) {
                     return $traditionNames[strtolower($t)] ?? ucfirst($t);
                 }, $traditions);
-                
+
                 $traditionsText = implode(', ', $translatedTraditions);
             }
-            
+
             // Тип анализа
             $analysisTypeText = [
                 'single' => 'Одиночный',
@@ -442,10 +483,10 @@ class SeoHelper
                 'series_integrated' => 'Анализ серии снов',
             ][$analysisType] ?? 'Анализ';
         }
-        
+
         // Дата создания
         $date = $interpretation->created_at ? $interpretation->created_at->format('d.m.Y') : '';
-        
+
         // Используем ID интерпретации для поиска индивидуальных SEO-записей
         // Используем отдельный page_type для анализов отчетов, чтобы различать их в админ-панели
         $seoResult = self::get('report-analysis', $interpretation->id, [
@@ -456,10 +497,10 @@ class SeoHelper
             'analysis_type' => $analysisTypeText,
             'hash' => $interpretation->hash,
         ]);
-        
+
         // Убеждаемся, что все необходимые ключи присутствуют (fallback значения)
         if (empty($seoResult['title'])) {
-            $seoResult['title'] = 'Толкование ' . ($isSeries ? 'снов' : 'сна') . ' - ' . $dreamTitle . ' | ' . config('app.name');
+            $seoResult['title'] = 'Толкование '.($isSeries ? 'снов' : 'сна').' - '.$dreamTitle.' | '.config('app.name');
         }
         if (empty($seoResult['description'])) {
             $seoResult['description'] = mb_substr($coreMessage, 0, 160);
@@ -468,12 +509,12 @@ class SeoHelper
             $seoResult['h1'] = $isSeries ? 'Расшифровка снов' : 'Расшифровка сна';
         }
         if (empty($seoResult['og_title'])) {
-            $seoResult['og_title'] = 'Толкование ' . ($isSeries ? 'снов' : 'сна') . ' - ' . $dreamTitle;
+            $seoResult['og_title'] = 'Толкование '.($isSeries ? 'снов' : 'сна').' - '.$dreamTitle;
         }
         if (empty($seoResult['og_description'])) {
             $seoResult['og_description'] = mb_substr($coreMessage, 0, 160);
         }
-        
+
         // Для серии снов изменяем title и h1 на множественное число
         if ($isSeries) {
             if (isset($seoResult['title'])) {
@@ -486,11 +527,11 @@ class SeoHelper
                 $seoResult['h1'] = str_replace('Расшифровка сна', 'Расшифровка снов', $seoResult['h1']);
             }
         }
-        
+
         // Убеждаемся, что canonical URL правильный для отчетов
         $seoResult['canonical'] = route('reports.analysis', $report);
-        
-        return $seoResult;
+
+        return self::applyUrlOverride($seoResult);
     }
 
     /**
@@ -501,26 +542,26 @@ class SeoHelper
         // Приоритет: сначала нормализованные данные, потом старые
         $result = $interpretation->result ?? null;
         $analysis = $interpretation->analysis_data ?? [];
-        
+
         // Определяем тип анализа
         if ($result) {
             $isSeries = $result->type === 'series';
         } else {
             $isSeries = isset($analysis['series_analysis']) && isset($analysis['dreams']);
         }
-        
+
         if ($isSeries) {
             // Обработка серии снов
             if ($result) {
                 // Из нормализованных данных
                 $dreamTitle = \App\Helpers\HtmlHelper::sanitizeTitle($result->series_title ?? 'Анализ серии снов');
                 $coreMessage = \App\Helpers\HtmlHelper::sanitizeTitle($result->overall_theme ?? '');
-                
+
                 // Если нет overall_theme, берем из первого сна в серии
                 if (empty($coreMessage) && $result->seriesDreams->isNotEmpty()) {
                     $coreMessage = \App\Helpers\HtmlHelper::sanitizeTitle($result->seriesDreams->first()->summary_insight ?? '');
                 }
-                
+
                 // Традиции
                 $traditions = $result->traditions ?? [];
                 $analysisType = $result->analysis_type ?? 'series_integrated';
@@ -528,26 +569,26 @@ class SeoHelper
                 // Из старых данных
                 $seriesAnalysis = $analysis['series_analysis'] ?? [];
                 $dreams = $analysis['dreams'] ?? [];
-                
+
                 $dreamTitle = \App\Helpers\HtmlHelper::sanitizeTitle($seriesAnalysis['series_title'] ?? 'Анализ серии снов');
                 $coreMessage = \App\Helpers\HtmlHelper::sanitizeTitle($seriesAnalysis['overall_theme'] ?? '');
-                
-                if (empty($coreMessage) && !empty($dreams) && isset($dreams[0]['summary_insight'])) {
+
+                if (empty($coreMessage) && ! empty($dreams) && isset($dreams[0]['summary_insight'])) {
                     $coreMessage = \App\Helpers\HtmlHelper::sanitizeTitle($dreams[0]['summary_insight']);
                 }
-                
+
                 $traditions = $seriesAnalysis['traditions'] ?? [];
                 $analysisType = $seriesAnalysis['analysis_type'] ?? 'series_integrated';
             }
-            
+
             // Если все еще пусто, используем дефолтное описание
             if (empty($coreMessage)) {
                 $coreMessage = 'Психологический анализ серии снов с использованием различных традиций интерпретации.';
             }
-            
+
             // Традиции - общая обработка
             $traditionsText = '';
-            if (!empty($traditions) && is_array($traditions)) {
+            if (! empty($traditions) && is_array($traditions)) {
                 $traditionNames = [
                     'freudian' => 'Фрейдистский',
                     'jungian' => 'Юнгианский',
@@ -557,14 +598,14 @@ class SeoHelper
                     'gestalt' => 'Гештальт',
                     'eclectic' => 'Комплексный',
                 ];
-                
-                $translatedTraditions = array_map(function($t) use ($traditionNames) {
+
+                $translatedTraditions = array_map(function ($t) use ($traditionNames) {
                     return $traditionNames[strtolower($t)] ?? ucfirst($t);
                 }, $traditions);
-                
+
                 $traditionsText = implode(', ', $translatedTraditions);
             }
-            
+
             $analysisTypeText = 'Анализ серии снов';
         } else {
             // Обработка одиночного сна
@@ -572,47 +613,47 @@ class SeoHelper
                 // Из нормализованных данных
                 $dreamTitle = \App\Helpers\HtmlHelper::sanitizeTitle($result->dream_title ?? 'Анализ сна');
                 $coreMessage = \App\Helpers\HtmlHelper::sanitizeTitle($result->summary_insight ?? '');
-                
+
                 // Традиции
                 $traditions = $result->traditions ?? [];
                 $analysisType = $result->analysis_type ?? 'single';
             } elseif (isset($analysis['dream_analysis'])) {
                 // Новый формат (из analysis_data)
                 $dreamAnalysis = $analysis['dream_analysis'] ?? [];
-                
+
                 $dreamTitle = \App\Helpers\HtmlHelper::sanitizeTitle($dreamAnalysis['core_theme'] ?? 'Анализ сна');
                 $coreMessage = \App\Helpers\HtmlHelper::sanitizeTitle($dreamAnalysis['central_message'] ?? '');
-                
+
                 if (empty($coreMessage)) {
                     $coreMessage = \App\Helpers\HtmlHelper::sanitizeTitle($dreamAnalysis['core_theme'] ?? '');
                 }
-                
+
                 $traditions = [];
                 $analysisType = 'single';
             } else {
                 // Старый формат (из analysis_data)
                 $metadata = $analysis['metadata'] ?? [];
                 $analysisData = $analysis['analysis'] ?? [];
-                
+
                 $dreamTitle = \App\Helpers\HtmlHelper::sanitizeTitle($metadata['title'] ?? 'Анализ сна');
                 $coreMessage = \App\Helpers\HtmlHelper::sanitizeTitle($analysisData['core_message'] ?? '');
-                
+
                 if (empty($coreMessage) && isset($analysisData['interpretation'])) {
                     $coreMessage = Str::limit(\App\Helpers\HtmlHelper::sanitizeTitle($analysisData['interpretation']), 160, '...');
                 }
-                
+
                 $traditions = $analysisData['traditions'] ?? [];
                 $analysisType = $analysisData['analysis_type'] ?? 'single';
             }
-            
+
             // Если все еще пусто, используем дефолтное описание
             if (empty($coreMessage)) {
                 $coreMessage = 'Психологический анализ сна с использованием различных традиций интерпретации.';
             }
-            
+
             // Традиции - общая обработка
             $traditionsText = '';
-            if (!empty($traditions) && is_array($traditions)) {
+            if (! empty($traditions) && is_array($traditions)) {
                 $traditionNames = [
                     'freudian' => 'Фрейдистский',
                     'jungian' => 'Юнгианский',
@@ -622,14 +663,14 @@ class SeoHelper
                     'gestalt' => 'Гештальт',
                     'eclectic' => 'Комплексный',
                 ];
-                
-                $translatedTraditions = array_map(function($t) use ($traditionNames) {
+
+                $translatedTraditions = array_map(function ($t) use ($traditionNames) {
                     return $traditionNames[strtolower($t)] ?? ucfirst($t);
                 }, $traditions);
-                
+
                 $traditionsText = implode(', ', $translatedTraditions);
             }
-            
+
             // Тип анализа
             $analysisTypeText = [
                 'single' => 'Одиночный',
@@ -638,10 +679,10 @@ class SeoHelper
                 'series_integrated' => 'Анализ серии снов',
             ][$analysisType] ?? 'Анализ';
         }
-        
+
         // Дата создания
         $date = $interpretation->created_at ? $interpretation->created_at->format('d.m.Y') : '';
-        
+
         // Используем ID интерпретации вместо hash для поиска индивидуальных SEO-записей
         $seoResult = self::get('dream-analyzer-result', $interpretation->id, [
             'dream_title' => $dreamTitle,
@@ -651,7 +692,7 @@ class SeoHelper
             'analysis_type' => $analysisTypeText,
             'hash' => $interpretation->hash,
         ]);
-        
+
         // Для серии снов изменяем title и h1 на множественное число
         if ($isSeries) {
             $seoResult['title'] = str_replace('Толкование сна', 'Толкование снов', $seoResult['title']);
@@ -660,20 +701,20 @@ class SeoHelper
                 $seoResult['h1'] = str_replace('Расшифровка сна', 'Расшифровка снов', $seoResult['h1']);
             }
         }
-        
+
         // Убеждаемся, что canonical URL правильный (используем hash для маршрута dream-analyzer.show)
-        if (empty($seoResult['canonical']) || !str_contains($seoResult['canonical'], $interpretation->hash)) {
+        if (empty($seoResult['canonical']) || ! str_contains($seoResult['canonical'], $interpretation->hash)) {
             $seoResult['canonical'] = route('dream-analyzer.show', ['hash' => $interpretation->hash]);
         }
-        
+
         return $seoResult;
     }
 
     /**
      * Получить структурированные данные FAQPage для инструкции
-     * 
-     * @param \App\Models\Article $article
-     * @param array $seo SEO данные страницы
+     *
+     * @param  \App\Models\Article  $article
+     * @param  array  $seo  SEO данные страницы
      * @return array|null Массив для JSON-LD или null если нет вопросов
      */
     public static function getStructuredDataForFAQPage($article, array $seo = []): ?array
@@ -685,71 +726,71 @@ class SeoHelper
 
         // Парсим HTML контент для извлечения вопросов и ответов
         $content = $article->content ?? '';
-        
+
         // Используем регулярные выражения для парсинга (быстрее чем DOMDocument)
         // Ищем все <details class="faq-spoiler"> блоки
         $pattern = '/<details[^>]*class\s*=\s*["\']faq-spoiler["\'][^>]*>(.*?)<\/details>/is';
-        
-        if (!preg_match_all($pattern, $content, $matches, PREG_SET_ORDER)) {
+
+        if (! preg_match_all($pattern, $content, $matches, PREG_SET_ORDER)) {
             // Если нет <details> с классом faq-spoiler, это не FAQ
             return null;
         }
 
         $questions = [];
-        
+
         foreach ($matches as $match) {
             $detailsContent = $match[1];
-            
+
             // Извлекаем вопрос из <summary class="faq-spoiler-header">
             $summaryPattern = '/<summary[^>]*class\s*=\s*["\']faq-spoiler-header["\'][^>]*>(.*?)<\/summary>/is';
-            
-            if (!preg_match($summaryPattern, $detailsContent, $summaryMatch)) {
+
+            if (! preg_match($summaryPattern, $detailsContent, $summaryMatch)) {
                 continue; // Пропускаем если нет summary
             }
-            
+
             $questionText = trim(strip_tags($summaryMatch[1]));
             $questionText = html_entity_decode($questionText, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-            
+
             if (empty($questionText)) {
                 continue; // Пропускаем пустые вопросы
             }
-            
+
             // Извлекаем ответ (все что после </summary>)
             $answerHtml = preg_replace($summaryPattern, '', $detailsContent);
             $answerText = trim(strip_tags($answerHtml));
             $answerText = html_entity_decode($answerText, ENT_QUOTES | ENT_HTML5, 'UTF-8');
             $answerText = preg_replace('/\s+/', ' ', $answerText); // Убираем множественные пробелы
-            
+
             if (empty($answerText)) {
                 continue; // Пропускаем пустые ответы
             }
-            
+
             $questions[] = [
                 '@type' => 'Question',
                 'name' => $questionText,
                 'acceptedAnswer' => [
                     '@type' => 'Answer',
-                    'text' => $answerText
-                ]
+                    'text' => $answerText,
+                ],
             ];
         }
-        
+
         // Если нет вопросов, возвращаем null
         if (empty($questions)) {
             return null;
         }
-        
+
         // Формируем базовый URL
         $baseUrl = rtrim(config('seo.base_url', config('app.url')), '/');
-        $pageUrl = $baseUrl . route('guide.show', $article->slug, false);
-        
+        $pageUrl = $baseUrl.route('guide.show', $article->slug, false);
+
         // Формируем заголовок
         $headline = $seo['h1'] ?? $article->title ?? 'Инструкция';
-        
+
         // Формируем даты
         $datePublished = $article->created_at ? $article->created_at->toIso8601String() : now()->toIso8601String();
         $dateModified = $article->updated_at ? $article->updated_at->toIso8601String() : $datePublished;
-        
+
         return [
             '@context' => 'https://schema.org',
             '@type' => 'FAQPage',
@@ -759,67 +800,64 @@ class SeoHelper
             'dateModified' => $dateModified,
             'mainEntityOfPage' => [
                 '@type' => 'WebPage',
-                '@id' => $pageUrl
-            ]
+                '@id' => $pageUrl,
+            ],
         ];
     }
 
     /**
      * Получить структурированные данные Organization
-     * 
-     * @return array
      */
     public static function getStructuredDataForOrganization(): array
     {
         $baseUrl = rtrim(config('seo.base_url', config('app.url')), '/');
         $logoUrl = config('seo.logo_url', '/images/og-default.jpg');
-        
+
         // Делаем логотип абсолютным URL
-        if (!Str::startsWith($logoUrl, ['http://', 'https://'])) {
-            $logoUrl = $baseUrl . '/' . ltrim($logoUrl, '/');
+        if (! Str::startsWith($logoUrl, ['http://', 'https://'])) {
+            $logoUrl = $baseUrl.'/'.ltrim($logoUrl, '/');
         }
-        
+
         return [
             '@context' => 'https://schema.org',
             '@type' => 'Organization',
             'name' => config('seo.site_name', 'Сновидец.ру'),
             'url' => $baseUrl,
             'logo' => $logoUrl,
-            'description' => config('seo.site_description', 'Платформа для ведения дневника сновидений')
+            'description' => config('seo.site_description', 'Платформа для ведения дневника сновидений'),
         ];
     }
 
     /**
      * Получить структурированные данные Article для статьи
-     * 
-     * @param \App\Models\Article $article
-     * @param array $seo SEO данные страницы
-     * @return array
+     *
+     * @param  \App\Models\Article  $article
+     * @param  array  $seo  SEO данные страницы
      */
     public static function getStructuredDataForArticle($article, array $seo = []): array
     {
         $baseUrl = rtrim(config('seo.base_url', config('app.url')), '/');
         $logoUrl = config('seo.logo_url', '/images/og-default.jpg');
-        
+
         // Делаем логотип абсолютным URL
-        if (!Str::startsWith($logoUrl, ['http://', 'https://'])) {
-            $logoUrl = $baseUrl . '/' . ltrim($logoUrl, '/');
+        if (! Str::startsWith($logoUrl, ['http://', 'https://'])) {
+            $logoUrl = $baseUrl.'/'.ltrim($logoUrl, '/');
         }
-        
+
         // Формируем URL страницы
         $routeName = $article->type === 'guide' ? 'guide.show' : 'articles.show';
-        $pageUrl = $baseUrl . route($routeName, $article->slug, false);
-        
+        $pageUrl = $baseUrl.route($routeName, $article->slug, false);
+
         // Формируем заголовок
         $headline = $seo['h1'] ?? $article->title ?? 'Статья';
-        
+
         // Формируем описание
         $description = $seo['description'] ?? $article->excerpt ?? '';
-        
+
         // Формируем даты
         $datePublished = $article->created_at ? $article->created_at->toIso8601String() : now()->toIso8601String();
         $dateModified = $article->updated_at ? $article->updated_at->toIso8601String() : $datePublished;
-        
+
         return [
             '@context' => 'https://schema.org',
             '@type' => 'Article',
@@ -827,54 +865,53 @@ class SeoHelper
             'description' => $description,
             'author' => [
                 '@type' => 'Organization',
-                'name' => config('seo.site_name', 'Сновидец.ру')
+                'name' => config('seo.site_name', 'Сновидец.ру'),
             ],
             'publisher' => [
                 '@type' => 'Organization',
                 'name' => config('seo.site_name', 'Сновидец.ру'),
                 'logo' => [
                     '@type' => 'ImageObject',
-                    'url' => $logoUrl
-                ]
+                    'url' => $logoUrl,
+                ],
             ],
             'datePublished' => $datePublished,
             'dateModified' => $dateModified,
             'mainEntityOfPage' => [
                 '@type' => 'WebPage',
-                '@id' => $pageUrl
-            ]
+                '@id' => $pageUrl,
+            ],
         ];
     }
 
     /**
      * Получить структурированные данные Article для толкования сна
-     * 
-     * @param \App\Models\DreamInterpretation $interpretation
-     * @param array $seo SEO данные страницы
-     * @return array
+     *
+     * @param  \App\Models\DreamInterpretation  $interpretation
+     * @param  array  $seo  SEO данные страницы
      */
     public static function getStructuredDataForDreamInterpretation($interpretation, array $seo = []): array
     {
         $baseUrl = rtrim(config('seo.base_url', config('app.url')), '/');
         $logoUrl = config('seo.logo_url', '/images/og-default.jpg');
-        
+
         // Делаем логотип абсолютным URL
-        if (!Str::startsWith($logoUrl, ['http://', 'https://'])) {
-            $logoUrl = $baseUrl . '/' . ltrim($logoUrl, '/');
+        if (! Str::startsWith($logoUrl, ['http://', 'https://'])) {
+            $logoUrl = $baseUrl.'/'.ltrim($logoUrl, '/');
         }
-        
+
         // Формируем URL страницы
-        $pageUrl = $baseUrl . route('dream-analyzer.show', $interpretation->hash, false);
-        
+        $pageUrl = $baseUrl.route('dream-analyzer.show', $interpretation->hash, false);
+
         // Формируем заголовок
         $headline = $seo['title'] ?? $seo['h1'] ?? 'Толкование сна';
-        
+
         // Формируем описание
         $description = $seo['description'] ?? '';
-        
+
         // Формируем даты
         $datePublished = $interpretation->created_at ? $interpretation->created_at->toIso8601String() : now()->toIso8601String();
-        
+
         return [
             '@context' => 'https://schema.org',
             '@type' => 'Article',
@@ -883,46 +920,45 @@ class SeoHelper
             'articleSection' => 'Толкование снов',
             'author' => [
                 '@type' => 'Organization',
-                'name' => config('seo.site_name', 'Сновидец.ру')
+                'name' => config('seo.site_name', 'Сновидец.ру'),
             ],
             'datePublished' => $datePublished,
             'mainEntityOfPage' => [
                 '@type' => 'WebPage',
-                '@id' => $pageUrl
-            ]
+                '@id' => $pageUrl,
+            ],
         ];
     }
 
     /**
      * Получить структурированные данные Article для анализа отчета
-     * 
-     * @param \App\Models\Report $report
-     * @param \App\Models\DreamInterpretation $interpretation
-     * @param array $seo SEO данные страницы
-     * @return array
+     *
+     * @param  \App\Models\Report  $report
+     * @param  \App\Models\DreamInterpretation  $interpretation
+     * @param  array  $seo  SEO данные страницы
      */
     public static function getStructuredDataForReportAnalysis($report, $interpretation, array $seo = []): array
     {
         $baseUrl = rtrim(config('seo.base_url', config('app.url')), '/');
         $logoUrl = config('seo.logo_url', '/images/og-default.jpg');
-        
+
         // Делаем логотип абсолютным URL
-        if (!Str::startsWith($logoUrl, ['http://', 'https://'])) {
-            $logoUrl = $baseUrl . '/' . ltrim($logoUrl, '/');
+        if (! Str::startsWith($logoUrl, ['http://', 'https://'])) {
+            $logoUrl = $baseUrl.'/'.ltrim($logoUrl, '/');
         }
-        
+
         // Формируем URL страницы
-        $pageUrl = $baseUrl . route('reports.analysis', $report->id, false);
-        
+        $pageUrl = $baseUrl.route('reports.analysis', $report->id, false);
+
         // Формируем заголовок
         $headline = $seo['title'] ?? $seo['h1'] ?? 'Анализ отчета';
-        
+
         // Формируем описание
         $description = $seo['description'] ?? '';
-        
+
         // Формируем даты
         $datePublished = $interpretation->created_at ? $interpretation->created_at->toIso8601String() : now()->toIso8601String();
-        
+
         return [
             '@context' => 'https://schema.org',
             '@type' => 'Article',
@@ -931,25 +967,23 @@ class SeoHelper
             'articleSection' => 'Анализ сновидений',
             'author' => [
                 '@type' => 'Organization',
-                'name' => config('seo.site_name', 'Сновидец.ру')
+                'name' => config('seo.site_name', 'Сновидец.ру'),
             ],
             'datePublished' => $datePublished,
             'mainEntityOfPage' => [
                 '@type' => 'WebPage',
-                '@id' => $pageUrl
-            ]
+                '@id' => $pageUrl,
+            ],
         ];
     }
 
     /**
      * Получить структурированные данные WebSite для главной страницы
-     * 
-     * @return array
      */
     public static function getStructuredDataForWebSite(): array
     {
         $baseUrl = rtrim(config('seo.base_url', config('app.url')), '/');
-        
+
         return [
             '@context' => 'https://schema.org',
             '@type' => 'WebSite',
@@ -960,70 +994,70 @@ class SeoHelper
                 // Используем EntryPoint для target (стандартный Schema.org формат)
                 'target' => [
                     '@type' => 'EntryPoint',
-                    'urlTemplate' => $baseUrl . '/search?q={search_term_string}'
+                    'urlTemplate' => $baseUrl.'/search?q={search_term_string}',
                 ],
                 'query-input' => [
                     '@type' => 'PropertyValueSpecification',
                     'valueRequired' => true,
-                    'valueName' => 'search_term_string'
-                ]
-            ]
+                    'valueName' => 'search_term_string',
+                ],
+            ],
         ];
     }
 
     /**
      * Получить структурированные данные Article для публичного отчета
-     * 
-     * @param \App\Models\Report $report
-     * @param array $seo SEO данные страницы
+     *
+     * @param  \App\Models\Report  $report
+     * @param  array  $seo  SEO данные страницы
      * @return array|null Массив для JSON-LD или null если отчет не публичный
      */
     public static function getStructuredDataForReport($report, array $seo = []): ?array
     {
         // Проверяем, что отчет публичный (как в sitemap)
         // Убеждаемся, что связь user загружена
-        if (!$report->relationLoaded('user')) {
+        if (! $report->relationLoaded('user')) {
             $report->load('user');
         }
-        
-        if ($report->status !== 'published' || 
-            $report->access_level !== 'all' || 
-            !$report->user || 
+
+        if ($report->status !== 'published' ||
+            $report->access_level !== 'all' ||
+            ! $report->user ||
             $report->user->diary_privacy !== 'public') {
             return null;
         }
 
         $baseUrl = rtrim(config('seo.base_url', config('app.url')), '/');
         $logoUrl = config('seo.logo_url', '/images/og-default.jpg');
-        
+
         // Делаем логотип абсолютным URL
-        if (!Str::startsWith($logoUrl, ['http://', 'https://'])) {
-            $logoUrl = $baseUrl . '/' . ltrim($logoUrl, '/');
+        if (! Str::startsWith($logoUrl, ['http://', 'https://'])) {
+            $logoUrl = $baseUrl.'/'.ltrim($logoUrl, '/');
         }
-        
+
         // Формируем URL страницы
-        $pageUrl = $baseUrl . route('reports.show', $report->id, false);
-        
+        $pageUrl = $baseUrl.route('reports.show', $report->id, false);
+
         // Формируем заголовок
         $headline = $seo['title'] ?? $seo['h1'] ?? 'Отчет о сновидениях';
-        
+
         // Формируем описание
         $description = $seo['description'] ?? '';
-        
+
         // Если нет описания, берем из первого сна
         if (empty($description) && $report->dreams->isNotEmpty()) {
             $firstDream = $report->dreams->first();
             $description = strip_tags($firstDream->description ?? '');
             $description = Str::limit($description, 160, '...');
         }
-        
+
         // Формируем даты
         $datePublished = $report->created_at ? $report->created_at->toIso8601String() : now()->toIso8601String();
         $dateModified = $report->updated_at ? $report->updated_at->toIso8601String() : $datePublished;
-        
+
         // Автор
         $authorName = $report->user->nickname ?? $report->user->name ?? 'Пользователь';
-        
+
         return [
             '@context' => 'https://schema.org',
             '@type' => 'Article',
@@ -1032,69 +1066,67 @@ class SeoHelper
             'articleSection' => 'Дневник сновидений',
             'author' => [
                 '@type' => 'Person',
-                'name' => $authorName
+                'name' => $authorName,
             ],
             'publisher' => [
                 '@type' => 'Organization',
                 'name' => config('seo.site_name', 'Сновидец.ру'),
                 'logo' => [
                     '@type' => 'ImageObject',
-                    'url' => $logoUrl
-                ]
+                    'url' => $logoUrl,
+                ],
             ],
             'datePublished' => $datePublished,
             'dateModified' => $dateModified,
             'mainEntityOfPage' => [
                 '@type' => 'WebPage',
-                '@id' => $pageUrl
-            ]
+                '@id' => $pageUrl,
+            ],
         ];
     }
 
     /**
      * Получить структурированные данные Person для профиля пользователя
-     * 
-     * @param \App\Models\User $user
-     * @param array $seo SEO данные страницы
-     * @return array
+     *
+     * @param  \App\Models\User  $user
+     * @param  array  $seo  SEO данные страницы
      */
     public static function getStructuredDataForPerson($user, array $seo = []): array
     {
         $baseUrl = rtrim(config('seo.base_url', config('app.url')), '/');
-        $profileUrl = $baseUrl . route('users.profile', $user, false);
-        
+        $profileUrl = $baseUrl.route('users.profile', $user, false);
+
         $personData = [
             '@context' => 'https://schema.org',
             '@type' => 'Person',
             'name' => $user->nickname ?? $user->name,
             'url' => $profileUrl,
         ];
-        
+
         // Добавляем описание, если есть
-        if (!empty($user->bio)) {
+        if (! empty($user->bio)) {
             $personData['description'] = $user->bio;
         }
-        
+
         // Примечание: memberSince не является валидным свойством Person в Schema.org
         // Дата регистрации не добавляется, так как нет стандартного свойства для этого
-        
+
         return $personData;
     }
 
     /**
      * Получить структурированные данные CollectionPage для списка статей/инструкций
-     * 
-     * @param string $title Заголовок страницы
-     * @param string $description Описание страницы
-     * @param string $routeName Имя маршрута
-     * @param array $seo SEO данные страницы
-     * @return array
+     *
+     * @param  string  $title  Заголовок страницы
+     * @param  string  $description  Описание страницы
+     * @param  string  $routeName  Имя маршрута
+     * @param  array  $seo  SEO данные страницы
      */
     public static function getStructuredDataForCollectionPage(string $title, string $description, string $routeName, array $seo = []): array
     {
         $baseUrl = rtrim(config('seo.base_url', config('app.url')), '/');
-        $pageUrl = $baseUrl . route($routeName, [], false);
-        
+        $pageUrl = $baseUrl.route($routeName, [], false);
+
         return [
             '@context' => 'https://schema.org',
             '@type' => 'CollectionPage',
@@ -1104,60 +1136,58 @@ class SeoHelper
             'headline' => $seo['h1'] ?? $title,
             'mainEntity' => [
                 '@type' => 'WebPage',
-                '@id' => $pageUrl
-            ]
+                '@id' => $pageUrl,
+            ],
         ];
     }
 
     /**
      * Получить breadcrumbs для статьи
-     * 
-     * @param \App\Models\Article $article
-     * @return array
+     *
+     * @param  \App\Models\Article  $article
      */
     public static function getBreadcrumbsForArticle($article): array
     {
         $baseUrl = rtrim(config('seo.base_url', config('app.url')), '/');
-        
+
         return [
             [
                 'name' => 'Главная',
-                'url' => $baseUrl . route('home', [], false)
+                'url' => $baseUrl.route('home', [], false),
             ],
             [
                 'name' => 'Статьи',
-                'url' => $baseUrl . route('articles.index', [], false)
+                'url' => $baseUrl.route('articles.index', [], false),
             ],
             [
                 'name' => $article->title,
-                'url' => $baseUrl . route('articles.show', ['slug' => $article->slug], false)
-            ]
+                'url' => $baseUrl.route('articles.show', ['slug' => $article->slug], false),
+            ],
         ];
     }
 
     /**
      * Получить breadcrumbs для инструкции (guide)
-     * 
-     * @param \App\Models\Article $guide
-     * @return array
+     *
+     * @param  \App\Models\Article  $guide
      */
     public static function getBreadcrumbsForGuide($guide): array
     {
         $baseUrl = rtrim(config('seo.base_url', config('app.url')), '/');
-        
+
         return [
             [
                 'name' => 'Главная',
-                'url' => $baseUrl . route('home', [], false)
+                'url' => $baseUrl.route('home', [], false),
             ],
             [
                 'name' => 'Инструкции',
-                'url' => $baseUrl . route('guide.index', [], false)
+                'url' => $baseUrl.route('guide.index', [], false),
             ],
             [
                 'name' => $guide->title,
-                'url' => $baseUrl . route('guide.show', ['slug' => $guide->slug], false)
-            ]
+                'url' => $baseUrl.route('guide.show', ['slug' => $guide->slug], false),
+            ],
         ];
     }
 
@@ -1167,63 +1197,61 @@ class SeoHelper
     public static function getBreadcrumbsForSymbol($article): array
     {
         $baseUrl = rtrim(config('seo.base_url', config('app.url')), '/');
+
         return [
-            ['name' => 'Главная', 'url' => $baseUrl . route('home', [], false)],
-            ['name' => $article->title, 'url' => $baseUrl . route('symbol.show', ['slug' => $article->slug], false)]
+            ['name' => 'Главная', 'url' => $baseUrl.route('home', [], false)],
+            ['name' => $article->title, 'url' => $baseUrl.route('symbol.show', ['slug' => $article->slug], false)],
         ];
     }
 
     /**
      * Получить breadcrumbs для профиля пользователя
-     * 
-     * @param \App\Models\User $user
-     * @return array
+     *
+     * @param  \App\Models\User  $user
      */
     public static function getBreadcrumbsForUserProfile($user): array
     {
         $baseUrl = rtrim(config('seo.base_url', config('app.url')), '/');
         $nickname = $user->nickname ?? $user->name;
-        
+
         return [
             [
                 'name' => 'Главная',
-                'url' => $baseUrl . route('home', [], false)
+                'url' => $baseUrl.route('home', [], false),
             ],
             [
-                'name' => 'Профиль ' . $nickname,
-                'url' => $baseUrl . route('users.profile', ['user' => $user->id], false)
-            ]
+                'name' => 'Профиль '.$nickname,
+                'url' => $baseUrl.route('users.profile', ['user' => $user->id], false),
+            ],
         ];
     }
 
     /**
      * Получить breadcrumbs для публичного дневника
-     * 
-     * @param \App\Models\User $user
-     * @return array
+     *
+     * @param  \App\Models\User  $user
      */
     public static function getBreadcrumbsForDiary($user): array
     {
         $baseUrl = rtrim(config('seo.base_url', config('app.url')), '/');
         $nickname = $user->nickname ?? $user->name;
-        
+
         return [
             [
                 'name' => 'Главная',
-                'url' => $baseUrl . route('home', [], false)
+                'url' => $baseUrl.route('home', [], false),
             ],
             [
-                'name' => 'Дневник ' . $nickname,
-                'url' => $baseUrl . route('diary.public', ['publicLink' => $user->public_link], false)
-            ]
+                'name' => 'Дневник '.$nickname,
+                'url' => $baseUrl.route('diary.public', ['publicLink' => $user->public_link], false),
+            ],
         ];
     }
 
     /**
      * Получить breadcrumbs для публичного отчета
-     * 
-     * @param \App\Models\Report $report
-     * @return array
+     *
+     * @param  \App\Models\Report  $report
      */
     public static function getBreadcrumbsForReport($report): array
     {
@@ -1231,28 +1259,27 @@ class SeoHelper
         $user = $report->user;
         $nickname = $user->nickname ?? $user->name;
         $reportDate = $report->report_date->format('d.m.Y');
-        
+
         return [
             [
                 'name' => 'Главная',
-                'url' => $baseUrl . route('home', [], false)
+                'url' => $baseUrl.route('home', [], false),
             ],
             [
-                'name' => 'Дневник ' . $nickname,
-                'url' => $baseUrl . route('diary.public', ['publicLink' => $user->public_link], false)
+                'name' => 'Дневник '.$nickname,
+                'url' => $baseUrl.route('diary.public', ['publicLink' => $user->public_link], false),
             ],
             [
-                'name' => 'Отчет от ' . $reportDate,
-                'url' => $baseUrl . route('reports.show', ['report' => $report->id], false)
-            ]
+                'name' => 'Отчет от '.$reportDate,
+                'url' => $baseUrl.route('reports.show', ['report' => $report->id], false),
+            ],
         ];
     }
 
     /**
      * Получить breadcrumbs для анализа отчета
-     * 
-     * @param \App\Models\Report $report
-     * @return array
+     *
+     * @param  \App\Models\Report  $report
      */
     public static function getBreadcrumbsForReportAnalysis($report): array
     {
@@ -1260,82 +1287,58 @@ class SeoHelper
         $user = $report->user;
         $nickname = $user->nickname ?? $user->name;
         $reportDate = $report->report_date->format('d.m.Y');
-        
+
         return [
             [
                 'name' => 'Главная',
-                'url' => $baseUrl . route('home', [], false)
+                'url' => $baseUrl.route('home', [], false),
             ],
             [
-                'name' => 'Дневник ' . $nickname,
-                'url' => $baseUrl . route('diary.public', ['publicLink' => $user->public_link], false)
+                'name' => 'Дневник '.$nickname,
+                'url' => $baseUrl.route('diary.public', ['publicLink' => $user->public_link], false),
             ],
             [
-                'name' => 'Отчет от ' . $reportDate,
-                'url' => $baseUrl . route('reports.show', ['report' => $report->id], false)
+                'name' => 'Отчет от '.$reportDate,
+                'url' => $baseUrl.route('reports.show', ['report' => $report->id], false),
             ],
             [
                 'name' => 'Анализ',
-                'url' => $baseUrl . route('reports.analysis', ['report' => $report->id], false)
-            ]
+                'url' => $baseUrl.route('reports.analysis', ['report' => $report->id], false),
+            ],
         ];
     }
 
     /**
      * Получить breadcrumbs для толкования сна
-     * 
-     * @param \App\Models\DreamInterpretation $interpretation
-     * @return array
+     *
+     * @param  \App\Models\DreamInterpretation  $interpretation
      */
     public static function getBreadcrumbsForDreamInterpretation($interpretation): array
     {
         $baseUrl = rtrim(config('seo.base_url', config('app.url')), '/');
-        
+
         // Получаем SEO данные для получения title
         $seo = self::forDreamAnalyzerResult($interpretation);
         $title = $seo['title'] ?? 'Толкование сна';
-        
+
         // Обрезаем title до 40 символов, если длиннее
-        $shortTitle = mb_strlen($title) > 40 
-            ? mb_substr($title, 0, 40) . '...' 
+        $shortTitle = mb_strlen($title) > 40
+            ? mb_substr($title, 0, 40).'...'
             : $title;
-        
+
         return [
             [
                 'name' => 'Главная',
-                'url' => $baseUrl . route('home', [], false)
+                'url' => $baseUrl.route('home', [], false),
             ],
             [
                 'name' => 'Толкование сна',
-                'url' => $baseUrl . route('dream-analyzer.create', [], false)
+                'url' => $baseUrl.route('dream-analyzer.create', [], false),
             ],
             [
                 'name' => $shortTitle,
-                'url' => $baseUrl . route('dream-analyzer.show', ['hash' => $interpretation->hash], false)
-            ]
+                'url' => $baseUrl.route('dream-analyzer.show', ['hash' => $interpretation->hash], false),
+            ],
         ];
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

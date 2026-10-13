@@ -383,6 +383,7 @@ class AdminController extends Controller
             'fallback_model' => Setting::getValue('fallback_model', ''),
             'timezone' => Setting::getValue('timezone', 'UTC'),
             'yandex_metrika_id' => Setting::getValue('yandex_metrika_id', '89409547'),
+            'additional_head_code' => Setting::where('key', 'additional_head_code')->value('value') ?? '',
             'feedback_mail_to' => Setting::getValue('feedback_mail_to', ''),
             'feedback_contact_telegram' => Setting::getValue('feedback_contact_telegram', ''),
             'feedback_contact_vk' => Setting::getValue('feedback_contact_vk', ''),
@@ -416,6 +417,7 @@ class AdminController extends Controller
             'fallback_model' => ['nullable', 'string', 'max:255'],
             'timezone' => ['nullable', 'string', 'timezone'],
             'yandex_metrika_id' => ['nullable', 'string', 'max:30', 'regex:/^\d*$/'],
+            'additional_head_code' => ['nullable', 'string', 'max:65000'],
             'feedback_mail_to' => ['nullable', 'string', 'max:255', 'email'],
             'feedback_contact_telegram' => ['nullable', 'string', 'max:255'],
             'feedback_contact_vk' => ['nullable', 'string', 'max:500'],
@@ -496,6 +498,8 @@ class AdminController extends Controller
         } else {
             Setting::setValue('yandex_metrika_id', '89409547'); // значение по умолчанию
         }
+
+        Setting::setValue('additional_head_code', $request->input('additional_head_code'));
 
         if ($request->filled('feedback_mail_to')) {
             Setting::setValue('feedback_mail_to', trim($request->feedback_mail_to));

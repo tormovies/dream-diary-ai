@@ -35,6 +35,7 @@
         @stack('styles')
 
         <x-analytics-consent-bootstrap :exclude-admin="true" />
+        {!! \App\Models\Setting::where('key', 'additional_head_code')->value('value') ?? '' !!}
     </head>
     <body class="font-sans antialiased bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
         <div class="min-h-screen bg-gray-100 dark:bg-gray-900">

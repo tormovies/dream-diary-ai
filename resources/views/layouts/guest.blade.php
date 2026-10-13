@@ -18,6 +18,7 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
 
         <x-analytics-consent-bootstrap :exclude-admin="true" />
+        {!! \App\Models\Setting::where('key', 'additional_head_code')->value('value') ?? '' !!}
     </head>
     <body class="font-sans text-gray-900 dark:text-gray-100 antialiased bg-gray-100 dark:bg-gray-900">
         <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-gray-100 dark:bg-gray-900">

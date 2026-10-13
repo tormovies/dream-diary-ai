@@ -8,7 +8,7 @@
                 <main class="space-y-6 min-w-0">
                     <!-- Заголовок -->
                     <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 card-shadow border border-gray-200 dark:border-gray-700">
-                        <h1 class="text-3xl font-bold text-purple-600 dark:text-purple-400 mb-2">Толкование снов</h1>
+                        <h1 class="text-3xl font-bold text-purple-600 dark:text-purple-400 mb-2">{{ $seo['h1'] ?? 'Толкование снов' }}</h1>
                         <p class="text-gray-600 dark:text-gray-400">Получите глубокий психологический анализ вашего сна с использованием различных традиций интерпретации</p>
                     </div>
 

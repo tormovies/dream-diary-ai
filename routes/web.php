@@ -173,6 +173,13 @@ Route::middleware('auth')->group(function () {
         Route::patch('/ad', [\App\Http\Controllers\AdminController::class, 'updateAd'])->name('ad.update');
 
         // SEO управление
+        Route::get('seo/yandex', [\App\Http\Controllers\Admin\YandexSeoController::class, 'index'])->name('seo.yandex.index');
+        Route::get('seo/yandex/pages/{page}', [\App\Http\Controllers\Admin\YandexSeoController::class, 'detail'])->whereNumber('page')->name('seo.yandex.detail');
+        Route::post('seo/yandex/pages/{page}/suggestions', [\App\Http\Controllers\Admin\YandexSeoController::class, 'suggestions'])->whereNumber('page')->middleware('throttle:6,1')->name('seo.yandex.suggestions');
+        Route::patch('seo/yandex/pages/{page}', [\App\Http\Controllers\Admin\YandexSeoController::class, 'save'])->whereNumber('page')->name('seo.yandex.save');
+        Route::post('seo/yandex/connect', [\App\Http\Controllers\Admin\YandexSeoController::class, 'connect'])->middleware('throttle:6,1')->name('seo.yandex.connect');
+        Route::post('seo/yandex/settings', [\App\Http\Controllers\Admin\YandexSeoController::class, 'settings'])->name('seo.yandex.settings');
+        Route::post('seo/yandex/tasks/{task}/recover', [\App\Http\Controllers\Admin\YandexSeoController::class, 'recover'])->whereNumber('task')->name('seo.yandex.recover');
         Route::resource('seo', \App\Http\Controllers\Admin\SeoController::class)->except(['show']);
         Route::get('/seo/sitemap', [\App\Http\Controllers\Admin\SeoController::class, 'sitemap'])->name('seo.sitemap');
         Route::post('/seo/sitemap/settings', [\App\Http\Controllers\Admin\SeoController::class, 'updateSitemapSettings'])->name('seo.sitemap.settings');
