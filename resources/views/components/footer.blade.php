@@ -30,5 +30,11 @@
             </button>
             @endif
         </div>
+        <div class="mt-3 text-center text-xs text-gray-500 dark:text-gray-400">
+            <a href="https://free-games.ru/"
+               target="_blank"
+               rel="noopener"
+               class="hover:text-purple-600 dark:hover:text-purple-400 hover:underline transition-colors">Разработано тут</a>
+        </div>
     </div>
 </footer>
