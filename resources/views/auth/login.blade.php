@@ -17,9 +17,14 @@
                         @endif
                     </div>
 
-                    <!-- Уведомление о сбое хостинга -->
-                    <div class="mt-4 mb-5 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3.5 text-[13px] leading-relaxed text-amber-900 dark:border-amber-600/60 dark:bg-amber-900/30 dark:text-amber-100">
-                        <p class="font-semibold">
+                    <!-- Уведомление о сбое хостинга (закрывается, скрытие запоминается в localStorage) -->
+                    <div id="hosting-notice" class="relative mt-4 mb-5 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3.5 text-[13px] leading-relaxed text-amber-900 dark:border-amber-600/60 dark:bg-amber-900/30 dark:text-amber-100">
+                        <button type="button" onclick="dismissHostingNotice()"
+                                class="absolute top-1.5 right-1.5 flex h-6 w-6 items-center justify-center rounded text-amber-700 hover:bg-amber-200/70 dark:text-amber-200 dark:hover:bg-amber-800/50"
+                                aria-label="Скрыть уведомление">
+                            <i class="fas fa-times"></i>
+                        </button>
+                        <p class="font-semibold pr-7">
                             <i class="fas fa-exclamation-triangle mr-1"></i> Внимание
                         </p>
                         <p class="mt-1.5">
@@ -28,6 +33,21 @@
                         <p class="mt-1.5">
                             Не можете авторизоваться или что-то не работает — <a href="{{ route('feedback.index') }}" class="font-medium underline hover:opacity-80">напишите в поддержку</a>.
                         </p>
+                        <script>
+                            function dismissHostingNotice() {
+                                try { localStorage.setItem('hosting_notice_dismissed', '1'); } catch (e) {}
+                                var n = document.getElementById('hosting-notice');
+                                if (n) { n.style.display = 'none'; }
+                            }
+                            (function () {
+                                try {
+                                    if (localStorage.getItem('hosting_notice_dismissed') === '1') {
+                                        var n = document.getElementById('hosting-notice');
+                                        if (n) { n.style.display = 'none'; }
+                                    }
+                                } catch (e) {}
+                            })();
+                        </script>
                     </div>
 
                     <!-- Session Status -->
