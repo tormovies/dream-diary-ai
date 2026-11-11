@@ -360,14 +360,16 @@ class YandexSeoImportTest extends TestCase
             'url' => 'https://example.test/page', 'path' => '/page', 'in_search_seen_at' => now(),
             'created_at' => now(), 'updated_at' => now(),
         ]);
+        $firstDate = now('Europe/Moscow')->subDays(2)->toDateString();
+        $secondDate = now('Europe/Moscow')->subDay()->toDateString();
         $api = $this->tickService();
         $gets = 0;
-        $api->method('request')->willReturnCallback(function ($method, $endpoint, array $params = []) use (&$gets) {
+        $api->method('request')->willReturnCallback(function ($method, $endpoint, array $params = []) use (&$gets, $firstDate, $secondDate) {
             if ($method === 'GET' && array_key_exists('offset', $params)) {
                 return ['samples' => [], 'count' => 0];
             }
             if ($method === 'GET') {
-                return ++$gets === 1 ? ['dates' => ['2026-09-01', '2026-10-01', '2026-10-10']] : ['limits' => []];
+                return ++$gets === 1 ? ['dates' => ['2000-01-01', $firstDate, $secondDate]] : ['limits' => []];
             }
 
             return ['task_id' => 'remote-1', 'free_quota_remaining' => 98];
@@ -378,7 +380,7 @@ class YandexSeoImportTest extends TestCase
         $this->assertSame('submitted', $task->status);
         $this->assertSame(2, $task->quota_used);
         $this->assertSame([$page], json_decode($task->page_ids));
-        $this->assertSame(['2026-10-01', '2026-10-10'], json_decode($task->dates, true));
+        $this->assertSame([$firstDate, $secondDate], json_decode($task->dates, true));
         $this->assertSame(2, DB::table('yandex_seo_coverage')->where('task_id', $task->id)->count());
         $this->assertSame(98, Setting::getValue('yandex_seo_free_remaining'));
         $this->assertSame(now('Europe/Moscow')->toDateString(), Setting::getValue('yandex_seo_quota_day'));
@@ -402,7 +404,7 @@ class YandexSeoImportTest extends TestCase
         $api = $this->tickService();
         $api->method('request')->willReturnCallback(fn ($method, $endpoint, array $params = []) => match (true) {
             $method === 'GET' && array_key_exists('offset', $params) => ['samples' => [], 'count' => 0],
-            default => ['dates' => ['2026-10-10']],
+            default => ['dates' => [now('Europe/Moscow')->subDay()->toDateString()]],
         });
         app(YandexSeoImportService::class, ['api' => $api])->tick();
         $this->assertDatabaseCount('yandex_seo_tasks', 0);
@@ -414,11 +416,13 @@ class YandexSeoImportTest extends TestCase
         Setting::setValue('yandex_seo_enabled', true);
         Setting::setValue('yandex_seo_host_id', 'example-host');
         Setting::setValue('yandex_seo_host_url', 'https://example.test');
+        $keptDate = now('Europe/Moscow')->subDay()->toDateString();
+        $staleDate = now('Europe/Moscow')->subDays(60)->toDateString();
         $page = DB::table('yandex_seo_pages')->insertGetId([
             'host_id' => 'example-host', 'url_hash' => hash('sha256', 'https://example.test/page'),
             'url' => 'https://example.test/page', 'path' => '/page', 'created_at' => now(), 'updated_at' => now(),
         ]);
-        foreach (['2026-01-01', '2026-10-10'] as $date) {
+        foreach ([$staleDate, $keptDate] as $date) {
             DB::table('yandex_seo_metrics')->insert([
                 'page_id' => $page, 'date' => $date, 'query_hash' => hash('sha256', 'dream'),
                 'query' => 'dream', 'region' => '', 'clicks' => 1, 'impressions' => 5,
@@ -431,10 +435,10 @@ class YandexSeoImportTest extends TestCase
             default => ['dates' => []],
         });
         app(YandexSeoImportService::class, ['api' => $api])->tick();
-        $this->assertDatabaseMissing('yandex_seo_metrics', ['date' => '2026-01-01']);
-        $this->assertDatabaseHas('yandex_seo_metrics', ['date' => '2026-10-10']);
-        $this->assertDatabaseMissing('yandex_seo_coverage', ['date' => '2026-01-01']);
-        $this->assertDatabaseHas('yandex_seo_coverage', ['date' => '2026-10-10']);
+        $this->assertDatabaseMissing('yandex_seo_metrics', ['date' => $staleDate]);
+        $this->assertDatabaseHas('yandex_seo_metrics', ['date' => $keptDate]);
+        $this->assertDatabaseMissing('yandex_seo_coverage', ['date' => $staleDate]);
+        $this->assertDatabaseHas('yandex_seo_coverage', ['date' => $keptDate]);
         $this->assertSame(now('Europe/Moscow')->toDateString(), Setting::getValue('yandex_seo_pruned_day'));
         Setting::setValue('yandex_seo_enabled', false);
     }
