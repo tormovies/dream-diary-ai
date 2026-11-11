@@ -17,6 +17,19 @@
                         @endif
                     </div>
 
+                    <!-- Уведомление о сбое хостинга -->
+                    <div class="mt-4 mb-5 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3.5 text-[13px] leading-relaxed text-amber-900 dark:border-amber-600/60 dark:bg-amber-900/30 dark:text-amber-100">
+                        <p class="font-semibold">
+                            <i class="fas fa-exclamation-triangle mr-1"></i> Внимание
+                        </p>
+                        <p class="mt-1.5">
+                            2 ноября наш хостинг-провайдер Beget подвергся хакерской атаке — часть данных за период с 12 октября по 10 ноября утеряна. Если сайт сообщает, что вашего аккаунта нет — <a href="{{ route('register') }}" class="font-medium underline hover:opacity-80">зарегистрируйтесь заново</a>. Записи сновидений за эти даты тоже утеряны. Мы работаем над тем, чтобы лучше защитить данные.
+                        </p>
+                        <p class="mt-1.5">
+                            Не можете авторизоваться или что-то не работает — <a href="{{ route('feedback.index') }}" class="font-medium underline hover:opacity-80">напишите в поддержку</a>.
+                        </p>
+                    </div>
+
                     <!-- Session Status -->
                     <x-auth-session-status class="mb-4" :status="session('status')" />
 
